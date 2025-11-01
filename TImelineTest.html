@@ -468,6 +468,21 @@
             Minute: { singular: "minute", plural: "minutes" }
         };
 
+        const STEP_SIZES = {
+            Eon: 1,
+            Epoch: 1,
+            Age: 10,
+            Millennium: 10,
+            Century: 10,
+            Decade: 10,
+            Year: 1000,
+            Month: 100,
+            Week: 100,
+            Day: 100,
+            Hour: 1000,
+            Minute: 1000
+        };
+
         const compactFormatter = new Intl.NumberFormat("en-US", {
             notation: "compact",
             maximumFractionDigits: 1
@@ -520,35 +535,15 @@
             const minUnits = TIMELINE_MIN / unitMinutes;
             const maxUnits = TIMELINE_MAX / unitMinutes;
             
-            // Determine appropriate step size
-            let step;
-            if (granularity === "Eon" || granularity === "Epoch") {
-                step = 1;
-            } else if (granularity === "Age") {
-                step = 10;
-            } else if (granularity === "Millennium") {
-                step = 10;
-            } else if (granularity === "Century") {
-                step = 10;
-            } else if (granularity === "Decade") {
-                step = 10;
-            } else if (granularity === "Year") {
-                step = 1000;
-            } else if (granularity === "Month") {
-                step = 100;
-            } else if (granularity === "Week") {
-                step = 100;
-            } else if (granularity === "Day") {
-                step = 100;
-            } else if (granularity === "Hour") {
-                step = 1000;
-            } else {
-                step = 1000;
-            }
+            // Get appropriate step size from configuration
+            const step = STEP_SIZES[granularity] || 1000;
             
             // Update input fields
-            startYearInput.value = Math.round(startUnits * 1000) / 1000;
-            endYearInput.value = Math.round(endUnits * 1000) / 1000;
+            const roundedStart = Math.round(startUnits * 1000) / 1000;
+            const roundedEnd = Math.round(endUnits * 1000) / 1000;
+            
+            startYearInput.value = roundedStart;
+            endYearInput.value = roundedEnd;
             startYearInput.step = step;
             endYearInput.step = step;
             startYearInput.min = minUnits;
@@ -556,15 +551,15 @@
             endYearInput.min = minUnits;
             endYearInput.max = maxUnits;
             
-            // Update sliders
+            // Update sliders with same precision
             startSlider.min = minUnits;
             startSlider.max = maxUnits;
             endSlider.min = minUnits;
             endSlider.max = maxUnits;
             startSlider.step = step;
             endSlider.step = step;
-            startSlider.value = Math.round(startUnits);
-            endSlider.value = Math.round(endUnits);
+            startSlider.value = roundedStart;
+            endSlider.value = roundedEnd;
         }
 
         function updateViewRange() {
