@@ -607,17 +607,14 @@
                 const ageYears = Math.round(years / 1000);
                 return `${compactFormatter.format(ageYears)}K yrs ${era}`;
             } else if (granularity === "Age") {
-                // One level smaller: Millennium
-                const millennia = Math.round(years / 1000);
-                return `${compactFormatter.format(millennia * 1000)} yrs ${era}`;
+                // One level smaller: Millennium - show specific year
+                return `Year ${compactFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Millennium") {
-                // One level smaller: Century
-                const centuries = Math.floor(years / 100);
-                return `${numberFormatter.format(centuries * 100 + 1)} ${era}`;
+                // One level smaller: Century - show specific year
+                return `Year ${compactFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Century") {
-                // One level smaller: Decade
-                const decades = Math.floor(years / 10);
-                return `${numberFormatter.format(decades * 10 + 1)} ${era}`;
+                // One level smaller: Decade - show specific year
+                return `Year ${numberFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Decade") {
                 // One level smaller: Year
                 return `Year ${numberFormatter.format(years + 1)} ${era}`;
