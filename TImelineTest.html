@@ -865,28 +865,29 @@
         }
 
         // Calculate appropriate fine granularity based on the span of the bottom slider's range
+        // The goal is to find a granularity such that the fine slider takes up approximately
+        // 1/4 of the track width while providing smooth navigation
         function calculateFineGranularity(spanMinutes) {
             const granularities = Object.keys(GRANULARITY_TO_MINUTES);
             const granularityValues = Object.values(GRANULARITY_TO_MINUTES);
             
-            // Find a granularity that gives a reasonable number of units (between 10 and 1000)
-            // to slide through within the span
-            for (let i = granularities.length - 1; i >= 0; i--) {
+            // Target: fine slider should span about 1/4 of the bottom slider's range
+            // This means we want a granularity where 10-40 units fit in 1/4 of the span
+            const targetSpan = spanMinutes / 4;
+            
+            // Find the COARSEST granularity where we have at least 10 units in the target span
+            // Start from coarsest and work toward finer
+            for (let i = 0; i < granularities.length; i++) {
                 const unitMinutes = granularityValues[i];
-                const numUnits = spanMinutes / unitMinutes;
+                const numUnitsInQuarter = targetSpan / unitMinutes;
                 
-                // We want between 10 and 1000 units for a good sliding experience
-                if (numUnits >= 10 && numUnits <= 1000) {
+                // We want at least 10 units to provide smooth sliding
+                if (numUnitsInQuarter >= 10) {
                     return granularities[i];
                 }
             }
             
-            // If span is very large, return the coarsest granularity
-            if (spanMinutes > granularityValues[0] * 1000) {
-                return granularities[0];
-            }
-            
-            // If span is very small, return the finest granularity
+            // If even the finest granularity doesn't give us 10 units, use it anyway
             return granularities[granularities.length - 1];
         }
 
@@ -900,11 +901,11 @@
             bottomStartMinutes = midpoint - quarterSpan;
             bottomEndMinutes = midpoint + quarterSpan;
             
-            // Set top timeline to middle of bottom range
+            // Set top timeline to take up 1/4 of bottom range width
             const topMidpoint = (bottomStartMinutes + bottomEndMinutes) / 2;
-            const topQuarterSpan = (bottomEndMinutes - bottomStartMinutes) / 4;
-            topStartMinutes = topMidpoint - topQuarterSpan;
-            topEndMinutes = topMidpoint + topQuarterSpan;
+            const topHalfSpan = (bottomEndMinutes - bottomStartMinutes) / 8; // 1/8 to get 1/4 total
+            topStartMinutes = topMidpoint - topHalfSpan;
+            topEndMinutes = topMidpoint + topHalfSpan;
             
             // Set view to show the top timeline's range
             currentViewMinutes = topMidpoint;
@@ -1099,16 +1100,26 @@
             if (topStartMinutes < bottomStartMinutes || topEndMinutes > bottomEndMinutes) {
                 // Top range is outside new bottom boundaries, reinitialize
                 const bottomMidpoint = (bottomStartMinutes + bottomEndMinutes) / 2;
-                const topHalfSpan = Math.min(bottomSpan / 4, minTopSpan * 10) / 2;
+                // Target: 1/4 of bottom span, but at least 10 units of the fine granularity
+                const targetTopSpan = Math.max(bottomSpan / 4, minTopSpan * 10);
+                const topHalfSpan = targetTopSpan / 2;
                 topStartMinutes = bottomMidpoint - topHalfSpan;
                 topEndMinutes = bottomMidpoint + topHalfSpan;
             }
             
-            // Ensure top timeline has minimum span
-            if (topEndMinutes - topStartMinutes < minTopSpan) {
-                topEndMinutes = Math.min(bottomEndMinutes, topStartMinutes + minTopSpan);
-                if (topEndMinutes - topStartMinutes < minTopSpan) {
-                    topStartMinutes = Math.max(bottomStartMinutes, topEndMinutes - minTopSpan);
+            // Ensure top timeline has minimum span (at least 10 granularity units)
+            const minAllowedTopSpan = minTopSpan * 10;
+            if (topEndMinutes - topStartMinutes < minAllowedTopSpan) {
+                const currentMidpoint = (topStartMinutes + topEndMinutes) / 2;
+                const halfSpan = minAllowedTopSpan / 2;
+                topStartMinutes = Math.max(bottomStartMinutes, currentMidpoint - halfSpan);
+                topEndMinutes = Math.min(bottomEndMinutes, currentMidpoint + halfSpan);
+                // Adjust if we hit boundaries
+                if (topEndMinutes - topStartMinutes < minAllowedTopSpan) {
+                    topEndMinutes = Math.min(bottomEndMinutes, topStartMinutes + minAllowedTopSpan);
+                    if (topEndMinutes - topStartMinutes < minAllowedTopSpan) {
+                        topStartMinutes = Math.max(bottomStartMinutes, topEndMinutes - minAllowedTopSpan);
+                    }
                 }
             }
             
