@@ -595,55 +595,88 @@
             const h = parseInt(hour) || 0;
             const min = parseInt(minute) || 0;
             
-            // Calculate total minutes from year 1 CE
+            // Calculate total minutes from year 1 CE (which is at 0 minutes)
             let totalMinutes = 0;
             
-            // Years (year 1 CE is at 0 minutes)
-            totalMinutes += (y - 1) * MINUTES_PER_YEAR * eraSign;
-            
-            // Months (subtract 1 because month 1 is the start)
-            totalMinutes += (m - 1) * MINUTES_PER_MONTH * eraSign;
-            
-            // Days (subtract 1 because day 1 is the start)
-            totalMinutes += (d - 1) * MINUTES_PER_DAY * eraSign;
-            
-            // Hours
-            totalMinutes += h * MINUTES_PER_HOUR * eraSign;
-            
-            // Minutes
-            totalMinutes += min * eraSign;
+            if (eraSign === 1) {
+                // CE: Year 1 CE starts at 0, Year 2 CE starts at MINUTES_PER_YEAR, etc.
+                totalMinutes = (y - 1) * MINUTES_PER_YEAR;
+                totalMinutes += (m - 1) * MINUTES_PER_MONTH;
+                totalMinutes += (d - 1) * MINUTES_PER_DAY;
+                totalMinutes += h * MINUTES_PER_HOUR;
+                totalMinutes += min;
+            } else {
+                // BCE: Year 1 BCE starts at -MINUTES_PER_YEAR, Year 2 BCE starts at -2*MINUTES_PER_YEAR, etc.
+                // Within each year, months/days/hours/minutes add forward (Jan=left, Dec=right)
+                totalMinutes = -(y * MINUTES_PER_YEAR);
+                totalMinutes += (m - 1) * MINUTES_PER_MONTH;
+                totalMinutes += (d - 1) * MINUTES_PER_DAY;
+                totalMinutes += h * MINUTES_PER_HOUR;
+                totalMinutes += min;
+            }
             
             return totalMinutes;
         }
 
         // Convert minutes from center to date components
         function minutesToDateComponents(minutes) {
-            const era = minutes >= 0 ? 1 : -1;
-            const absMinutes = Math.abs(minutes);
-            
-            let remaining = absMinutes;
-            const years = Math.floor(remaining / MINUTES_PER_YEAR);
-            remaining -= years * MINUTES_PER_YEAR;
-            
-            const months = Math.floor(remaining / MINUTES_PER_MONTH);
-            remaining -= months * MINUTES_PER_MONTH;
-            
-            const days = Math.floor(remaining / MINUTES_PER_DAY);
-            remaining -= days * MINUTES_PER_DAY;
-            
-            const hours = Math.floor(remaining / MINUTES_PER_HOUR);
-            remaining -= hours * MINUTES_PER_HOUR;
-            
-            const mins = Math.floor(remaining);
-            
-            return {
-                era: era,
-                year: years + 1,  // Add 1 because there's no year 0
-                month: months + 1,  // Add 1 because months are 1-indexed
-                day: days + 1,  // Add 1 because days are 1-indexed
-                hour: hours,
-                minute: mins
-            };
+            if (minutes >= 0) {
+                // CE: straightforward calculation
+                let remaining = minutes;
+                const years = Math.floor(remaining / MINUTES_PER_YEAR);
+                remaining -= years * MINUTES_PER_YEAR;
+                
+                const months = Math.floor(remaining / MINUTES_PER_MONTH);
+                remaining -= months * MINUTES_PER_MONTH;
+                
+                const days = Math.floor(remaining / MINUTES_PER_DAY);
+                remaining -= days * MINUTES_PER_DAY;
+                
+                const hours = Math.floor(remaining / MINUTES_PER_HOUR);
+                remaining -= hours * MINUTES_PER_HOUR;
+                
+                const mins = Math.floor(remaining);
+                
+                return {
+                    era: 1,
+                    year: years + 1,
+                    month: months + 1,
+                    day: days + 1,
+                    hour: hours,
+                    minute: mins
+                };
+            } else {
+                // BCE: Year N BCE spans from -(N*MINUTES_PER_YEAR) to -((N-1)*MINUTES_PER_YEAR)
+                const absMinutes = Math.abs(minutes);
+                const years = Math.ceil(absMinutes / MINUTES_PER_YEAR);
+                
+                // Calculate the start of this year (most negative point)
+                const yearStart = -(years * MINUTES_PER_YEAR);
+                
+                // Calculate offset from year start (positive for sub-year components)
+                const offsetFromYearStart = minutes - yearStart;
+                
+                let remaining = offsetFromYearStart;
+                const months = Math.floor(remaining / MINUTES_PER_MONTH);
+                remaining -= months * MINUTES_PER_MONTH;
+                
+                const days = Math.floor(remaining / MINUTES_PER_DAY);
+                remaining -= days * MINUTES_PER_DAY;
+                
+                const hours = Math.floor(remaining / MINUTES_PER_HOUR);
+                remaining -= hours * MINUTES_PER_HOUR;
+                
+                const mins = Math.floor(remaining);
+                
+                return {
+                    era: -1,
+                    year: years,
+                    month: months + 1,
+                    day: days + 1,
+                    hour: hours,
+                    minute: mins
+                };
+            }
         }
 
         // Update the date component inputs based on current viewStartMinutes and viewEndMinutes
@@ -764,65 +797,53 @@
                 return "Center";
             }
             
-            const era = minutes >= 0 ? "CE" : "BCE";
-            const absMinutes = Math.abs(minutes);
+            const components = minutesToDateComponents(minutes);
+            const era = components.era === 1 ? "CE" : "BCE";
+            const monthIndex = Math.min(Math.max(components.month - 1, 0), 11);
             
-            let remaining = absMinutes;
-            const years = Math.floor(remaining / MINUTES_PER_YEAR);
-            remaining -= years * MINUTES_PER_YEAR;
-            
-            const months = Math.floor(remaining / MINUTES_PER_MONTH);
-            remaining -= months * MINUTES_PER_MONTH;
-            
-            const days = Math.floor(remaining / MINUTES_PER_DAY);
-            remaining -= days * MINUTES_PER_DAY;
-            
-            const hours = Math.floor(remaining / MINUTES_PER_HOUR);
-            remaining -= hours * MINUTES_PER_HOUR;
-            
-            const mins = Math.floor(remaining);
-            
-            const monthIndex = Math.min(Math.max(months, 0), 11);
-            
-            // Format one level smaller than the selected granularity
+            // Format at the same granularity level as selected
             if (granularity === "Eon") {
-                // One level smaller: Epoch (millions of years)
-                const epochYears = Math.round(years / 1_000_000);
-                return `${compactFormatter.format(epochYears)} M yrs ${era}`;
+                // Show in billions of years for Eon scale
+                const eonYears = Math.round(components.year / 1_000_000_000);
+                return `${compactFormatter.format(eonYears)} B yrs ${era}`;
             } else if (granularity === "Epoch") {
-                // One level smaller: Age (thousands of years)
-                const ageYears = Math.round(years / 1000);
-                return `${compactFormatter.format(ageYears)}K yrs ${era}`;
+                // Show in millions of years for Epoch scale
+                const epochYears = Math.round(components.year / 1_000_000);
+                return `${compactFormatter.format(epochYears)} M yrs ${era}`;
             } else if (granularity === "Age") {
-                // One level smaller: Millennium - show specific year
-                return `Year ${compactFormatter.format(years + 1)} ${era}`;
+                // Show in thousands of years for Age scale
+                const ageYears = Math.round(components.year / 1000);
+                return `${compactFormatter.format(ageYears)}K yrs ${era}`;
             } else if (granularity === "Millennium") {
-                // One level smaller: Century - show specific year
-                return `Year ${compactFormatter.format(years + 1)} ${era}`;
+                // Show specific year for Millennium
+                return `Year ${compactFormatter.format(components.year)} ${era}`;
             } else if (granularity === "Century") {
-                // One level smaller: Decade - show specific year
-                return `Year ${numberFormatter.format(years + 1)} ${era}`;
+                // Show specific year for Century
+                return `Year ${compactFormatter.format(components.year)} ${era}`;
             } else if (granularity === "Decade") {
-                // One level smaller: Year
-                return `Year ${numberFormatter.format(years + 1)} ${era}`;
+                // Show specific year for Decade
+                return `Year ${numberFormatter.format(components.year)} ${era}`;
             } else if (granularity === "Year") {
-                // One level smaller: Month
-                return `${MONTH_NAMES[monthIndex]} ${numberFormatter.format(years + 1)} ${era}`;
+                // Show specific year
+                return `Year ${numberFormatter.format(components.year)} ${era}`;
             } else if (granularity === "Month") {
-                // One level smaller: Week/Day
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${era}`;
+                // Show Month and Year
+                return `${MONTH_NAMES[monthIndex]} ${numberFormatter.format(components.year)} ${era}`;
             } else if (granularity === "Week") {
-                // One level smaller: Day (show with day of month)
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${era}`;
+                // Show Week (calculate from day of year using components)
+                // components.month and components.day already account for BCE calendar order
+                const dayOfYear = (components.month - 1) * 30 + (components.day - 1);
+                const weekNum = Math.floor(dayOfYear / 7) + 1;
+                return `Week ${weekNum}, ${numberFormatter.format(components.year)} ${era}`;
             } else if (granularity === "Day") {
-                // One level smaller: Hour
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${pad(hours)}:00 ${era}`;
+                // Show Month, Day, and Year
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${numberFormatter.format(components.year)} ${era}`;
             } else if (granularity === "Hour") {
-                // One level smaller: Minute
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${pad(hours)}:${pad(mins)} ${era}`;
+                // Show Day and Time with Era
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${numberFormatter.format(components.year)} ${pad(components.hour)}:00 ${era}`;
             } else if (granularity === "Minute") {
-                // Minute is the smallest, show seconds (always 00)
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${pad(hours)}:${pad(mins)}:00 ${era}`;
+                // Show Time with minutes and Era
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${numberFormatter.format(components.year)} ${pad(components.hour)}:${pad(components.minute)} ${era}`;
             }
             
             // Fallback
@@ -855,9 +876,10 @@
             if (minutes === 0) {
                 return "Year 1 CE";
             }
-            const years = Math.floor(Math.abs(minutes) / MINUTES_PER_YEAR);
-            const label = compactFormatter.format(years + 1);
-            const era = minutes >= 0 ? "CE" : "BCE";
+            
+            const components = minutesToDateComponents(minutes);
+            const label = compactFormatter.format(components.year);
+            const era = components.era === 1 ? "CE" : "BCE";
             return `Year ${label} ${era}`;
         }
 
@@ -867,8 +889,6 @@
             }
             
             const granularity = granularitySelect.value;
-            const era = minutes >= 0 ? "CE" : "BCE";
-            const absMinutes = Math.abs(minutes);
             
             // For large time scales (Eon, Epoch, Age, Millennium, Century, Decade, Year), use year-based format
             if (granularity === "Eon" || granularity === "Epoch" || granularity === "Age" || 
@@ -877,41 +897,25 @@
                 return formatYearLabel(minutes);
             }
             
-            // Calculate date components
-            let remaining = absMinutes;
-            const years = Math.floor(remaining / MINUTES_PER_YEAR);
-            remaining -= years * MINUTES_PER_YEAR;
-            
-            const months = Math.floor(remaining / MINUTES_PER_MONTH);
-            remaining -= months * MINUTES_PER_MONTH;
-            
-            const days = Math.floor(remaining / MINUTES_PER_DAY);
-            remaining -= days * MINUTES_PER_DAY;
-            
-            const hours = Math.floor(remaining / MINUTES_PER_HOUR);
-            remaining -= hours * MINUTES_PER_HOUR;
-            
-            const mins = Math.floor(remaining);
-            
-            // Ensure month index is within bounds
-            const monthIndex = Math.min(Math.max(months, 0), 11);
+            // For sub-year granularities, use minutesToDateComponents to get correct date
+            const components = minutesToDateComponents(minutes);
+            const era = components.era === 1 ? "CE" : "BCE";
+            const monthIndex = Math.min(Math.max(components.month - 1, 0), 11);
             
             // Format based on granularity
             if (granularity === "Month") {
                 // Show Month and Year
-                return `${MONTH_NAMES[monthIndex]} ${years + 1} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${components.year} ${era}`;
             } else if (granularity === "Week" || granularity === "Day") {
                 // Show Month, Day, and Year
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${years + 1} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${components.year} ${era}`;
             } else if (granularity === "Hour") {
                 // Show Day and Time with Era
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${pad(hours)}:00 ${era}`;
-            } else if (granularity === "Minute") {
-                // Show Time with minutes and Era
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${pad(hours)}:${pad(mins)} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${components.year} at ${pad(components.hour)}:00 ${era}`;
+            } else {
+                // Minute
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${components.year} at ${pad(components.hour)}:${pad(components.minute)} ${era}`;
             }
-            
-            return formatYearLabel(minutes);
         }
 
         function formatDetailedTime(minutes) {
@@ -919,53 +923,36 @@
                 return "Center (Year 1 CE · Month 1 · Day 1 · 00:00)";
             }
             
+            const components = minutesToDateComponents(minutes);
+            const era = components.era === 1 ? "CE" : "BCE";
+            const monthIndex = Math.min(Math.max(components.month - 1, 0), 11);
             const granularity = granularitySelect.value;
-            const era = minutes >= 0 ? "CE" : "BCE";
-            const absMinutes = Math.abs(minutes);
-
-            let remaining = absMinutes;
-            const years = Math.floor(remaining / MINUTES_PER_YEAR);
-            remaining -= years * MINUTES_PER_YEAR;
-
-            const months = Math.floor(remaining / MINUTES_PER_MONTH);
-            remaining -= months * MINUTES_PER_MONTH;
-
-            const days = Math.floor(remaining / MINUTES_PER_DAY);
-            remaining -= days * MINUTES_PER_DAY;
-
-            const hours = Math.floor(remaining / MINUTES_PER_HOUR);
-            remaining -= hours * MINUTES_PER_HOUR;
-
-            const mins = Math.floor(remaining);
-            
-            // Ensure month index is within bounds
-            const monthIndex = Math.min(Math.max(months, 0), 11);
             
             // Format based on granularity
             if (granularity === "Eon" || granularity === "Epoch" || granularity === "Age" || 
                 granularity === "Millennium" || granularity === "Century" || granularity === "Decade") {
                 // For very large scales, show year with compact notation
-                const yearLabel = compactFormatter.format(years + 1);
+                const yearLabel = compactFormatter.format(components.year);
                 return `Year ${yearLabel} ${era}`;
             } else if (granularity === "Year") {
                 // Show full year
-                return `Year ${numberFormatter.format(years + 1)} ${era}`;
+                return `Year ${numberFormatter.format(components.year)} ${era}`;
             } else if (granularity === "Month") {
                 // Show Month and Year
-                return `${MONTH_NAMES[monthIndex]} ${numberFormatter.format(years + 1)} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${numberFormatter.format(components.year)} ${era}`;
             } else if (granularity === "Week" || granularity === "Day") {
                 // Show Month, Day, and Year
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${numberFormatter.format(components.year)} ${era}`;
             } else if (granularity === "Hour") {
                 // Show Day and Time with Era
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} at ${pad(hours)}:00 ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${numberFormatter.format(components.year)} at ${pad(components.hour)}:00 ${era}`;
             } else if (granularity === "Minute") {
                 // Show Time with minutes and Era
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} at ${pad(hours)}:${pad(mins)} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${numberFormatter.format(components.year)} at ${pad(components.hour)}:${pad(components.minute)} ${era}`;
             }
 
             // Fallback to detailed format
-            return `Year ${numberFormatter.format(years + 1)} ${era} · Month ${months + 1} · Day ${days + 1} · ${pad(hours)}:${pad(mins)}`;
+            return `Year ${numberFormatter.format(components.year)} ${era} · Month ${components.month} · Day ${components.day} · ${pad(components.hour)}:${pad(components.minute)}`;
         }
 
         function formatDifference(minutes, granularity) {
