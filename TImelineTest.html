@@ -966,7 +966,10 @@
             }
             
             updateRangeSliders();
-            updateViewFromTopTimeline();
+            // Update the main view display to show the top timeline's range
+            refreshRangeDisplay();
+            rebuildTicks();
+            updatePointerAndDetails();
         }
 
         function refreshRangeDisplay() {
@@ -1007,7 +1010,7 @@
                 tickLine.className = "tick-line";
                 tick.appendChild(tickLine);
 
-                const tickMinutes = viewStartMinutes + rangeMinutes * (i / segments);
+                const tickMinutes = topStartMinutes + rangeMinutes * (i / segments);
                 const tickLabel = document.createElement("span");
                 tickLabel.className = "tick-label";
                 tickLabel.textContent = formatTickLabel(tickMinutes);
