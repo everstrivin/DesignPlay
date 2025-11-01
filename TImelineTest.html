@@ -667,6 +667,11 @@
         }
 
         function formatDetailedTime(minutes) {
+            if (minutes === 0) {
+                return "Center (Year 1 CE · Month 1 · Day 1 · 00:00)";
+            }
+            
+            const granularity = granularitySelect.value;
             const era = minutes >= 0 ? "CE" : "BCE";
             const absMinutes = Math.abs(minutes);
 
@@ -684,7 +689,34 @@
             remaining -= hours * MINUTES_PER_HOUR;
 
             const mins = Math.floor(remaining);
+            
+            // Ensure month index is within bounds
+            const monthIndex = Math.min(Math.max(months, 0), 11);
+            
+            // Format based on granularity
+            if (granularity === "Eon" || granularity === "Epoch" || granularity === "Age" || 
+                granularity === "Millennium" || granularity === "Century" || granularity === "Decade") {
+                // For very large scales, show year with compact notation
+                const yearLabel = compactFormatter.format(years + 1);
+                return `Year ${yearLabel} ${era}`;
+            } else if (granularity === "Year") {
+                // Show full year
+                return `Year ${numberFormatter.format(years + 1)} ${era}`;
+            } else if (granularity === "Month") {
+                // Show Month and Year
+                return `${MONTH_NAMES[monthIndex]} ${numberFormatter.format(years + 1)} ${era}`;
+            } else if (granularity === "Week" || granularity === "Day") {
+                // Show Month, Day, and Year
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${era}`;
+            } else if (granularity === "Hour") {
+                // Show Day and Time with Era
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} at ${pad(hours)}:00 ${era}`;
+            } else if (granularity === "Minute") {
+                // Show Time with minutes and Era
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} at ${pad(hours)}:${pad(mins)} ${era}`;
+            }
 
+            // Fallback to detailed format
             return `Year ${numberFormatter.format(years + 1)} ${era} · Month ${months + 1} · Day ${days + 1} · ${pad(hours)}:${pad(mins)}`;
         }
 
