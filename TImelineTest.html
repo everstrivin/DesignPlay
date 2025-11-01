@@ -1536,10 +1536,19 @@
             const boundaryMax = dragState.boundaryMax || viewEndMinutes;
             const minBottomSpan = 1440; // 1 day minimum span
             
+            // Calculate minimum span in minutes based on 20px minimum separation
+            const wrapperWidth = dragState.wrapperRect.width - 24; // Account for padding
+            const totalRange = dragState.totalRange;
+            const minPixels = 20; // Minimum pixel separation between handles
+            const minPixelSpan = (minPixels / wrapperWidth) * totalRange;
+            
+            // Use the larger of the time-based minimum or the pixel-based minimum
+            const effectiveMinSpan = Math.max(minBottomSpan, minPixelSpan);
+            
             if (dragState.type === 'start') {
                 let newStart = dragState.startMinutesStart + deltaMinutes;
                 // Constrain within date input boundaries
-                newStart = Math.max(boundaryMin, Math.min(newStart, bottomEndMinutes - minBottomSpan));
+                newStart = Math.max(boundaryMin, Math.min(newStart, bottomEndMinutes - effectiveMinSpan));
                 newStart = Math.max(boundaryMin, newStart); // Ensure it doesn't go below min
                 bottomStartMinutes = newStart;
                 
@@ -1547,8 +1556,8 @@
                 if (bottomEndMinutes > boundaryMax) {
                     bottomEndMinutes = boundaryMax;
                 }
-                if (bottomEndMinutes - bottomStartMinutes < minBottomSpan) {
-                    bottomEndMinutes = Math.min(boundaryMax, bottomStartMinutes + minBottomSpan);
+                if (bottomEndMinutes - bottomStartMinutes < effectiveMinSpan) {
+                    bottomEndMinutes = Math.min(boundaryMax, bottomStartMinutes + effectiveMinSpan);
                 }
                 
                 // Constrain top timeline within new bottom bounds
@@ -1560,7 +1569,7 @@
             } else if (dragState.type === 'end') {
                 let newEnd = dragState.startMinutesEnd + deltaMinutes;
                 // Constrain within date input boundaries
-                newEnd = Math.min(boundaryMax, Math.max(newEnd, bottomStartMinutes + minBottomSpan));
+                newEnd = Math.min(boundaryMax, Math.max(newEnd, bottomStartMinutes + effectiveMinSpan));
                 newEnd = Math.min(boundaryMax, newEnd); // Ensure it doesn't go above max
                 bottomEndMinutes = newEnd;
                 
@@ -1568,8 +1577,8 @@
                 if (bottomStartMinutes < boundaryMin) {
                     bottomStartMinutes = boundaryMin;
                 }
-                if (bottomEndMinutes - bottomStartMinutes < minBottomSpan) {
-                    bottomStartMinutes = Math.max(boundaryMin, bottomEndMinutes - minBottomSpan);
+                if (bottomEndMinutes - bottomStartMinutes < effectiveMinSpan) {
+                    bottomStartMinutes = Math.max(boundaryMin, bottomEndMinutes - effectiveMinSpan);
                 }
                 
                 // Constrain top timeline within new bottom bounds
@@ -1633,15 +1642,24 @@
             const fineGranularity = getCurrentFineGranularity();
             const minTopSpan = GRANULARITY_TO_MINUTES[fineGranularity];
             
+            // Calculate minimum span in minutes based on 20px minimum separation
+            const wrapperWidth = dragState.wrapperRect.width - 24; // Account for padding
+            const totalRange = dragState.totalRange;
+            const minPixels = 20; // Minimum pixel separation between handles
+            const minPixelSpan = (minPixels / wrapperWidth) * totalRange;
+            
+            // Use the larger of the time-based minimum or the pixel-based minimum
+            const effectiveMinSpan = Math.max(minTopSpan, minPixelSpan);
+            
             if (dragState.type === 'start') {
                 let newStart = dragState.startMinutesStart + deltaMinutes;
                 newStart = Math.max(bottomStartMinutes, newStart);
-                newStart = Math.min(newStart, topEndMinutes - minTopSpan);
+                newStart = Math.min(newStart, topEndMinutes - effectiveMinSpan);
                 topStartMinutes = newStart;
             } else if (dragState.type === 'end') {
                 let newEnd = dragState.startMinutesEnd + deltaMinutes;
                 newEnd = Math.min(bottomEndMinutes, newEnd);
-                newEnd = Math.max(newEnd, topStartMinutes + minTopSpan);
+                newEnd = Math.max(newEnd, topStartMinutes + effectiveMinSpan);
                 topEndMinutes = newEnd;
             } else if (dragState.type === 'range') {
                 const span = dragState.startMinutesEnd - dragState.startMinutesStart;
