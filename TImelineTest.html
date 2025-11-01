@@ -1247,21 +1247,26 @@
                 bottomStartMinutes = newStart;
                 
                 // Constrain top timeline within new bounds
-                topStartMinutes = Math.max(bottomStartMinutes, topStartMinutes);
-                topEndMinutes = Math.max(topStartMinutes + GRANULARITY_TO_MINUTES[getGranularityTwoLevelsLess(granularitySelect.value)], topEndMinutes);
-                topStartMinutes = Math.min(topStartMinutes, bottomEndMinutes);
-                topEndMinutes = Math.min(topEndMinutes, bottomEndMinutes);
+                const minTopSpan = GRANULARITY_TO_MINUTES[getGranularityTwoLevelsLess(granularitySelect.value)];
+                topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - minTopSpan));
+                topEndMinutes = Math.min(bottomEndMinutes, Math.max(topEndMinutes, topStartMinutes + minTopSpan));
             } else if (dragState.type === 'end') {
                 let newEnd = clampMinutes(dragState.startMinutesEnd + deltaMinutes);
                 newEnd = Math.max(newEnd, bottomStartMinutes + GRANULARITY_TO_MINUTES[granularitySelect.value]);
                 bottomEndMinutes = newEnd;
                 
                 // Constrain top timeline within new bounds
-                topStartMinutes = Math.min(Math.max(bottomStartMinutes, topStartMinutes), bottomEndMinutes);
-                topEndMinutes = Math.min(topEndMinutes, bottomEndMinutes);
-                topEndMinutes = Math.max(topEndMinutes, topStartMinutes + GRANULARITY_TO_MINUTES[getGranularityTwoLevelsLess(granularitySelect.value)]);
+                const minTopSpan = GRANULARITY_TO_MINUTES[getGranularityTwoLevelsLess(granularitySelect.value)];
+                topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - minTopSpan));
+                topEndMinutes = Math.min(bottomEndMinutes, Math.max(topEndMinutes, topStartMinutes + minTopSpan));
             } else if (dragState.type === 'range') {
                 const span = dragState.startMinutesEnd - dragState.startMinutesStart;
+                
+                // Prevent division by zero
+                if (span === 0) {
+                    return;
+                }
+                
                 let newStart = dragState.startMinutesStart + deltaMinutes;
                 let newEnd = dragState.startMinutesEnd + deltaMinutes;
                 
