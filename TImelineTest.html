@@ -588,23 +588,6 @@
         </header>
         <section class="panel">
             <div class="control-grid">
-                <div class="control-row">
-                    <label for="granularity">Granularity</label>
-                    <select id="granularity">
-                        <option>Eon</option>
-                        <option>Epoch</option>
-                        <option>Age</option>
-                        <option>Millennium</option>
-                        <option>Century</option>
-                        <option>Decade</option>
-                        <option selected>Year</option>
-                        <option>Month</option>
-                        <option>Week</option>
-                        <option>Day</option>
-                        <option>Hour</option>
-                        <option>Minute</option>
-                    </select>
-                </div>
                 <div class="controls-footer">
                     <div class="footnote">
                         Bounds: &minus;4.54 billion years to +4.54 billion years relative to the center point.
@@ -643,43 +626,6 @@
                                     <div class="date-field" style="grid-column: 1 / -1;">
                                         <label for="fineGranularitySelect" class="field-label">Granularity Level</label>
                                         <select id="fineGranularitySelect" style="width: 100%;">
-                                            <option value="Eon">Eon (500M years)</option>
-                                            <option value="Epoch">Epoch (50M years)</option>
-                                            <option value="Age">Age (5M years)</option>
-                                            <option value="Millennium">Millennium (1K years)</option>
-                                            <option value="Century">Century (100 years)</option>
-                                            <option value="Decade">Decade (10 years)</option>
-                                            <option value="Year">Year</option>
-                                            <option value="Month">Month</option>
-                                            <option value="Week">Week</option>
-                                            <option value="Day">Day</option>
-                                            <option value="Hour">Hour</option>
-                                            <option value="Minute">Minute</option>
-                                        </select>
-                                    </div>
-                                    <div class="date-field" style="grid-column: 1 / -1;">
-                                        <p style="font-size: 0.85rem; color: #475569; margin: 0.5rem 0 0 0; line-height: 1.4;">
-                                            This controls the granularity of the fine slider and automatically adjusts its span to maintain smooth navigation (at least 10 units).
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Fine Granularity Control at right end of fine slider track (same control) -->
-                        <div class="slider-boundary-control" id="topSliderEndControl" style="right: 0;">
-                            <div class="slider-boundary-icon">
-                                <span>⚙</span>
-                            </div>
-                            <div class="range-controls" id="topEndControls">
-                                <div class="range-controls-header">
-                                    <span>Fine Granularity</span>
-                                    <button class="apply-btn" id="applyTopGranularityBtn2">Apply</button>
-                                </div>
-                                <div class="date-inputs">
-                                    <div class="date-field" style="grid-column: 1 / -1;">
-                                        <label for="fineGranularitySelect2" class="field-label">Granularity Level</label>
-                                        <select id="fineGranularitySelect2" style="width: 100%;">
                                             <option value="Eon">Eon (500M years)</option>
                                             <option value="Epoch">Epoch (50M years)</option>
                                             <option value="Age">Age (5M years)</option>
@@ -873,8 +819,6 @@
         }
         
         const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-        const granularitySelect = document.getElementById("granularity");
         
         // Start date components
         const startEra = document.getElementById("startEra");
@@ -1138,7 +1082,8 @@
             endMinutes = clampMinutes(endMinutes);
 
             if (startMinutes === endMinutes) {
-                const minimumSpan = GRANULARITY_TO_MINUTES[granularitySelect.value];
+                // Use a reasonable default minimum span (1 year)
+                const minimumSpan = MINUTES_PER_YEAR;
                 if (endMinutes >= TIMELINE_MAX) {
                     startMinutes = Math.max(TIMELINE_MIN, endMinutes - minimumSpan);
                 }
@@ -1168,8 +1113,8 @@
                 bottomEndMinutes = midpoint + quarterSpan;
             }
             
-            // Ensure bottom timeline has minimum span based on selected granularity
-            const minBottomSpan = GRANULARITY_TO_MINUTES[granularitySelect.value];
+            // Ensure bottom timeline has a reasonable minimum span (1 year)
+            const minBottomSpan = MINUTES_PER_YEAR;
             if (bottomEndMinutes - bottomStartMinutes < minBottomSpan) {
                 bottomEndMinutes = Math.min(viewEndMinutes, bottomStartMinutes + minBottomSpan);
                 if (bottomEndMinutes - bottomStartMinutes < minBottomSpan) {
@@ -1328,7 +1273,6 @@
             const percent = 50; // Always show at center
             pointer.style.left = `${percent}%`;
 
-            const granularity = granularitySelect.value;
             // Use current fine granularity (manual or auto-calculated)
             const fineGranularity = getCurrentFineGranularity();
             
@@ -1342,7 +1286,7 @@
 
             currentTime.innerHTML = `
                 <h3>Selected moment</h3>
-                <span>${formatDetailedTime(currentViewMinutes)}</span>
+                <span>${formatDetailedTime(currentViewMinutes, fineGranularity)}</span>
                 <span>${formatDifference(currentViewMinutes, fineGranularity)}</span>
             `;
         }
@@ -1363,7 +1307,8 @@
                 return "Center";
             }
             
-            const granularity = granularitySelect.value;
+            // Use the fine granularity for tick labels
+            const granularity = getCurrentFineGranularity();
             
             // For large time scales (Eon, Epoch, Age, Millennium, Century, Decade, Year), use year-based format
             if (granularity === "Eon" || granularity === "Epoch" || granularity === "Age" || 
@@ -1393,7 +1338,7 @@
             }
         }
 
-        function formatDetailedTime(minutes) {
+        function formatDetailedTime(minutes, granularity) {
             if (minutes === 0) {
                 return "Center (Year 1 CE · Month 1 · Day 1 · 00:00)";
             }
@@ -1401,7 +1346,6 @@
             const components = minutesToDateComponents(minutes);
             const era = components.era === 1 ? "CE" : "BCE";
             const monthIndex = Math.min(Math.max(components.month - 1, 0), 11);
-            const granularity = granularitySelect.value;
             
             // Format based on granularity
             if (granularity === "Eon" || granularity === "Epoch" || granularity === "Age" || 
@@ -1493,7 +1437,8 @@
             bottomSelected.style.left = `${startPercent}%`;
             bottomSelected.style.width = `${endPercent - startPercent}%`;
             
-            const granularity = granularitySelect.value;
+            // Use fine granularity for labeling
+            const granularity = getCurrentFineGranularity();
             const startLabel = formatSliderLabel(bottomStartMinutes, granularity);
             const endLabel = formatSliderLabel(bottomEndMinutes, granularity);
             bottomInfo.textContent = `Range: ${startLabel} to ${endLabel}`;
@@ -1589,7 +1534,7 @@
         function handleBottomDrag(deltaMinutes) {
             const boundaryMin = dragState.boundaryMin || viewStartMinutes;
             const boundaryMax = dragState.boundaryMax || viewEndMinutes;
-            const minBottomSpan = GRANULARITY_TO_MINUTES[granularitySelect.value];
+            const minBottomSpan = MINUTES_PER_YEAR; // Use a reasonable default
             
             if (dragState.type === 'start') {
                 let newStart = dragState.startMinutesStart + deltaMinutes;
@@ -1685,15 +1630,18 @@
         }
 
         function handleTopDrag(deltaMinutes) {
+            const fineGranularity = getCurrentFineGranularity();
+            const minTopSpan = GRANULARITY_TO_MINUTES[fineGranularity];
+            
             if (dragState.type === 'start') {
                 let newStart = dragState.startMinutesStart + deltaMinutes;
                 newStart = Math.max(bottomStartMinutes, newStart);
-                newStart = Math.min(newStart, topEndMinutes - GRANULARITY_TO_MINUTES[getGranularityTwoLevelsLess(granularitySelect.value)]);
+                newStart = Math.min(newStart, topEndMinutes - minTopSpan);
                 topStartMinutes = newStart;
             } else if (dragState.type === 'end') {
                 let newEnd = dragState.startMinutesEnd + deltaMinutes;
                 newEnd = Math.min(bottomEndMinutes, newEnd);
-                newEnd = Math.max(newEnd, topStartMinutes + GRANULARITY_TO_MINUTES[getGranularityTwoLevelsLess(granularitySelect.value)]);
+                newEnd = Math.max(newEnd, topStartMinutes + minTopSpan);
                 topEndMinutes = newEnd;
             } else if (dragState.type === 'range') {
                 const span = dragState.startMinutesEnd - dragState.startMinutesStart;
@@ -1756,12 +1704,6 @@
             updateViewRange();
         });
 
-        granularitySelect.addEventListener("change", () => {
-            rebuildTicks();
-            updateRangeSliders();
-            updatePointerAndDetails();
-        });
-
         // Add event listeners to all date component inputs
         const allDateInputs = [
             startEra, startYearComp, startMonth, startDay, startHour, startMinute,
@@ -1781,17 +1723,7 @@
 
         // Fine granularity controls
         const fineGranularitySelect = document.getElementById("fineGranularitySelect");
-        const fineGranularitySelect2 = document.getElementById("fineGranularitySelect2");
         const applyTopGranularityBtn = document.getElementById("applyTopGranularityBtn");
-        const applyTopGranularityBtn2 = document.getElementById("applyTopGranularityBtn2");
-        
-        // Keep both selects in sync
-        fineGranularitySelect.addEventListener("change", () => {
-            fineGranularitySelect2.value = fineGranularitySelect.value;
-        });
-        fineGranularitySelect2.addEventListener("change", () => {
-            fineGranularitySelect.value = fineGranularitySelect2.value;
-        });
         
         // Function to apply manual fine granularity override
         function applyFineGranularity() {
@@ -1835,13 +1767,11 @@
         }
         
         applyTopGranularityBtn.addEventListener("click", applyFineGranularity);
-        applyTopGranularityBtn2.addEventListener("click", applyFineGranularity);
         
-        // Update the fine granularity selects to show the current granularity
+        // Update the fine granularity select to show the current granularity
         function updateFineGranularitySelects() {
             const currentFineGranularity = getCurrentFineGranularity();
             fineGranularitySelect.value = currentFineGranularity;
-            fineGranularitySelect2.value = currentFineGranularity;
         }
 
         // Initialize
