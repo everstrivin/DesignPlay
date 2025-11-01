@@ -628,6 +628,80 @@
                         <div class="range-slider-selected" id="topSelected"></div>
                         <div class="range-handle" id="topStartHandle"></div>
                         <div class="range-handle" id="topEndHandle"></div>
+                        
+                        <!-- Fine Granularity Control at left end of fine slider track -->
+                        <div class="slider-boundary-control" id="topSliderStartControl" style="left: 0;">
+                            <div class="slider-boundary-icon">
+                                <span>⚙</span>
+                            </div>
+                            <div class="range-controls" id="topStartControls">
+                                <div class="range-controls-header">
+                                    <span>Fine Granularity</span>
+                                    <button class="apply-btn" id="applyTopGranularityBtn">Apply</button>
+                                </div>
+                                <div class="date-inputs">
+                                    <div class="date-field" style="grid-column: 1 / -1;">
+                                        <label for="fineGranularitySelect" class="field-label">Granularity Level</label>
+                                        <select id="fineGranularitySelect" style="width: 100%;">
+                                            <option value="Eon">Eon (500M years)</option>
+                                            <option value="Epoch">Epoch (50M years)</option>
+                                            <option value="Age">Age (5M years)</option>
+                                            <option value="Millennium">Millennium (1K years)</option>
+                                            <option value="Century">Century (100 years)</option>
+                                            <option value="Decade">Decade (10 years)</option>
+                                            <option value="Year">Year</option>
+                                            <option value="Month">Month</option>
+                                            <option value="Week">Week</option>
+                                            <option value="Day">Day</option>
+                                            <option value="Hour">Hour</option>
+                                            <option value="Minute">Minute</option>
+                                        </select>
+                                    </div>
+                                    <div class="date-field" style="grid-column: 1 / -1;">
+                                        <p style="font-size: 0.85rem; color: #475569; margin: 0.5rem 0 0 0; line-height: 1.4;">
+                                            This controls the granularity of the fine slider and automatically adjusts its span to maintain smooth navigation (at least 10 units).
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Fine Granularity Control at right end of fine slider track (same control) -->
+                        <div class="slider-boundary-control" id="topSliderEndControl" style="right: 0;">
+                            <div class="slider-boundary-icon">
+                                <span>⚙</span>
+                            </div>
+                            <div class="range-controls" id="topEndControls">
+                                <div class="range-controls-header">
+                                    <span>Fine Granularity</span>
+                                    <button class="apply-btn" id="applyTopGranularityBtn2">Apply</button>
+                                </div>
+                                <div class="date-inputs">
+                                    <div class="date-field" style="grid-column: 1 / -1;">
+                                        <label for="fineGranularitySelect2" class="field-label">Granularity Level</label>
+                                        <select id="fineGranularitySelect2" style="width: 100%;">
+                                            <option value="Eon">Eon (500M years)</option>
+                                            <option value="Epoch">Epoch (50M years)</option>
+                                            <option value="Age">Age (5M years)</option>
+                                            <option value="Millennium">Millennium (1K years)</option>
+                                            <option value="Century">Century (100 years)</option>
+                                            <option value="Decade">Decade (10 years)</option>
+                                            <option value="Year">Year</option>
+                                            <option value="Month">Month</option>
+                                            <option value="Week">Week</option>
+                                            <option value="Day">Day</option>
+                                            <option value="Hour">Hour</option>
+                                            <option value="Minute">Minute</option>
+                                        </select>
+                                    </div>
+                                    <div class="date-field" style="grid-column: 1 / -1;">
+                                        <p style="font-size: 0.85rem; color: #475569; margin: 0.5rem 0 0 0; line-height: 1.4;">
+                                            This controls the granularity of the fine slider and automatically adjusts its span to maintain smooth navigation (at least 10 units).
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="range-slider-info" id="topInfo"></div>
                 </div>
@@ -851,6 +925,9 @@
         let viewStartMinutes = -1_000_000 * MINUTES_PER_YEAR;
         let viewEndMinutes = 1_000_000 * MINUTES_PER_YEAR;
         let currentViewMinutes = 0; // Current position shown on the timeline
+        
+        // Track manual fine granularity override (null means auto-calculate)
+        let manualFineGranularity = null;
 
         function getGranularityIndex(granularity) {
             const granularities = Object.keys(GRANULARITY_TO_MINUTES);
@@ -862,6 +939,15 @@
             const currentIndex = getGranularityIndex(granularity);
             const targetIndex = Math.min(currentIndex + 2, granularities.length - 1);
             return granularities[targetIndex];
+        }
+        
+        // Get the current fine granularity (manual override or auto-calculated)
+        function getCurrentFineGranularity() {
+            if (manualFineGranularity) {
+                return manualFineGranularity;
+            }
+            const bottomSpan = bottomEndMinutes - bottomStartMinutes;
+            return calculateFineGranularity(bottomSpan);
         }
 
         // Calculate appropriate fine granularity based on the span of the bottom slider's range
@@ -1093,7 +1179,7 @@
             
             // Update top timeline to be centered within bottom range
             const bottomSpan = bottomEndMinutes - bottomStartMinutes;
-            const fineGranularity = calculateFineGranularity(bottomSpan);
+            const fineGranularity = getCurrentFineGranularity();
             const minTopSpan = GRANULARITY_TO_MINUTES[fineGranularity];
             
             // Try to keep existing top range if it fits
@@ -1243,9 +1329,8 @@
             pointer.style.left = `${percent}%`;
 
             const granularity = granularitySelect.value;
-            // Calculate fine granularity dynamically based on bottom slider span
-            const bottomSpan = bottomEndMinutes - bottomStartMinutes;
-            const fineGranularity = calculateFineGranularity(bottomSpan);
+            // Use current fine granularity (manual or auto-calculated)
+            const fineGranularity = getCurrentFineGranularity();
             
             // Use the midpoint of the top timeline as the current view position
             currentViewMinutes = (topStartMinutes + topEndMinutes) / 2;
@@ -1435,8 +1520,8 @@
             topSelected.style.left = `${startPercent}%`;
             topSelected.style.width = `${endPercent - startPercent}%`;
             
-            // Calculate appropriate fine granularity based on bottom slider span
-            const fineGranularity = calculateFineGranularity(totalRange);
+            // Use current fine granularity (manual or auto-calculated)
+            const fineGranularity = getCurrentFineGranularity();
             const startLabel = formatSliderLabel(topStartMinutes, fineGranularity);
             const endLabel = formatSliderLabel(topEndMinutes, fineGranularity);
             topInfo.textContent = `Fine range (${fineGranularity}): ${startLabel} to ${endLabel}`;
@@ -1523,7 +1608,7 @@
                 
                 // Constrain top timeline within new bottom bounds
                 const bottomSpan = bottomEndMinutes - bottomStartMinutes;
-                const fineGranularity = calculateFineGranularity(bottomSpan);
+                const fineGranularity = getCurrentFineGranularity();
                 const minTopSpan = GRANULARITY_TO_MINUTES[fineGranularity];
                 topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - minTopSpan));
                 topEndMinutes = Math.min(bottomEndMinutes, Math.max(topEndMinutes, topStartMinutes + minTopSpan));
@@ -1544,7 +1629,7 @@
                 
                 // Constrain top timeline within new bottom bounds
                 const bottomSpan = bottomEndMinutes - bottomStartMinutes;
-                const fineGranularity = calculateFineGranularity(bottomSpan);
+                const fineGranularity = getCurrentFineGranularity();
                 const minTopSpan = GRANULARITY_TO_MINUTES[fineGranularity];
                 topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - minTopSpan));
                 topEndMinutes = Math.min(bottomEndMinutes, Math.max(topEndMinutes, topStartMinutes + minTopSpan));
@@ -1694,6 +1779,71 @@
             });
         });
 
+        // Fine granularity controls
+        const fineGranularitySelect = document.getElementById("fineGranularitySelect");
+        const fineGranularitySelect2 = document.getElementById("fineGranularitySelect2");
+        const applyTopGranularityBtn = document.getElementById("applyTopGranularityBtn");
+        const applyTopGranularityBtn2 = document.getElementById("applyTopGranularityBtn2");
+        
+        // Keep both selects in sync
+        fineGranularitySelect.addEventListener("change", () => {
+            fineGranularitySelect2.value = fineGranularitySelect.value;
+        });
+        fineGranularitySelect2.addEventListener("change", () => {
+            fineGranularitySelect.value = fineGranularitySelect2.value;
+        });
+        
+        // Function to apply manual fine granularity override
+        function applyFineGranularity() {
+            const selectedGranularity = fineGranularitySelect.value;
+            
+            // Set the manual override
+            manualFineGranularity = selectedGranularity;
+            
+            const minTopSpan = GRANULARITY_TO_MINUTES[selectedGranularity] * 10; // At least 10 units
+            
+            // Calculate new top slider span based on selected granularity
+            const bottomSpan = bottomEndMinutes - bottomStartMinutes;
+            
+            // Try to use 1/4 of bottom span, but ensure at least 10 units of selected granularity
+            let targetTopSpan = Math.max(bottomSpan / 4, minTopSpan);
+            
+            // Ensure it doesn't exceed bottom span
+            if (targetTopSpan > bottomSpan) {
+                targetTopSpan = bottomSpan;
+            }
+            
+            // Center the new top slider range within bottom slider
+            const bottomMidpoint = (bottomStartMinutes + bottomEndMinutes) / 2;
+            const halfSpan = targetTopSpan / 2;
+            
+            topStartMinutes = Math.max(bottomStartMinutes, bottomMidpoint - halfSpan);
+            topEndMinutes = Math.min(bottomEndMinutes, bottomMidpoint + halfSpan);
+            
+            // If we hit boundaries, adjust
+            if (topEndMinutes - topStartMinutes < minTopSpan) {
+                topEndMinutes = Math.min(bottomEndMinutes, topStartMinutes + minTopSpan);
+                if (topEndMinutes - topStartMinutes < minTopSpan) {
+                    topStartMinutes = Math.max(bottomStartMinutes, topEndMinutes - minTopSpan);
+                }
+            }
+            
+            updateRangeSliders();
+            refreshRangeDisplay();
+            rebuildTicks();
+            updatePointerAndDetails();
+        }
+        
+        applyTopGranularityBtn.addEventListener("click", applyFineGranularity);
+        applyTopGranularityBtn2.addEventListener("click", applyFineGranularity);
+        
+        // Update the fine granularity selects to show the current granularity
+        function updateFineGranularitySelects() {
+            const currentFineGranularity = getCurrentFineGranularity();
+            fineGranularitySelect.value = currentFineGranularity;
+            fineGranularitySelect2.value = currentFineGranularity;
+        }
+
         // Initialize
         initializeTimelines();
         updateDateInputs();
@@ -1701,6 +1851,7 @@
         refreshRangeDisplay();
         rebuildTicks();
         updatePointerAndDetails();
+        updateFineGranularitySelects();
     </script>
 </body>
 </html>
