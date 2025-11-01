@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Deep Time Timeline Explorer</title>
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            --accent: #0ea5e9;
+            --accent-dark: #0284c7;
+            --surface: rgba(255, 255, 255, 0.88);
+            --shadow: 0 25px 60px rgba(15, 23, 42, 0.18);
+            --text-muted: #475569;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 1.5rem;
+            background: radial-gradient(circle at top, #f0f9ff, #dbeafe 45%, #c7d2fe 100%);
+            color: #0f172a;
+        }
+
+        .app {
+            width: min(1080px, 100%);
+            background: var(--surface);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(12px);
+        }
+
+        header {
+            padding: 2.5rem 3rem 2rem;
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.9), rgba(6, 182, 212, 0.9));
+            color: white;
+        }
+
+        header h1 {
+            margin: 0 0 0.75rem;
+            font-size: clamp(2rem, 3vw, 2.6rem);
+            letter-spacing: 0.02em;
+        }
+
+        header p {
+            margin: 0;
+            max-width: 720px;
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        .panel {
+            padding: 2.5rem 3rem 2rem;
+            background: rgba(248, 250, 252, 0.9);
+        }
+
+        .control-grid {
+            display: grid;
+            gap: 1.8rem;
+        }
+
+        .control-row {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        select,
+        input[type="number"] {
+            width: 100%;
+            border-radius: 14px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            padding: 0.9rem 1rem;
+            font-size: 1rem;
+            transition: border 0.2s ease, box-shadow 0.2s ease;
+            background: white;
+        }
+
+        select:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: rgba(14, 165, 233, 0.7);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+        }
+
+        .hint {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .controls-footer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        button {
+            border: none;
+            border-radius: 999px;
+            padding: 0.85rem 1.6rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: white;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 15px 30px rgba(2, 132, 199, 0.25);
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 20px 40px rgba(2, 132, 199, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .timeline-card {
+            padding: 2.5rem 3rem 3rem;
+            display: grid;
+            gap: 1.5rem;
+            background: white;
+        }
+
+        .timeline-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem 2rem;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .timeline-meta strong {
+            color: #0f172a;
+        }
+
+        .range-display {
+            border-radius: 18px;
+            padding: 1rem 1.25rem;
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(59, 130, 246, 0.12));
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .slider-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .slider-area label {
+            color: #0f172a;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 14px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(14, 165, 233, 0.25), rgba(37, 99, 235, 0.25));
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 28px;
+            width: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            cursor: pointer;
+            box-shadow: 0 12px 20px rgba(14, 165, 233, 0.25);
+            border: 3px solid white;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            height: 28px;
+            width: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            cursor: pointer;
+            box-shadow: 0 12px 20px rgba(14, 165, 233, 0.25);
+            border: 3px solid white;
+        }
+
+        .timeline {
+            position: relative;
+            border-radius: 22px;
+            padding: 3.2rem 2.2rem 3.5rem;
+            background: radial-gradient(circle at top, rgba(14, 165, 233, 0.12), rgba(59, 130, 246, 0.08)),
+                linear-gradient(135deg, rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.05));
+            overflow: visible;
+        }
+
+        .timeline-inner {
+            position: relative;
+            margin: 0 2rem;
+        }
+
+        .timeline-track {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 10px;
+            transform: translateY(-50%);
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(14, 165, 233, 0.3), rgba(2, 132, 199, 0.6), rgba(14, 165, 233, 0.3));
+            box-shadow: inset 0 0 12px rgba(14, 165, 233, 0.35);
+        }
+
+        .timeline-ticks {
+            position: relative;
+            min-height: 140px;
+        }
+
+        .tick {
+            position: absolute;
+            top: 0;
+            transform: translateX(-50%);
+            text-align: center;
+            color: var(--text-muted);
+            width: 120px;
+        }
+
+        .tick-line {
+            display: block;
+            margin: 0 auto 0.6rem;
+            width: 2px;
+            height: 32px;
+            background: linear-gradient(180deg, rgba(14, 165, 233, 0.25), rgba(14, 165, 233, 0));
+        }
+
+        .tick-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #1e293b;
+            text-shadow: 0 1px 2px rgba(148, 163, 184, 0.35);
+            display: block;
+            line-height: 1.3;
+        }
+
+        .pointer {
+            position: absolute;
+            top: 28%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+            pointer-events: none;
+        }
+
+        .pointer::after {
+            content: "";
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            box-shadow: 0 0 0 8px rgba(14, 165, 233, 0.18);
+        }
+
+        .pointer-label {
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.92), rgba(2, 132, 199, 0.92));
+            color: white;
+            font-size: 0.78rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            box-shadow: 0 12px 24px rgba(14, 165, 233, 0.35);
+        }
+
+        .current-time {
+            border-radius: 20px;
+            padding: 1.5rem 1.75rem;
+            background: linear-gradient(135deg, rgba(240, 249, 255, 0.7), rgba(224, 242, 254, 0.85));
+            box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.25);
+            display: grid;
+            gap: 0.65rem;
+            font-size: 1rem;
+        }
+
+        .current-time h3 {
+            margin: 0;
+            font-size: 1.05rem;
+            color: #0f172a;
+            letter-spacing: 0.01em;
+        }
+
+        .current-time span {
+            color: var(--text-muted);
+        }
+
+        .footnote {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        @media (min-width: 720px) {
+            .control-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .control-row:nth-child(2),
+            .control-row:nth-child(3) {
+                grid-column: span 1;
+            }
+
+            .controls-footer {
+                grid-column: span 3;
+                justify-content: space-between;
+            }
+        }
+
+        @media (max-width: 640px) {
+            header,
+            .panel,
+            .timeline-card {
+                padding: 2rem 1.5rem;
+            }
+
+            .tick {
+                width: 96px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header>
+            <h1>Deep Time Timeline Explorer</h1>
+            <p>
+                Navigate the grand sweep of time from Earth's formation (~4.54 billion BCE) to an equally distant
+                future. The exact midpoint is fixed at 12:00:01&nbsp;AM on January&nbsp;1, 0001.
+            </p>
+        </header>
+        <section class="panel">
+            <div class="control-grid">
+                <div class="control-row">
+                    <label for="granularity">Granularity</label>
+                    <select id="granularity">
+                        <option>Eon</option>
+                        <option>Epoch</option>
+                        <option>Age</option>
+                        <option>Millennium</option>
+                        <option>Century</option>
+                        <option>Decade</option>
+                        <option selected>Year</option>
+                        <option>Month</option>
+                        <option>Week</option>
+                        <option>Day</option>
+                        <option>Hour</option>
+                        <option>Minute</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label for="startYear">View start (years from center)</label>
+                    <div>
+                        <input type="number" id="startYear" value="-1000000" step="1000" />
+                        <div class="hint">Negative values move into the past.</div>
+                    </div>
+                </div>
+                <div class="control-row">
+                    <label for="endYear">View end (years from center)</label>
+                    <div>
+                        <input type="number" id="endYear" value="1000000" step="1000" />
+                        <div class="hint">Positive values move into the future.</div>
+                    </div>
+                </div>
+                <div class="controls-footer">
+                    <button id="updateRange">Update timeline window</button>
+                    <div class="footnote">
+                        Bounds: &minus;4.54 billion years to +4.54 billion years relative to the center point.
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="timeline-card">
+            <div class="timeline-meta">
+                <div><strong>Earliest point:</strong> ~4.54&nbsp;billion&nbsp;BCE</div>
+                <div><strong>Midpoint:</strong> 12:00:01&nbsp;AM · January&nbsp;1, 0001</div>
+                <div><strong>Most distant future:</strong> ~4.54&nbsp;billion&nbsp;CE</div>
+            </div>
+            <div class="range-display" id="rangeDisplay"></div>
+            <div class="slider-area">
+                <label for="positionSlider">Scroll through the selected window</label>
+                <input id="positionSlider" type="range" min="0" max="1000" value="500" />
+            </div>
+            <div class="timeline">
+                <div class="timeline-inner">
+                    <div class="timeline-track"></div>
+                    <div class="timeline-ticks" id="timelineTicks"></div>
+                    <div class="pointer" id="timelinePointer">
+                        <span class="pointer-label" id="pointerLabel">Center</span>
+                    </div>
+                </div>
+            </div>
+            <div class="current-time" id="currentTime"></div>
+        </section>
+    </div>
+
+    <script>
+        const MINUTES_PER_YEAR = 525600;
+        const MINUTES_PER_MONTH = MINUTES_PER_YEAR / 12;
+        const MINUTES_PER_WEEK = 10080;
+        const MINUTES_PER_DAY = 1440;
+        const MINUTES_PER_HOUR = 60;
+
+        const EARTH_AGE_YEARS = 4_540_000_000;
+        const HALF_SPAN_MINUTES = EARTH_AGE_YEARS * MINUTES_PER_YEAR;
+        const TIMELINE_MIN = -HALF_SPAN_MINUTES;
+        const TIMELINE_MAX = HALF_SPAN_MINUTES;
+
+        const GRANULARITY_TO_MINUTES = {
+            Eon: MINUTES_PER_YEAR * 500_000_000,
+            Epoch: MINUTES_PER_YEAR * 50_000_000,
+            Age: MINUTES_PER_YEAR * 5_000_000,
+            Millennium: MINUTES_PER_YEAR * 1_000,
+            Century: MINUTES_PER_YEAR * 100,
+            Decade: MINUTES_PER_YEAR * 10,
+            Year: MINUTES_PER_YEAR,
+            Month: MINUTES_PER_MONTH,
+            Week: MINUTES_PER_WEEK,
+            Day: MINUTES_PER_DAY,
+            Hour: MINUTES_PER_HOUR,
+            Minute: 1
+        };
+
+        const UNIT_LABELS = {
+            Eon: { singular: "eon", plural: "eons" },
+            Epoch: { singular: "epoch", plural: "epochs" },
+            Age: { singular: "age", plural: "ages" },
+            Millennium: { singular: "millennium", plural: "millennia" },
+            Century: { singular: "century", plural: "centuries" },
+            Decade: { singular: "decade", plural: "decades" },
+            Year: { singular: "year", plural: "years" },
+            Month: { singular: "month", plural: "months" },
+            Week: { singular: "week", plural: "weeks" },
+            Day: { singular: "day", plural: "days" },
+            Hour: { singular: "hour", plural: "hours" },
+            Minute: { singular: "minute", plural: "minutes" }
+        };
+
+        const compactFormatter = new Intl.NumberFormat("en-US", {
+            notation: "compact",
+            maximumFractionDigits: 1
+        });
+        const numberFormatter = new Intl.NumberFormat("en-US");
+
+        const granularitySelect = document.getElementById("granularity");
+        const startYearInput = document.getElementById("startYear");
+        const endYearInput = document.getElementById("endYear");
+        const updateRangeButton = document.getElementById("updateRange");
+        const slider = document.getElementById("positionSlider");
+        const rangeDisplay = document.getElementById("rangeDisplay");
+        const timelineTicks = document.getElementById("timelineTicks");
+        const pointer = document.getElementById("timelinePointer");
+        const pointerLabel = document.getElementById("pointerLabel");
+        const currentTime = document.getElementById("currentTime");
+
+        startYearInput.min = -EARTH_AGE_YEARS;
+        startYearInput.max = EARTH_AGE_YEARS;
+        endYearInput.min = -EARTH_AGE_YEARS;
+        endYearInput.max = EARTH_AGE_YEARS;
+
+        let viewStartMinutes = -1_000_000 * MINUTES_PER_YEAR;
+        let viewEndMinutes = 1_000_000 * MINUTES_PER_YEAR;
+
+        function clampMinutes(value) {
+            return Math.min(Math.max(value, TIMELINE_MIN), TIMELINE_MAX);
+        }
+
+        function updateViewRange() {
+            let startYears = parseFloat(startYearInput.value);
+            let endYears = parseFloat(endYearInput.value);
+            if (Number.isNaN(startYears) || Number.isNaN(endYears)) {
+                return;
+            }
+
+            let startMinutes = clampMinutes(startYears * MINUTES_PER_YEAR);
+            let endMinutes = clampMinutes(endYears * MINUTES_PER_YEAR);
+
+            if (startMinutes === endMinutes) {
+                const minimumSpan = GRANULARITY_TO_MINUTES[granularitySelect.value];
+                if (endMinutes >= TIMELINE_MAX) {
+                    startMinutes = Math.max(TIMELINE_MIN, endMinutes - minimumSpan);
+                }
+                endMinutes = Math.min(startMinutes + minimumSpan, TIMELINE_MAX);
+            }
+
+            if (startMinutes > endMinutes) {
+                [startMinutes, endMinutes] = [endMinutes, startMinutes];
+            }
+
+            viewStartMinutes = startMinutes;
+            viewEndMinutes = endMinutes;
+
+            startYearInput.value = formatYearInputValue(viewStartMinutes);
+            endYearInput.value = formatYearInputValue(viewEndMinutes);
+
+            slider.value = 500;
+            refreshRangeDisplay();
+            rebuildTicks();
+            updatePointerAndDetails();
+        }
+
+        function refreshRangeDisplay() {
+            const startLabel = formatYearLabel(viewStartMinutes);
+            const endLabel = formatYearLabel(viewEndMinutes);
+            const spanMinutes = viewEndMinutes - viewStartMinutes;
+            let spanLabel;
+            if (spanMinutes >= MINUTES_PER_YEAR) {
+                spanLabel = `${numberFormatter.format(Math.round(spanMinutes / MINUTES_PER_YEAR))} years`;
+            } else if (spanMinutes >= MINUTES_PER_MONTH) {
+                spanLabel = `${numberFormatter.format(Math.round(spanMinutes / MINUTES_PER_MONTH))} months`;
+            } else if (spanMinutes >= MINUTES_PER_DAY) {
+                spanLabel = `${numberFormatter.format(Math.round(spanMinutes / MINUTES_PER_DAY))} days`;
+            } else if (spanMinutes >= MINUTES_PER_HOUR) {
+                spanLabel = `${numberFormatter.format(Math.round(spanMinutes / MINUTES_PER_HOUR))} hours`;
+            } else {
+                spanLabel = `${numberFormatter.format(Math.max(1, Math.round(spanMinutes)))} minutes`;
+            }
+
+            rangeDisplay.innerHTML = `Viewing from <strong>${startLabel}</strong> to <strong>${endLabel}</strong><br />`
+                + `Window width: <strong>${spanLabel}</strong>`;
+        }
+
+        function rebuildTicks() {
+            timelineTicks.innerHTML = "";
+            const segments = 10;
+            const rangeMinutes = viewEndMinutes - viewStartMinutes;
+
+            for (let i = 0; i <= segments; i++) {
+                const tick = document.createElement("div");
+                tick.className = "tick";
+                const percent = (i / segments) * 100;
+                tick.style.left = `${percent}%`;
+
+                const tickLine = document.createElement("span");
+                tickLine.className = "tick-line";
+                tick.appendChild(tickLine);
+
+                const tickMinutes = viewStartMinutes + rangeMinutes * (i / segments);
+                const tickLabel = document.createElement("span");
+                tickLabel.className = "tick-label";
+                tickLabel.textContent = formatTickLabel(tickMinutes);
+                tickLabel.title = formatDetailedTime(tickMinutes);
+                tick.appendChild(tickLabel);
+
+                timelineTicks.appendChild(tick);
+            }
+        }
+
+        function updatePointerAndDetails() {
+            const sliderValue = parseFloat(slider.value);
+            const sliderMax = parseFloat(slider.max);
+            const progress = sliderMax === 0 ? 0 : sliderValue / sliderMax;
+            const currentMinutes = viewStartMinutes + (viewEndMinutes - viewStartMinutes) * progress;
+            const percent = Math.min(Math.max(progress * 100, 0), 100);
+            pointer.style.left = `${percent}%`;
+
+            const granularity = granularitySelect.value;
+            const unitMinutes = GRANULARITY_TO_MINUTES[granularity];
+            const diffUnits = currentMinutes / unitMinutes;
+            const direction = diffUnits === 0 ? "at" : currentMinutes >= 0 ? "after" : "before";
+            const absUnits = Math.abs(diffUnits);
+            const isSingular = Math.abs(absUnits - 1) < 1e-6;
+            const labelText = getUnitLabel(granularity, !isSingular, true);
+            const unitValue = absUnits >= 1000
+                ? numberFormatter.format(Math.round(absUnits))
+                : absUnits.toFixed(absUnits < 10 ? 2 : 1);
+            const unitsLabel = absUnits < 0.01
+                ? "Center"
+                : `${unitValue} ${labelText} ${direction}`;
+
+            pointerLabel.textContent = unitsLabel;
+
+            currentTime.innerHTML = `
+                <h3>Selected moment</h3>
+                <span>${formatDetailedTime(currentMinutes)}</span>
+                <span>${formatDifference(currentMinutes, granularity)}</span>
+            `;
+        }
+
+        function formatYearLabel(minutes) {
+            if (minutes === 0) {
+                return "Year 1 CE";
+            }
+            const years = Math.floor(Math.abs(minutes) / MINUTES_PER_YEAR);
+            const label = compactFormatter.format(years + 1);
+            const era = minutes >= 0 ? "CE" : "BCE";
+            return `Year ${label} ${era}`;
+        }
+
+        function formatTickLabel(minutes) {
+            const years = Math.floor(Math.abs(minutes) / MINUTES_PER_YEAR);
+            if (years < 1) {
+                if (minutes === 0) {
+                    return "Center";
+                }
+                const days = Math.floor(Math.abs(minutes) / MINUTES_PER_DAY);
+                if (days >= 1) {
+                    return `${days} day${days === 1 ? "" : "s"}`;
+                }
+                const hours = Math.floor(Math.abs(minutes) / MINUTES_PER_HOUR);
+                if (hours >= 1) {
+                    return `${hours} hour${hours === 1 ? "" : "s"}`;
+                }
+                const mins = Math.max(1, Math.round(Math.abs(minutes)));
+                return `${mins} minute${mins === 1 ? "" : "s"}`;
+            }
+            return formatYearLabel(minutes);
+        }
+
+        function formatDetailedTime(minutes) {
+            const era = minutes >= 0 ? "CE" : "BCE";
+            const absMinutes = Math.abs(minutes);
+
+            let remaining = absMinutes;
+            const years = Math.floor(remaining / MINUTES_PER_YEAR);
+            remaining -= years * MINUTES_PER_YEAR;
+
+            const months = Math.floor(remaining / MINUTES_PER_MONTH);
+            remaining -= months * MINUTES_PER_MONTH;
+
+            const days = Math.floor(remaining / MINUTES_PER_DAY);
+            remaining -= days * MINUTES_PER_DAY;
+
+            const hours = Math.floor(remaining / MINUTES_PER_HOUR);
+            remaining -= hours * MINUTES_PER_HOUR;
+
+            const mins = Math.floor(remaining);
+
+            return `Year ${numberFormatter.format(years + 1)} ${era} · Month ${months + 1} · Day ${days + 1} · ${pad(hours)}:${pad(mins)}`;
+        }
+
+        function formatDifference(minutes, granularity) {
+            if (minutes === 0) {
+                return "Exactly at the center moment.";
+            }
+            const unitMinutes = GRANULARITY_TO_MINUTES[granularity];
+            const diffUnits = minutes / unitMinutes;
+            const direction = minutes >= 0 ? "after" : "before";
+            const absoluteUnits = Math.abs(diffUnits);
+            const formattedUnits = absoluteUnits >= 1000
+                ? numberFormatter.format(Math.round(absoluteUnits))
+                : absoluteUnits.toFixed(2);
+            const unitLabel = getUnitLabel(granularity, Math.abs(absoluteUnits - 1) >= 1e-6, false);
+            return `${formattedUnits} ${unitLabel} ${direction} the center moment.`;
+        }
+
+        function getUnitLabel(granularity, isPlural, capitalize) {
+            const entry = UNIT_LABELS[granularity];
+            if (!entry) {
+                return granularity;
+            }
+            const text = isPlural ? entry.plural : entry.singular;
+            return capitalize ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+        }
+
+        function formatYearInputValue(minutes) {
+            const years = minutes / MINUTES_PER_YEAR;
+            const rounded = Math.round(years * 1000) / 1000;
+            const sanitized = Math.abs(rounded) < 1e-6 ? 0 : rounded;
+            return sanitized.toString();
+        }
+
+        function pad(value) {
+            return value.toString().padStart(2, "0");
+        }
+
+        granularitySelect.addEventListener("change", () => {
+            rebuildTicks();
+            updatePointerAndDetails();
+        });
+
+        slider.addEventListener("input", updatePointerAndDetails);
+        updateRangeButton.addEventListener("click", updateViewRange);
+        [startYearInput, endYearInput].forEach(input => {
+            input.addEventListener("keydown", event => {
+                if (event.key === "Enter") {
+                    updateViewRange();
+                }
+            });
+            input.addEventListener("change", () => {
+                updateViewRange();
+            });
+        });
+
+        refreshRangeDisplay();
+        rebuildTicks();
+        updatePointerAndDetails();
+    </script>
+</body>
+</html>
