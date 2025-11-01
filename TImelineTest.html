@@ -201,6 +201,86 @@
             color: #0f172a;
         }
 
+        .dual-timeline-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .range-slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .range-slider-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .range-slider-wrapper {
+            position: relative;
+            height: 50px;
+            background: linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(37, 99, 235, 0.15));
+            border-radius: 12px;
+            padding: 0 12px;
+        }
+
+        .range-slider-track {
+            position: absolute;
+            top: 50%;
+            left: 12px;
+            right: 12px;
+            height: 8px;
+            transform: translateY(-50%);
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.3);
+        }
+
+        .range-slider-selected {
+            position: absolute;
+            top: 50%;
+            height: 8px;
+            transform: translateY(-50%);
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+            cursor: grab;
+        }
+
+        .range-slider-selected:active {
+            cursor: grabbing;
+        }
+
+        .range-handle {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
+            border: 3px solid white;
+            z-index: 10;
+        }
+
+        .range-handle:hover {
+            transform: translate(-50%, -50%) scale(1.15);
+        }
+
+        .range-handle:active {
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+
+        .range-slider-info {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
         input[type="range"] {
             -webkit-appearance: none;
             appearance: none;
@@ -484,9 +564,30 @@
                 <div><strong>Most distant future:</strong> ~4.54&nbsp;billion&nbsp;CE</div>
             </div>
             <div class="range-display" id="rangeDisplay"></div>
-            <div class="slider-area">
-                <label for="positionSlider">Scroll through the selected window</label>
-                <input id="positionSlider" type="range" min="0" max="1000" value="500" />
+            <div class="dual-timeline-container">
+                <!-- Bottom Timeline: Coarse Range Selector -->
+                <div class="range-slider-container">
+                    <div class="range-slider-label">Bottom Timeline (Coarse Level)</div>
+                    <div class="range-slider-wrapper" id="bottomSliderWrapper">
+                        <div class="range-slider-track"></div>
+                        <div class="range-slider-selected" id="bottomSelected"></div>
+                        <div class="range-handle" id="bottomStartHandle"></div>
+                        <div class="range-handle" id="bottomEndHandle"></div>
+                    </div>
+                    <div class="range-slider-info" id="bottomInfo"></div>
+                </div>
+
+                <!-- Top Timeline: Fine Range Selector -->
+                <div class="range-slider-container">
+                    <div class="range-slider-label">Top Timeline (Fine Level)</div>
+                    <div class="range-slider-wrapper" id="topSliderWrapper">
+                        <div class="range-slider-track"></div>
+                        <div class="range-slider-selected" id="topSelected"></div>
+                        <div class="range-handle" id="topStartHandle"></div>
+                        <div class="range-handle" id="topEndHandle"></div>
+                    </div>
+                    <div class="range-slider-info" id="topInfo"></div>
+                </div>
             </div>
             <div class="timeline">
                 <div class="timeline-inner">
@@ -572,15 +673,56 @@
         const startLabel = document.getElementById("startLabel");
         const endLabel = document.getElementById("endLabel");
         const updateRangeButton = document.getElementById("updateRange");
-        const slider = document.getElementById("positionSlider");
         const rangeDisplay = document.getElementById("rangeDisplay");
         const timelineTicks = document.getElementById("timelineTicks");
         const pointer = document.getElementById("timelinePointer");
         const pointerLabel = document.getElementById("pointerLabel");
         const currentTime = document.getElementById("currentTime");
 
+        // Bottom timeline elements
+        const bottomSliderWrapper = document.getElementById("bottomSliderWrapper");
+        const bottomSelected = document.getElementById("bottomSelected");
+        const bottomStartHandle = document.getElementById("bottomStartHandle");
+        const bottomEndHandle = document.getElementById("bottomEndHandle");
+        const bottomInfo = document.getElementById("bottomInfo");
+
+        // Top timeline elements
+        const topSliderWrapper = document.getElementById("topSliderWrapper");
+        const topSelected = document.getElementById("topSelected");
+        const topStartHandle = document.getElementById("topStartHandle");
+        const topEndHandle = document.getElementById("topEndHandle");
+        const topInfo = document.getElementById("topInfo");
+
+        // Timeline state
+        // Bottom timeline: user's coarse range selection (boundaries are TIMELINE_MIN to TIMELINE_MAX)
+        let bottomStartMinutes = -1_000_000 * MINUTES_PER_YEAR;
+        let bottomEndMinutes = 1_000_000 * MINUTES_PER_YEAR;
+        // Top timeline: user's fine range selection (boundaries are bottomStart to bottomEnd)
+        let topStartMinutes = -500_000 * MINUTES_PER_YEAR;
+        let topEndMinutes = 500_000 * MINUTES_PER_YEAR;
+
         let viewStartMinutes = -1_000_000 * MINUTES_PER_YEAR;
         let viewEndMinutes = 1_000_000 * MINUTES_PER_YEAR;
+        let currentViewMinutes = 0; // Current position shown on the timeline
+
+        function getGranularityIndex(granularity) {
+            const granularities = Object.keys(GRANULARITY_TO_MINUTES);
+            return granularities.indexOf(granularity);
+        }
+
+        function getGranularityTwoLevelsLess(granularity) {
+            const granularities = Object.keys(GRANULARITY_TO_MINUTES);
+            const currentIndex = getGranularityIndex(granularity);
+            const targetIndex = Math.min(currentIndex + 2, granularities.length - 1);
+            return granularities[targetIndex];
+        }
+
+        function initializeTimelines() {
+            // Set initial view from top timeline
+            viewStartMinutes = topStartMinutes;
+            viewEndMinutes = topEndMinutes;
+            currentViewMinutes = (topStartMinutes + topEndMinutes) / 2;
+        }
 
         function clampMinutes(value) {
             return Math.min(Math.max(value, TIMELINE_MIN), TIMELINE_MAX);
@@ -739,10 +881,27 @@
 
             updateDateInputs();
 
-            slider.value = 500;
-            refreshRangeDisplay();
-            rebuildTicks();
-            updatePointerAndDetails();
+            // Update bottom timeline's selected range to match the input dates
+            // This becomes the new boundary for the top timeline
+            bottomStartMinutes = clampMinutes(startMinutes);
+            bottomEndMinutes = clampMinutes(endMinutes);
+            
+            // Ensure bottom timeline has minimum span
+            if (bottomEndMinutes - bottomStartMinutes < GRANULARITY_TO_MINUTES[granularitySelect.value]) {
+                bottomEndMinutes = Math.min(TIMELINE_MAX, bottomStartMinutes + GRANULARITY_TO_MINUTES[granularitySelect.value]);
+            }
+            
+            // Update top timeline to be centered within bottom range
+            const topSpan = Math.min(
+                topEndMinutes - topStartMinutes,
+                bottomEndMinutes - bottomStartMinutes
+            );
+            const midpoint = (bottomStartMinutes + bottomEndMinutes) / 2;
+            topStartMinutes = Math.max(bottomStartMinutes, midpoint - topSpan / 2);
+            topEndMinutes = Math.min(bottomEndMinutes, topStartMinutes + topSpan);
+            
+            updateRangeSliders();
+            updateViewFromTopTimeline();
         }
 
         function refreshRangeDisplay() {
@@ -851,24 +1010,22 @@
         }
 
         function updatePointerAndDetails() {
-            const sliderValue = parseFloat(slider.value);
-            const sliderMax = parseFloat(slider.max);
-            const progress = sliderMax === 0 ? 0 : sliderValue / sliderMax;
-            const currentMinutes = viewStartMinutes + (viewEndMinutes - viewStartMinutes) * progress;
-            const percent = Math.min(Math.max(progress * 100, 0), 100);
+            // Position pointer at the center of the current view (top timeline)
+            const percent = 50; // Always show at center
             pointer.style.left = `${percent}%`;
 
             const granularity = granularitySelect.value;
+            const fineGranularity = getGranularityTwoLevelsLess(granularity);
             
-            // Format the slider label with one granularity level smaller
-            const unitsLabel = formatSliderLabel(currentMinutes, granularity);
+            // Format the pointer label with fine granularity
+            const unitsLabel = formatSliderLabel(currentViewMinutes, fineGranularity);
 
             pointerLabel.textContent = unitsLabel;
 
             currentTime.innerHTML = `
                 <h3>Selected moment</h3>
-                <span>${formatDetailedTime(currentMinutes)}</span>
-                <span>${formatDifference(currentMinutes, granularity)}</span>
+                <span>${formatDetailedTime(currentViewMinutes)}</span>
+                <span>${formatDifference(currentViewMinutes, fineGranularity)}</span>
             `;
         }
 
@@ -990,8 +1147,216 @@
             return value.toString().padStart(2, "0");
         }
 
+        // Range slider functionality
+        function updateRangeSliders() {
+            updateBottomSlider();
+            updateTopSlider();
+        }
+
+        function updateBottomSlider() {
+            const totalRange = TIMELINE_MAX - TIMELINE_MIN;
+            const startPercent = ((bottomStartMinutes - TIMELINE_MIN) / totalRange) * 100;
+            const endPercent = ((bottomEndMinutes - TIMELINE_MIN) / totalRange) * 100;
+            
+            bottomStartHandle.style.left = `${startPercent}%`;
+            bottomEndHandle.style.left = `${endPercent}%`;
+            bottomSelected.style.left = `${startPercent}%`;
+            bottomSelected.style.width = `${endPercent - startPercent}%`;
+            
+            const startLabel = formatYearLabel(bottomStartMinutes);
+            const endLabel = formatYearLabel(bottomEndMinutes);
+            bottomInfo.textContent = `Range: ${startLabel} to ${endLabel}`;
+        }
+
+        function updateTopSlider() {
+            const totalRange = bottomEndMinutes - bottomStartMinutes;
+            const startPercent = ((topStartMinutes - bottomStartMinutes) / totalRange) * 100;
+            const endPercent = ((topEndMinutes - bottomStartMinutes) / totalRange) * 100;
+            
+            topStartHandle.style.left = `${startPercent}%`;
+            topEndHandle.style.left = `${endPercent}%`;
+            topSelected.style.left = `${startPercent}%`;
+            topSelected.style.width = `${endPercent - startPercent}%`;
+            
+            const fineGranularity = getGranularityTwoLevelsLess(granularitySelect.value);
+            const startLabel = formatSliderLabel(topStartMinutes, fineGranularity);
+            const endLabel = formatSliderLabel(topEndMinutes, fineGranularity);
+            topInfo.textContent = `Fine range (${fineGranularity}): ${startLabel} to ${endLabel}`;
+        }
+
+        // Drag handling for bottom timeline
+        let dragState = null;
+
+        function startBottomDrag(type, event) {
+            event.preventDefault();
+            const rect = bottomSliderWrapper.getBoundingClientRect();
+            const totalRange = TIMELINE_MAX - TIMELINE_MIN;
+            
+            dragState = {
+                type: type,
+                timeline: 'bottom',
+                startX: event.clientX,
+                startMinutesStart: bottomStartMinutes,
+                startMinutesEnd: bottomEndMinutes,
+                wrapperRect: rect,
+                totalRange: totalRange
+            };
+            
+            document.addEventListener('mousemove', handleDrag);
+            document.addEventListener('mouseup', endDrag);
+        }
+
+        function startTopDrag(type, event) {
+            event.preventDefault();
+            const rect = topSliderWrapper.getBoundingClientRect();
+            const totalRange = bottomEndMinutes - bottomStartMinutes;
+            
+            dragState = {
+                type: type,
+                timeline: 'top',
+                startX: event.clientX,
+                startMinutesStart: topStartMinutes,
+                startMinutesEnd: topEndMinutes,
+                wrapperRect: rect,
+                totalRange: totalRange
+            };
+            
+            document.addEventListener('mousemove', handleDrag);
+            document.addEventListener('mouseup', endDrag);
+        }
+
+        function handleDrag(event) {
+            if (!dragState) return;
+            
+            const deltaX = event.clientX - dragState.startX;
+            const wrapperWidth = dragState.wrapperRect.width - 24; // Account for padding
+            const deltaPercent = deltaX / wrapperWidth;
+            const deltaMinutes = deltaPercent * dragState.totalRange;
+            
+            if (dragState.timeline === 'bottom') {
+                handleBottomDrag(deltaMinutes);
+            } else {
+                handleTopDrag(deltaMinutes);
+            }
+        }
+
+        function handleBottomDrag(deltaMinutes) {
+            if (dragState.type === 'start') {
+                let newStart = clampMinutes(dragState.startMinutesStart + deltaMinutes);
+                newStart = Math.min(newStart, bottomEndMinutes - GRANULARITY_TO_MINUTES[granularitySelect.value]);
+                bottomStartMinutes = newStart;
+                
+                // Constrain top timeline within new bounds
+                topStartMinutes = Math.max(bottomStartMinutes, topStartMinutes);
+                topEndMinutes = Math.max(topStartMinutes + GRANULARITY_TO_MINUTES[getGranularityTwoLevelsLess(granularitySelect.value)], topEndMinutes);
+                topStartMinutes = Math.min(topStartMinutes, bottomEndMinutes);
+                topEndMinutes = Math.min(topEndMinutes, bottomEndMinutes);
+            } else if (dragState.type === 'end') {
+                let newEnd = clampMinutes(dragState.startMinutesEnd + deltaMinutes);
+                newEnd = Math.max(newEnd, bottomStartMinutes + GRANULARITY_TO_MINUTES[granularitySelect.value]);
+                bottomEndMinutes = newEnd;
+                
+                // Constrain top timeline within new bounds
+                topStartMinutes = Math.min(Math.max(bottomStartMinutes, topStartMinutes), bottomEndMinutes);
+                topEndMinutes = Math.min(topEndMinutes, bottomEndMinutes);
+                topEndMinutes = Math.max(topEndMinutes, topStartMinutes + GRANULARITY_TO_MINUTES[getGranularityTwoLevelsLess(granularitySelect.value)]);
+            } else if (dragState.type === 'range') {
+                const span = dragState.startMinutesEnd - dragState.startMinutesStart;
+                let newStart = dragState.startMinutesStart + deltaMinutes;
+                let newEnd = dragState.startMinutesEnd + deltaMinutes;
+                
+                // Keep within absolute bounds
+                if (newStart < TIMELINE_MIN) {
+                    newStart = TIMELINE_MIN;
+                    newEnd = newStart + span;
+                }
+                if (newEnd > TIMELINE_MAX) {
+                    newEnd = TIMELINE_MAX;
+                    newStart = newEnd - span;
+                }
+                
+                bottomStartMinutes = newStart;
+                bottomEndMinutes = newEnd;
+                
+                // Move top timeline proportionally
+                const topSpan = topEndMinutes - topStartMinutes;
+                const topRelativeStart = (topStartMinutes - dragState.startMinutesStart) / (dragState.startMinutesEnd - dragState.startMinutesStart);
+                topStartMinutes = bottomStartMinutes + topRelativeStart * (bottomEndMinutes - bottomStartMinutes);
+                topEndMinutes = topStartMinutes + topSpan;
+                
+                // Ensure top stays within bottom bounds
+                topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - topSpan));
+                topEndMinutes = topStartMinutes + topSpan;
+            }
+            
+            updateRangeSliders();
+            updateViewFromTopTimeline();
+        }
+
+        function handleTopDrag(deltaMinutes) {
+            if (dragState.type === 'start') {
+                let newStart = dragState.startMinutesStart + deltaMinutes;
+                newStart = Math.max(bottomStartMinutes, newStart);
+                newStart = Math.min(newStart, topEndMinutes - GRANULARITY_TO_MINUTES[getGranularityTwoLevelsLess(granularitySelect.value)]);
+                topStartMinutes = newStart;
+            } else if (dragState.type === 'end') {
+                let newEnd = dragState.startMinutesEnd + deltaMinutes;
+                newEnd = Math.min(bottomEndMinutes, newEnd);
+                newEnd = Math.max(newEnd, topStartMinutes + GRANULARITY_TO_MINUTES[getGranularityTwoLevelsLess(granularitySelect.value)]);
+                topEndMinutes = newEnd;
+            } else if (dragState.type === 'range') {
+                const span = dragState.startMinutesEnd - dragState.startMinutesStart;
+                let newStart = dragState.startMinutesStart + deltaMinutes;
+                let newEnd = dragState.startMinutesEnd + deltaMinutes;
+                
+                // Keep within bottom timeline bounds
+                if (newStart < bottomStartMinutes) {
+                    newStart = bottomStartMinutes;
+                    newEnd = newStart + span;
+                }
+                if (newEnd > bottomEndMinutes) {
+                    newEnd = bottomEndMinutes;
+                    newStart = newEnd - span;
+                }
+                
+                topStartMinutes = newStart;
+                topEndMinutes = newEnd;
+            }
+            
+            updateRangeSliders();
+            updateViewFromTopTimeline();
+        }
+
+        function endDrag() {
+            dragState = null;
+            document.removeEventListener('mousemove', handleDrag);
+            document.removeEventListener('mouseup', endDrag);
+        }
+
+        function updateViewFromTopTimeline() {
+            viewStartMinutes = topStartMinutes;
+            viewEndMinutes = topEndMinutes;
+            currentViewMinutes = (topStartMinutes + topEndMinutes) / 2;
+            
+            refreshRangeDisplay();
+            rebuildTicks();
+            updatePointerAndDetails();
+        }
+
+        // Event listeners for bottom timeline
+        bottomStartHandle.addEventListener('mousedown', (e) => startBottomDrag('start', e));
+        bottomEndHandle.addEventListener('mousedown', (e) => startBottomDrag('end', e));
+        bottomSelected.addEventListener('mousedown', (e) => startBottomDrag('range', e));
+
+        // Event listeners for top timeline
+        topStartHandle.addEventListener('mousedown', (e) => startTopDrag('start', e));
+        topEndHandle.addEventListener('mousedown', (e) => startTopDrag('end', e));
+        topSelected.addEventListener('mousedown', (e) => startTopDrag('range', e));
+
+
         granularitySelect.addEventListener("change", () => {
             rebuildTicks();
+            updateRangeSliders();
             updatePointerAndDetails();
         });
 
@@ -1012,10 +1377,12 @@
             });
         });
 
-        slider.addEventListener("input", updatePointerAndDetails);
         updateRangeButton.addEventListener("click", updateViewRange);
 
+        // Initialize
+        initializeTimelines();
         updateDateInputs();
+        updateRangeSliders();
         refreshRangeDisplay();
         rebuildTicks();
         updatePointerAndDetails();
