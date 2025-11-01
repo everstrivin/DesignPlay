@@ -1304,7 +1304,7 @@
             const granularityMinutes = GRANULARITY_TO_MINUTES[granularity];
             
             // Calculate appropriate step size (make it larger for coarse selection)
-            // We want roughly 20-40 options
+            // Target approximately TARGET_DROPDOWN_OPTIONS (30) options
             const viewSpan = viewEndMinutes - viewStartMinutes;
             const targetSteps = TARGET_DROPDOWN_OPTIONS;
             let stepMultiplier = Math.max(1, Math.round(viewSpan / (granularityMinutes * targetSteps)));
