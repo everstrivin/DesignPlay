@@ -830,11 +830,10 @@
                 // Show Month and Year
                 return `${MONTH_NAMES[monthIndex]} ${numberFormatter.format(components.year)} ${era}`;
             } else if (granularity === "Week") {
-                // Show Week (calculate from total days in year)
-                const absMinutes = Math.abs(minutes);
-                const totalDays = Math.floor(absMinutes / MINUTES_PER_DAY);
-                const daysInYear = Math.floor(totalDays % 365);
-                const weekNum = Math.floor(daysInYear / 7) + 1;
+                // Show Week (calculate from day of year using components)
+                // components.month and components.day already account for BCE calendar order
+                const dayOfYear = (components.month - 1) * 30 + (components.day - 1);
+                const weekNum = Math.floor(dayOfYear / 7) + 1;
                 return `Week ${weekNum}, ${numberFormatter.format(components.year)} ${era}`;
             } else if (granularity === "Day") {
                 // Show Month, Day, and Year
