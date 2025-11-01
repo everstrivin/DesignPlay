@@ -572,6 +572,76 @@
             }
         }
 
+        function formatSliderLabel(minutes, granularity) {
+            if (Math.abs(minutes) < 0.5) {
+                return "Center";
+            }
+            
+            const era = minutes >= 0 ? "CE" : "BCE";
+            const absMinutes = Math.abs(minutes);
+            
+            let remaining = absMinutes;
+            const years = Math.floor(remaining / MINUTES_PER_YEAR);
+            remaining -= years * MINUTES_PER_YEAR;
+            
+            const months = Math.floor(remaining / MINUTES_PER_MONTH);
+            remaining -= months * MINUTES_PER_MONTH;
+            
+            const days = Math.floor(remaining / MINUTES_PER_DAY);
+            remaining -= days * MINUTES_PER_DAY;
+            
+            const hours = Math.floor(remaining / MINUTES_PER_HOUR);
+            remaining -= hours * MINUTES_PER_HOUR;
+            
+            const mins = Math.floor(remaining);
+            
+            const monthIndex = Math.min(Math.max(months, 0), 11);
+            
+            // Format one level smaller than the selected granularity
+            if (granularity === "Eon") {
+                // One level smaller: Epoch (millions of years)
+                const epochYears = Math.round(years / 1_000_000);
+                return `${compactFormatter.format(epochYears)} M yrs ${era}`;
+            } else if (granularity === "Epoch") {
+                // One level smaller: Age (thousands of years)
+                const ageYears = Math.round(years / 1000);
+                return `${compactFormatter.format(ageYears)}K yrs ${era}`;
+            } else if (granularity === "Age") {
+                // One level smaller: Millennium - show specific year
+                return `Year ${compactFormatter.format(years + 1)} ${era}`;
+            } else if (granularity === "Millennium") {
+                // One level smaller: Century - show specific year
+                return `Year ${compactFormatter.format(years + 1)} ${era}`;
+            } else if (granularity === "Century") {
+                // One level smaller: Decade - show specific year
+                return `Year ${numberFormatter.format(years + 1)} ${era}`;
+            } else if (granularity === "Decade") {
+                // One level smaller: Year
+                return `Year ${numberFormatter.format(years + 1)} ${era}`;
+            } else if (granularity === "Year") {
+                // One level smaller: Month
+                return `${MONTH_NAMES[monthIndex]} ${numberFormatter.format(years + 1)} ${era}`;
+            } else if (granularity === "Month") {
+                // One level smaller: Week/Day
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${era}`;
+            } else if (granularity === "Week") {
+                // One level smaller: Day (show with day of month)
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${era}`;
+            } else if (granularity === "Day") {
+                // One level smaller: Hour
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${pad(hours)}:00 ${era}`;
+            } else if (granularity === "Hour") {
+                // One level smaller: Minute
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${pad(hours)}:${pad(mins)} ${era}`;
+            } else if (granularity === "Minute") {
+                // Minute is the smallest, show seconds (always 00)
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${pad(hours)}:${pad(mins)}:00 ${era}`;
+            }
+            
+            // Fallback
+            return formatYearLabel(minutes);
+        }
+
         function updatePointerAndDetails() {
             const sliderValue = parseFloat(slider.value);
             const sliderMax = parseFloat(slider.max);
@@ -581,18 +651,9 @@
             pointer.style.left = `${percent}%`;
 
             const granularity = granularitySelect.value;
-            const unitMinutes = GRANULARITY_TO_MINUTES[granularity];
-            const diffUnits = currentMinutes / unitMinutes;
-            const direction = diffUnits === 0 ? "at" : currentMinutes >= 0 ? "after" : "before";
-            const absUnits = Math.abs(diffUnits);
-            const isSingular = Math.abs(absUnits - 1) < 1e-6;
-            const labelText = getUnitLabel(granularity, !isSingular, true);
-            const unitValue = absUnits >= 1000
-                ? numberFormatter.format(Math.round(absUnits))
-                : absUnits.toFixed(absUnits < 10 ? 2 : 1);
-            const unitsLabel = absUnits < 0.01
-                ? "Center"
-                : `${unitValue} ${labelText} ${direction}`;
+            
+            // Format the slider label with one granularity level smaller
+            const unitsLabel = formatSliderLabel(currentMinutes, granularity);
 
             pointerLabel.textContent = unitsLabel;
 
