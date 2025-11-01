@@ -609,7 +609,7 @@
             } else if (granularity === "Age") {
                 // One level smaller: Millennium
                 const millennia = Math.round(years / 1000);
-                return `${numberFormatter.format(millennia)}K yrs ${era}`;
+                return `${compactFormatter.format(millennia * 1000)} yrs ${era}`;
             } else if (granularity === "Millennium") {
                 // One level smaller: Century
                 const centuries = Math.floor(years / 100);
@@ -629,7 +629,7 @@
                 return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Week") {
                 // One level smaller: Day (show with day of month)
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${years + 1} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Day") {
                 // One level smaller: Hour
                 return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${pad(hours)}:00 ${era}`;
