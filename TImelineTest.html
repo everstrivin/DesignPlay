@@ -96,6 +96,12 @@
             box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
         }
 
+        .control-row input[type="range"] {
+            width: 100%;
+            margin-top: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
         .hint {
             font-size: 0.85rem;
             color: var(--text-muted);
@@ -373,16 +379,18 @@
                     </select>
                 </div>
                 <div class="control-row">
-                    <label for="startYear">View start (years from center)</label>
+                    <label for="startYear"><span id="startLabel">View start (years from center)</span></label>
                     <div>
                         <input type="number" id="startYear" value="-1000000" step="1000" />
+                        <input type="range" id="startSlider" min="-4540000000" max="4540000000" value="-1000000" step="1000" />
                         <div class="hint">Negative values move into the past.</div>
                     </div>
                 </div>
                 <div class="control-row">
-                    <label for="endYear">View end (years from center)</label>
+                    <label for="endYear"><span id="endLabel">View end (years from center)</span></label>
                     <div>
                         <input type="number" id="endYear" value="1000000" step="1000" />
+                        <input type="range" id="endSlider" min="-4540000000" max="4540000000" value="1000000" step="1000" />
                         <div class="hint">Positive values move into the future.</div>
                     </div>
                 </div>
@@ -471,6 +479,10 @@
         const granularitySelect = document.getElementById("granularity");
         const startYearInput = document.getElementById("startYear");
         const endYearInput = document.getElementById("endYear");
+        const startSlider = document.getElementById("startSlider");
+        const endSlider = document.getElementById("endSlider");
+        const startLabel = document.getElementById("startLabel");
+        const endLabel = document.getElementById("endLabel");
         const updateRangeButton = document.getElementById("updateRange");
         const slider = document.getElementById("positionSlider");
         const rangeDisplay = document.getElementById("rangeDisplay");
@@ -491,18 +503,85 @@
             return Math.min(Math.max(value, TIMELINE_MIN), TIMELINE_MAX);
         }
 
+        function updateInputLabelsAndRanges() {
+            const granularity = granularitySelect.value;
+            const unitMinutes = GRANULARITY_TO_MINUTES[granularity];
+            const unitLabel = getUnitLabel(granularity, true, false);
+            
+            // Update labels
+            startLabel.textContent = `View start (${unitLabel} from center)`;
+            endLabel.textContent = `View end (${unitLabel} from center)`;
+            
+            // Calculate the current values in the selected unit
+            const startUnits = viewStartMinutes / unitMinutes;
+            const endUnits = viewEndMinutes / unitMinutes;
+            
+            // Calculate min/max in the selected unit
+            const minUnits = TIMELINE_MIN / unitMinutes;
+            const maxUnits = TIMELINE_MAX / unitMinutes;
+            
+            // Determine appropriate step size
+            let step;
+            if (granularity === "Eon" || granularity === "Epoch") {
+                step = 1;
+            } else if (granularity === "Age") {
+                step = 10;
+            } else if (granularity === "Millennium") {
+                step = 10;
+            } else if (granularity === "Century") {
+                step = 10;
+            } else if (granularity === "Decade") {
+                step = 10;
+            } else if (granularity === "Year") {
+                step = 1000;
+            } else if (granularity === "Month") {
+                step = 100;
+            } else if (granularity === "Week") {
+                step = 100;
+            } else if (granularity === "Day") {
+                step = 100;
+            } else if (granularity === "Hour") {
+                step = 1000;
+            } else {
+                step = 1000;
+            }
+            
+            // Update input fields
+            startYearInput.value = Math.round(startUnits * 1000) / 1000;
+            endYearInput.value = Math.round(endUnits * 1000) / 1000;
+            startYearInput.step = step;
+            endYearInput.step = step;
+            startYearInput.min = minUnits;
+            startYearInput.max = maxUnits;
+            endYearInput.min = minUnits;
+            endYearInput.max = maxUnits;
+            
+            // Update sliders
+            startSlider.min = minUnits;
+            startSlider.max = maxUnits;
+            endSlider.min = minUnits;
+            endSlider.max = maxUnits;
+            startSlider.step = step;
+            endSlider.step = step;
+            startSlider.value = Math.round(startUnits);
+            endSlider.value = Math.round(endUnits);
+        }
+
         function updateViewRange() {
-            let startYears = parseFloat(startYearInput.value);
-            let endYears = parseFloat(endYearInput.value);
-            if (Number.isNaN(startYears) || Number.isNaN(endYears)) {
+            const granularity = granularitySelect.value;
+            const unitMinutes = GRANULARITY_TO_MINUTES[granularity];
+            
+            let startUnits = parseFloat(startYearInput.value);
+            let endUnits = parseFloat(endYearInput.value);
+            if (Number.isNaN(startUnits) || Number.isNaN(endUnits)) {
                 return;
             }
 
-            let startMinutes = clampMinutes(startYears * MINUTES_PER_YEAR);
-            let endMinutes = clampMinutes(endYears * MINUTES_PER_YEAR);
+            let startMinutes = clampMinutes(startUnits * unitMinutes);
+            let endMinutes = clampMinutes(endUnits * unitMinutes);
 
             if (startMinutes === endMinutes) {
-                const minimumSpan = GRANULARITY_TO_MINUTES[granularitySelect.value];
+                const minimumSpan = GRANULARITY_TO_MINUTES[granularity];
                 if (endMinutes >= TIMELINE_MAX) {
                     startMinutes = Math.max(TIMELINE_MIN, endMinutes - minimumSpan);
                 }
@@ -516,8 +595,7 @@
             viewStartMinutes = startMinutes;
             viewEndMinutes = endMinutes;
 
-            startYearInput.value = formatYearInputValue(viewStartMinutes);
-            endYearInput.value = formatYearInputValue(viewEndMinutes);
+            updateInputLabelsAndRanges();
 
             slider.value = 500;
             refreshRangeDisplay();
@@ -817,8 +895,41 @@
         }
 
         granularitySelect.addEventListener("change", () => {
+            updateInputLabelsAndRanges();
             rebuildTicks();
             updatePointerAndDetails();
+        });
+
+        // Synchronize start slider with input
+        startSlider.addEventListener("input", () => {
+            startYearInput.value = startSlider.value;
+        });
+        
+        startSlider.addEventListener("change", () => {
+            updateViewRange();
+        });
+        
+        startYearInput.addEventListener("input", () => {
+            const value = parseFloat(startYearInput.value);
+            if (!Number.isNaN(value)) {
+                startSlider.value = value;
+            }
+        });
+
+        // Synchronize end slider with input
+        endSlider.addEventListener("input", () => {
+            endYearInput.value = endSlider.value;
+        });
+        
+        endSlider.addEventListener("change", () => {
+            updateViewRange();
+        });
+        
+        endYearInput.addEventListener("input", () => {
+            const value = parseFloat(endYearInput.value);
+            if (!Number.isNaN(value)) {
+                endSlider.value = value;
+            }
         });
 
         slider.addEventListener("input", updatePointerAndDetails);
@@ -834,6 +945,7 @@
             });
         });
 
+        updateInputLabelsAndRanges();
         refreshRangeDisplay();
         rebuildTicks();
         updatePointerAndDetails();
