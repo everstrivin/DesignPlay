@@ -1295,6 +1295,10 @@
 
         // Generate options for coarse dropdowns based on view boundaries
         function generateCoarseOptions() {
+            const TARGET_DROPDOWN_OPTIONS = 30;
+            const LARGE_SPAN_THRESHOLD = 1000;
+            const LARGE_SPAN_MIN_MULTIPLIER = 10;
+            
             const options = [];
             const granularity = granularitySelect.value;
             const granularityMinutes = GRANULARITY_TO_MINUTES[granularity];
@@ -1302,12 +1306,12 @@
             // Calculate appropriate step size (make it larger for coarse selection)
             // We want roughly 20-40 options
             const viewSpan = viewEndMinutes - viewStartMinutes;
-            const targetSteps = 30;
+            const targetSteps = TARGET_DROPDOWN_OPTIONS;
             let stepMultiplier = Math.max(1, Math.round(viewSpan / (granularityMinutes * targetSteps)));
             
             // For very large spans, use larger steps
-            if (viewSpan > granularityMinutes * 1000) {
-                stepMultiplier = Math.max(10, stepMultiplier);
+            if (viewSpan > granularityMinutes * LARGE_SPAN_THRESHOLD) {
+                stepMultiplier = Math.max(LARGE_SPAN_MIN_MULTIPLIER, stepMultiplier);
             }
             
             const stepSize = granularityMinutes * stepMultiplier;
