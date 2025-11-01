@@ -1409,6 +1409,13 @@
             return value.toString().padStart(2, "0");
         }
 
+        // Calculate minimum span in minutes based on 20px minimum separation
+        function calculateMinPixelSpan(wrapperWidth, totalRange) {
+            const minPixels = 20; // Minimum pixel separation between handles
+            const effectiveWidth = wrapperWidth - 24; // Account for padding
+            return (minPixels / effectiveWidth) * totalRange;
+        }
+
         // Range slider functionality
         function updateRangeSliders() {
             updateBottomSlider();
@@ -1536,11 +1543,8 @@
             const boundaryMax = dragState.boundaryMax || viewEndMinutes;
             const minBottomSpan = 1440; // 1 day minimum span
             
-            // Calculate minimum span in minutes based on 20px minimum separation
-            const wrapperWidth = dragState.wrapperRect.width - 24; // Account for padding
-            const totalRange = dragState.totalRange;
-            const minPixels = 20; // Minimum pixel separation between handles
-            const minPixelSpan = (minPixels / wrapperWidth) * totalRange;
+            // Calculate minimum span based on 20px minimum separation
+            const minPixelSpan = calculateMinPixelSpan(dragState.wrapperRect.width, dragState.totalRange);
             
             // Use the larger of the time-based minimum or the pixel-based minimum
             const effectiveMinSpan = Math.max(minBottomSpan, minPixelSpan);
@@ -1642,11 +1646,8 @@
             const fineGranularity = getCurrentFineGranularity();
             const minTopSpan = GRANULARITY_TO_MINUTES[fineGranularity];
             
-            // Calculate minimum span in minutes based on 20px minimum separation
-            const wrapperWidth = dragState.wrapperRect.width - 24; // Account for padding
-            const totalRange = dragState.totalRange;
-            const minPixels = 20; // Minimum pixel separation between handles
-            const minPixelSpan = (minPixels / wrapperWidth) * totalRange;
+            // Calculate minimum span based on 20px minimum separation
+            const minPixelSpan = calculateMinPixelSpan(dragState.wrapperRect.width, dragState.totalRange);
             
             // Use the larger of the time-based minimum or the pixel-based minimum
             const effectiveMinSpan = Math.max(minTopSpan, minPixelSpan);
