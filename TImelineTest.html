@@ -275,6 +275,126 @@
             transform: translate(-50%, -50%) scale(1.05);
         }
 
+        /* Slider boundary control wrappers at ends of coarse slider */
+        .slider-boundary-control {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+        }
+
+        .slider-boundary-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
+            border: 3px solid white;
+            transition: transform 0.2s ease;
+        }
+
+        .slider-boundary-icon:hover {
+            transform: scale(1.1);
+        }
+
+        .slider-boundary-icon span {
+            font-size: 16px;
+            color: white;
+        }
+
+        .range-controls {
+            position: absolute;
+            top: calc(100% + 8px);
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+            padding: 1rem;
+            min-width: 420px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s ease 0.15s, visibility 0s linear 0.35s;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+        }
+        
+        /* Add invisible bridge to maintain hover state */
+        .range-controls::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            right: 0;
+            height: 16px;
+            background: transparent;
+        }
+
+        /* Keep popup visible with delay when hovering either icon or popup */
+        .slider-boundary-control:hover .range-controls {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition: opacity 0.2s ease, visibility 0s linear;
+        }
+
+        .range-controls:hover {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition: opacity 0.2s ease, visibility 0s linear;
+        }
+
+        .range-controls-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .range-controls-header span {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #0f172a;
+        }
+
+        .apply-btn {
+            padding: 0.4rem 0.9rem;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+            transition: transform 0.2s ease;
+        }
+
+        .apply-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(14, 165, 233, 0.4);
+        }
+
+        .apply-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Position start control popup to the right */
+        #sliderStartControl .range-controls {
+            left: 0;
+        }
+
+        /* Position end control popup to the left */
+        #sliderEndControl .range-controls {
+            right: 0;
+            left: auto;
+        }
+
         .range-slider-info {
             font-size: 0.85rem;
             color: var(--text-muted);
@@ -485,72 +605,7 @@
                         <option>Minute</option>
                     </select>
                 </div>
-                <div class="control-row">
-                    <label><span id="startLabel">View start</span></label>
-                    <div class="date-inputs">
-                        <div class="date-field">
-                            <label for="startEra" class="field-label">Era</label>
-                            <select id="startEra">
-                                <option value="-1">BCE</option>
-                                <option value="1">CE</option>
-                            </select>
-                        </div>
-                        <div class="date-field">
-                            <label for="startYearComp" class="field-label">Year</label>
-                            <input type="number" id="startYearComp" value="1000001" min="1" max="4540000000" />
-                        </div>
-                        <div class="date-field">
-                            <label for="startMonth" class="field-label">Month</label>
-                            <input type="number" id="startMonth" value="1" min="1" max="12" />
-                        </div>
-                        <div class="date-field">
-                            <label for="startDay" class="field-label">Day</label>
-                            <input type="number" id="startDay" value="1" min="1" max="31" />
-                        </div>
-                        <div class="date-field">
-                            <label for="startHour" class="field-label">Hour</label>
-                            <input type="number" id="startHour" value="0" min="0" max="23" />
-                        </div>
-                        <div class="date-field">
-                            <label for="startMinute" class="field-label">Minute</label>
-                            <input type="number" id="startMinute" value="0" min="0" max="59" />
-                        </div>
-                    </div>
-                </div>
-                <div class="control-row">
-                    <label><span id="endLabel">View end</span></label>
-                    <div class="date-inputs">
-                        <div class="date-field">
-                            <label for="endEra" class="field-label">Era</label>
-                            <select id="endEra">
-                                <option value="-1">BCE</option>
-                                <option value="1" selected>CE</option>
-                            </select>
-                        </div>
-                        <div class="date-field">
-                            <label for="endYearComp" class="field-label">Year</label>
-                            <input type="number" id="endYearComp" value="1000001" min="1" max="4540000000" />
-                        </div>
-                        <div class="date-field">
-                            <label for="endMonth" class="field-label">Month</label>
-                            <input type="number" id="endMonth" value="1" min="1" max="12" />
-                        </div>
-                        <div class="date-field">
-                            <label for="endDay" class="field-label">Day</label>
-                            <input type="number" id="endDay" value="1" min="1" max="31" />
-                        </div>
-                        <div class="date-field">
-                            <label for="endHour" class="field-label">Hour</label>
-                            <input type="number" id="endHour" value="0" min="0" max="23" />
-                        </div>
-                        <div class="date-field">
-                            <label for="endMinute" class="field-label">Minute</label>
-                            <input type="number" id="endMinute" value="0" min="0" max="59" />
-                        </div>
-                    </div>
-                </div>
                 <div class="controls-footer">
-                    <button id="updateRange">Update timeline window</button>
                     <div class="footnote">
                         Bounds: &minus;4.54 billion years to +4.54 billion years relative to the center point.
                     </div>
@@ -585,6 +640,90 @@
                         <div class="range-slider-selected" id="bottomSelected"></div>
                         <div class="range-handle" id="bottomStartHandle"></div>
                         <div class="range-handle" id="bottomEndHandle"></div>
+                        
+                        <!-- View Start Control at left end of coarse slider track -->
+                        <div class="slider-boundary-control" id="sliderStartControl" style="left: 0;">
+                            <div class="slider-boundary-icon">
+                                <span>⚙</span>
+                            </div>
+                            <div class="range-controls" id="startControls">
+                                <div class="range-controls-header">
+                                    <span>View Start</span>
+                                    <button class="apply-btn" id="applyStartBtn">Apply</button>
+                                </div>
+                                <div class="date-inputs">
+                                    <div class="date-field">
+                                        <label for="startEra" class="field-label">Era</label>
+                                        <select id="startEra">
+                                            <option value="-1">BCE</option>
+                                            <option value="1">CE</option>
+                                        </select>
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="startYearComp" class="field-label">Year</label>
+                                        <input type="number" id="startYearComp" value="1000001" min="1" max="4540000000" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="startMonth" class="field-label">Month</label>
+                                        <input type="number" id="startMonth" value="1" min="1" max="12" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="startDay" class="field-label">Day</label>
+                                        <input type="number" id="startDay" value="1" min="1" max="31" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="startHour" class="field-label">Hour</label>
+                                        <input type="number" id="startHour" value="0" min="0" max="23" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="startMinute" class="field-label">Minute</label>
+                                        <input type="number" id="startMinute" value="0" min="0" max="59" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- View End Control at right end of coarse slider track -->
+                        <div class="slider-boundary-control" id="sliderEndControl" style="right: 0;">
+                            <div class="slider-boundary-icon">
+                                <span>⚙</span>
+                            </div>
+                            <div class="range-controls" id="endControls">
+                                <div class="range-controls-header">
+                                    <span>View End</span>
+                                    <button class="apply-btn" id="applyEndBtn">Apply</button>
+                                </div>
+                                <div class="date-inputs">
+                                    <div class="date-field">
+                                        <label for="endEra" class="field-label">Era</label>
+                                        <select id="endEra">
+                                            <option value="-1">BCE</option>
+                                            <option value="1" selected>CE</option>
+                                        </select>
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="endYearComp" class="field-label">Year</label>
+                                        <input type="number" id="endYearComp" value="1000001" min="1" max="4540000000" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="endMonth" class="field-label">Month</label>
+                                        <input type="number" id="endMonth" value="1" min="1" max="12" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="endDay" class="field-label">Day</label>
+                                        <input type="number" id="endDay" value="1" min="1" max="31" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="endHour" class="field-label">Hour</label>
+                                        <input type="number" id="endHour" value="0" min="0" max="23" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="endMinute" class="field-label">Minute</label>
+                                        <input type="number" id="endMinute" value="0" min="0" max="59" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="range-slider-info" id="bottomInfo"></div>
                 </div>
@@ -670,9 +809,6 @@
         const endHour = document.getElementById("endHour");
         const endMinute = document.getElementById("endMinute");
         
-        const startLabel = document.getElementById("startLabel");
-        const endLabel = document.getElementById("endLabel");
-        const updateRangeButton = document.getElementById("updateRange");
         const rangeDisplay = document.getElementById("rangeDisplay");
         const timelineTicks = document.getElementById("timelineTicks");
         const pointer = document.getElementById("timelinePointer");
@@ -685,6 +821,8 @@
         const bottomStartHandle = document.getElementById("bottomStartHandle");
         const bottomEndHandle = document.getElementById("bottomEndHandle");
         const bottomInfo = document.getElementById("bottomInfo");
+        const applyStartBtn = document.getElementById("applyStartBtn");
+        const applyEndBtn = document.getElementById("applyEndBtn");
 
         // Top timeline elements
         const topSliderWrapper = document.getElementById("topSliderWrapper");
@@ -1504,6 +1642,14 @@
         topEndHandle.addEventListener('mousedown', (e) => startTopDrag('end', e));
         topSelected.addEventListener('mousedown', (e) => startTopDrag('range', e));
 
+        // Apply button handlers
+        applyStartBtn.addEventListener("click", () => {
+            updateViewRange();
+        });
+
+        applyEndBtn.addEventListener("click", () => {
+            updateViewRange();
+        });
 
         granularitySelect.addEventListener("change", () => {
             rebuildTicks();
@@ -1527,8 +1673,6 @@
                 }
             });
         });
-
-        updateRangeButton.addEventListener("click", updateViewRange);
 
         // Initialize
         initializeTimelines();
