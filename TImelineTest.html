@@ -257,14 +257,17 @@
             position: absolute;
             top: 50%;
             transform: translate(-50%, -50%);
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--accent), var(--accent-dark));
             cursor: pointer;
             box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
             border: 3px solid white;
             z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .range-handle:hover {
@@ -275,41 +278,105 @@
             transform: translate(-50%, -50%) scale(1.05);
         }
 
+        .handle-icon {
+            font-size: 14px;
+            color: white;
+            pointer-events: none;
+        }
+
+        .range-handle-wrapper {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 20;
+        }
+
+        .range-controls {
+            position: absolute;
+            top: calc(100% + 12px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+            padding: 1rem;
+            min-width: 420px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+        }
+
+        .range-handle-wrapper:hover .range-controls,
+        .range-controls:hover {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) translateY(4px);
+        }
+
+        .range-controls-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .range-controls-header span {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #0f172a;
+        }
+
+        .apply-btn {
+            padding: 0.4rem 0.9rem;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+            transition: transform 0.2s ease;
+        }
+
+        .apply-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(14, 165, 233, 0.4);
+        }
+
+        .apply-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Position start handle controls to the right, end handle to the left */
+        #bottomStartHandleWrapper .range-controls {
+            left: 0;
+            transform: translateX(0);
+        }
+
+        #bottomStartHandleWrapper:hover .range-controls,
+        #bottomStartHandleWrapper .range-controls:hover {
+            transform: translateX(0) translateY(4px);
+        }
+
+        #bottomEndHandleWrapper .range-controls {
+            left: auto;
+            right: 0;
+            transform: translateX(0);
+        }
+
+        #bottomEndHandleWrapper:hover .range-controls,
+        #bottomEndHandleWrapper .range-controls:hover {
+            transform: translateX(0) translateY(4px);
+        }
+
         .range-slider-info {
             font-size: 0.85rem;
             color: var(--text-muted);
             margin-top: 0.25rem;
-        }
-
-        .coarse-controls {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .coarse-control-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .coarse-control-item select {
-            padding: 0.6rem 0.75rem;
-            font-size: 0.9rem;
-        }
-
-        /* Hide bottom slider handles by default */
-        #bottomSliderWrapper .range-handle {
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
-        }
-
-        /* Show bottom slider handles only on hover of the slider wrapper */
-        #bottomSliderWrapper:hover .range-handle {
-            opacity: 1;
-            pointer-events: auto;
         }
 
         input[type="range"] {
@@ -516,72 +583,7 @@
                         <option>Minute</option>
                     </select>
                 </div>
-                <div class="control-row">
-                    <label><span id="startLabel">View start</span></label>
-                    <div class="date-inputs">
-                        <div class="date-field">
-                            <label for="startEra" class="field-label">Era</label>
-                            <select id="startEra">
-                                <option value="-1">BCE</option>
-                                <option value="1">CE</option>
-                            </select>
-                        </div>
-                        <div class="date-field">
-                            <label for="startYearComp" class="field-label">Year</label>
-                            <input type="number" id="startYearComp" value="1000001" min="1" max="4540000000" />
-                        </div>
-                        <div class="date-field">
-                            <label for="startMonth" class="field-label">Month</label>
-                            <input type="number" id="startMonth" value="1" min="1" max="12" />
-                        </div>
-                        <div class="date-field">
-                            <label for="startDay" class="field-label">Day</label>
-                            <input type="number" id="startDay" value="1" min="1" max="31" />
-                        </div>
-                        <div class="date-field">
-                            <label for="startHour" class="field-label">Hour</label>
-                            <input type="number" id="startHour" value="0" min="0" max="23" />
-                        </div>
-                        <div class="date-field">
-                            <label for="startMinute" class="field-label">Minute</label>
-                            <input type="number" id="startMinute" value="0" min="0" max="59" />
-                        </div>
-                    </div>
-                </div>
-                <div class="control-row">
-                    <label><span id="endLabel">View end</span></label>
-                    <div class="date-inputs">
-                        <div class="date-field">
-                            <label for="endEra" class="field-label">Era</label>
-                            <select id="endEra">
-                                <option value="-1">BCE</option>
-                                <option value="1" selected>CE</option>
-                            </select>
-                        </div>
-                        <div class="date-field">
-                            <label for="endYearComp" class="field-label">Year</label>
-                            <input type="number" id="endYearComp" value="1000001" min="1" max="4540000000" />
-                        </div>
-                        <div class="date-field">
-                            <label for="endMonth" class="field-label">Month</label>
-                            <input type="number" id="endMonth" value="1" min="1" max="12" />
-                        </div>
-                        <div class="date-field">
-                            <label for="endDay" class="field-label">Day</label>
-                            <input type="number" id="endDay" value="1" min="1" max="31" />
-                        </div>
-                        <div class="date-field">
-                            <label for="endHour" class="field-label">Hour</label>
-                            <input type="number" id="endHour" value="0" min="0" max="23" />
-                        </div>
-                        <div class="date-field">
-                            <label for="endMinute" class="field-label">Minute</label>
-                            <input type="number" id="endMinute" value="0" min="0" max="59" />
-                        </div>
-                    </div>
-                </div>
                 <div class="controls-footer">
-                    <button id="updateRange">Update timeline window</button>
                     <div class="footnote">
                         Bounds: &minus;4.54 billion years to +4.54 billion years relative to the center point.
                     </div>
@@ -611,21 +613,92 @@
                 <!-- Bottom Timeline: Coarse Range Selector -->
                 <div class="range-slider-container">
                     <div class="range-slider-label">Bottom Timeline (Coarse Level)</div>
-                    <div class="coarse-controls">
-                        <div class="coarse-control-item">
-                            <label for="coarseStartSelect" class="field-label">Start</label>
-                            <select id="coarseStartSelect"></select>
-                        </div>
-                        <div class="coarse-control-item">
-                            <label for="coarseEndSelect" class="field-label">End</label>
-                            <select id="coarseEndSelect"></select>
-                        </div>
-                    </div>
                     <div class="range-slider-wrapper" id="bottomSliderWrapper">
                         <div class="range-slider-track"></div>
                         <div class="range-slider-selected" id="bottomSelected"></div>
-                        <div class="range-handle" id="bottomStartHandle"></div>
-                        <div class="range-handle" id="bottomEndHandle"></div>
+                        
+                        <!-- Start Handle with Expandable Controls -->
+                        <div class="range-handle-wrapper" id="bottomStartHandleWrapper">
+                            <div class="range-handle" id="bottomStartHandle">
+                                <span class="handle-icon">⚙</span>
+                            </div>
+                            <div class="range-controls" id="startControls">
+                                <div class="range-controls-header">
+                                    <span>View Start</span>
+                                    <button class="apply-btn" id="applyStartBtn">Apply</button>
+                                </div>
+                                <div class="date-inputs">
+                                    <div class="date-field">
+                                        <label for="startEra" class="field-label">Era</label>
+                                        <select id="startEra">
+                                            <option value="-1">BCE</option>
+                                            <option value="1">CE</option>
+                                        </select>
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="startYearComp" class="field-label">Year</label>
+                                        <input type="number" id="startYearComp" value="1000001" min="1" max="4540000000" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="startMonth" class="field-label">Month</label>
+                                        <input type="number" id="startMonth" value="1" min="1" max="12" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="startDay" class="field-label">Day</label>
+                                        <input type="number" id="startDay" value="1" min="1" max="31" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="startHour" class="field-label">Hour</label>
+                                        <input type="number" id="startHour" value="0" min="0" max="23" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="startMinute" class="field-label">Minute</label>
+                                        <input type="number" id="startMinute" value="0" min="0" max="59" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- End Handle with Expandable Controls -->
+                        <div class="range-handle-wrapper" id="bottomEndHandleWrapper">
+                            <div class="range-handle" id="bottomEndHandle">
+                                <span class="handle-icon">⚙</span>
+                            </div>
+                            <div class="range-controls" id="endControls">
+                                <div class="range-controls-header">
+                                    <span>View End</span>
+                                    <button class="apply-btn" id="applyEndBtn">Apply</button>
+                                </div>
+                                <div class="date-inputs">
+                                    <div class="date-field">
+                                        <label for="endEra" class="field-label">Era</label>
+                                        <select id="endEra">
+                                            <option value="-1">BCE</option>
+                                            <option value="1" selected>CE</option>
+                                        </select>
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="endYearComp" class="field-label">Year</label>
+                                        <input type="number" id="endYearComp" value="1000001" min="1" max="4540000000" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="endMonth" class="field-label">Month</label>
+                                        <input type="number" id="endMonth" value="1" min="1" max="12" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="endDay" class="field-label">Day</label>
+                                        <input type="number" id="endDay" value="1" min="1" max="31" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="endHour" class="field-label">Hour</label>
+                                        <input type="number" id="endHour" value="0" min="0" max="23" />
+                                    </div>
+                                    <div class="date-field">
+                                        <label for="endMinute" class="field-label">                                        <input type="number" id="endMinute" value="0" min="0" max="59" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="range-slider-info" id="bottomInfo"></div>
                 </div>
@@ -654,11 +727,6 @@
         const HALF_SPAN_MINUTES = EARTH_AGE_YEARS * MINUTES_PER_YEAR;
         const TIMELINE_MIN = -HALF_SPAN_MINUTES;
         const TIMELINE_MAX = HALF_SPAN_MINUTES;
-
-        // Dropdown generation constants
-        const TARGET_DROPDOWN_OPTIONS = 30;
-        const LARGE_SPAN_THRESHOLD = 1000;
-        const LARGE_SPAN_MIN_MULTIPLIER = 10;
 
         const GRANULARITY_TO_MINUTES = {
             Eon: MINUTES_PER_YEAR * 500_000_000,
@@ -716,9 +784,6 @@
         const endHour = document.getElementById("endHour");
         const endMinute = document.getElementById("endMinute");
         
-        const startLabel = document.getElementById("startLabel");
-        const endLabel = document.getElementById("endLabel");
-        const updateRangeButton = document.getElementById("updateRange");
         const rangeDisplay = document.getElementById("rangeDisplay");
         const timelineTicks = document.getElementById("timelineTicks");
         const pointer = document.getElementById("timelinePointer");
@@ -730,9 +795,11 @@
         const bottomSelected = document.getElementById("bottomSelected");
         const bottomStartHandle = document.getElementById("bottomStartHandle");
         const bottomEndHandle = document.getElementById("bottomEndHandle");
+        const bottomStartHandleWrapper = document.getElementById("bottomStartHandleWrapper");
+        const bottomEndHandleWrapper = document.getElementById("bottomEndHandleWrapper");
         const bottomInfo = document.getElementById("bottomInfo");
-        const coarseStartSelect = document.getElementById("coarseStartSelect");
-        const coarseEndSelect = document.getElementById("coarseEndSelect");
+        const applyStartBtn = document.getElementById("applyStartBtn");
+        const applyEndBtn = document.getElementById("applyEndBtn");
 
         // Top timeline elements
         const topSliderWrapper = document.getElementById("topSliderWrapper");
@@ -1270,151 +1337,6 @@
             return value.toString().padStart(2, "0");
         }
 
-        // Populate coarse slider dropdowns with preset options
-        function populateCoarseDropdowns() {
-            const options = generateCoarseOptions();
-            
-            // Clear existing options
-            coarseStartSelect.innerHTML = '';
-            coarseEndSelect.innerHTML = '';
-            
-            // Populate start dropdown
-            options.forEach(opt => {
-                const option = document.createElement('option');
-                option.value = opt.minutes;
-                option.textContent = opt.label;
-                coarseStartSelect.appendChild(option);
-            });
-            
-            // Populate end dropdown
-            options.forEach(opt => {
-                const option = document.createElement('option');
-                option.value = opt.minutes;
-                option.textContent = opt.label;
-                coarseEndSelect.appendChild(option);
-            });
-            
-            // Set current values
-            updateCoarseDropdownSelections();
-        }
-
-        // Generate options for coarse dropdowns based on view boundaries
-        function generateCoarseOptions() {
-            const options = [];
-            const granularity = granularitySelect.value;
-            const granularityMinutes = GRANULARITY_TO_MINUTES[granularity];
-            
-            // Calculate appropriate step size (make it larger for coarse selection)
-            // Target approximately TARGET_DROPDOWN_OPTIONS (30) options
-            const viewSpan = viewEndMinutes - viewStartMinutes;
-            const targetSteps = TARGET_DROPDOWN_OPTIONS;
-            let stepMultiplier = Math.max(1, Math.round(viewSpan / (granularityMinutes * targetSteps)));
-            
-            // For very large spans, use larger steps
-            if (viewSpan > granularityMinutes * LARGE_SPAN_THRESHOLD) {
-                stepMultiplier = Math.max(LARGE_SPAN_MIN_MULTIPLIER, stepMultiplier);
-            }
-            
-            const stepSize = granularityMinutes * stepMultiplier;
-            
-            // Generate options from viewStartMinutes to viewEndMinutes
-            for (let minutes = viewStartMinutes; minutes <= viewEndMinutes; minutes += stepSize) {
-                const clampedMinutes = Math.min(minutes, viewEndMinutes);
-                options.push({
-                    minutes: clampedMinutes,
-                    label: formatSliderLabel(clampedMinutes, granularity)
-                });
-                
-                if (clampedMinutes >= viewEndMinutes) break;
-            }
-            
-            return options;
-        }
-
-        // Update dropdown selections to match current bottom slider values
-        function updateCoarseDropdownSelections() {
-            // Find closest option to current bottomStartMinutes
-            let closestStartIndex = 0;
-            let minStartDiff = Infinity;
-            
-            for (let i = 0; i < coarseStartSelect.options.length; i++) {
-                const optionMinutes = parseFloat(coarseStartSelect.options[i].value);
-                const diff = Math.abs(optionMinutes - bottomStartMinutes);
-                if (diff < minStartDiff) {
-                    minStartDiff = diff;
-                    closestStartIndex = i;
-                }
-            }
-            
-            coarseStartSelect.selectedIndex = closestStartIndex;
-            
-            // Find closest option to current bottomEndMinutes
-            let closestEndIndex = coarseEndSelect.options.length - 1;
-            let minEndDiff = Infinity;
-            
-            for (let i = 0; i < coarseEndSelect.options.length; i++) {
-                const optionMinutes = parseFloat(coarseEndSelect.options[i].value);
-                const diff = Math.abs(optionMinutes - bottomEndMinutes);
-                if (diff < minEndDiff) {
-                    minEndDiff = diff;
-                    closestEndIndex = i;
-                }
-            }
-            
-            coarseEndSelect.selectedIndex = closestEndIndex;
-        }
-
-        // Handle coarse dropdown changes
-        function handleCoarseDropdownChange() {
-            const newStart = parseFloat(coarseStartSelect.value);
-            const newEnd = parseFloat(coarseEndSelect.value);
-            
-            // Ensure start is before end
-            if (newStart >= newEnd) {
-                // If start >= end, adjust the other dropdown
-                if (coarseStartSelect === document.activeElement) {
-                    // User changed start, so adjust end
-                    const nextEndIndex = Math.min(coarseEndSelect.selectedIndex + 1, coarseEndSelect.options.length - 1);
-                    coarseEndSelect.selectedIndex = nextEndIndex;
-                    bottomEndMinutes = parseFloat(coarseEndSelect.value);
-                } else {
-                    // User changed end, so adjust start
-                    const prevStartIndex = Math.max(coarseStartSelect.selectedIndex - 1, 0);
-                    coarseStartSelect.selectedIndex = prevStartIndex;
-                    bottomStartMinutes = parseFloat(coarseStartSelect.value);
-                }
-            }
-            
-            bottomStartMinutes = parseFloat(coarseStartSelect.value);
-            bottomEndMinutes = parseFloat(coarseEndSelect.value);
-            
-            // Constrain top timeline within new bottom bounds
-            const bottomSpan = bottomEndMinutes - bottomStartMinutes;
-            const fineGranularity = calculateFineGranularity(bottomSpan);
-            const minTopSpan = GRANULARITY_TO_MINUTES[fineGranularity];
-            
-            // Adjust top timeline if it's outside new bottom bounds
-            if (topStartMinutes < bottomStartMinutes || topEndMinutes > bottomEndMinutes) {
-                const bottomMidpoint = (bottomStartMinutes + bottomEndMinutes) / 2;
-                const topHalfSpan = Math.min(bottomSpan / 4, minTopSpan * 10) / 2;
-                topStartMinutes = Math.max(bottomStartMinutes, bottomMidpoint - topHalfSpan);
-                topEndMinutes = Math.min(bottomEndMinutes, bottomMidpoint + topHalfSpan);
-            }
-            
-            // Ensure minimum span
-            if (topEndMinutes - topStartMinutes < minTopSpan) {
-                topEndMinutes = Math.min(bottomEndMinutes, topStartMinutes + minTopSpan);
-                if (topEndMinutes - topStartMinutes < minTopSpan) {
-                    topStartMinutes = Math.max(bottomStartMinutes, topEndMinutes - minTopSpan);
-                }
-            }
-            
-            updateRangeSliders();
-            refreshRangeDisplay();
-            rebuildTicks();
-            updatePointerAndDetails();
-        }
-
         // Range slider functionality
         function updateRangeSliders() {
             updateBottomSlider();
@@ -1427,8 +1349,8 @@
             
             // Prevent division by zero
             if (totalRange === 0) {
-                bottomStartHandle.style.left = '50%';
-                bottomEndHandle.style.left = '50%';
+                bottomStartHandleWrapper.style.left = '50%';
+                bottomEndHandleWrapper.style.left = '50%';
                 bottomSelected.style.left = '50%';
                 bottomSelected.style.width = '0%';
                 bottomInfo.textContent = 'Range: Invalid (date range is zero)';
@@ -1438,8 +1360,8 @@
             const startPercent = ((bottomStartMinutes - viewStartMinutes) / totalRange) * 100;
             const endPercent = ((bottomEndMinutes - viewStartMinutes) / totalRange) * 100;
             
-            bottomStartHandle.style.left = `${startPercent}%`;
-            bottomEndHandle.style.left = `${endPercent}%`;
+            bottomStartHandleWrapper.style.left = `${startPercent}%`;
+            bottomEndHandleWrapper.style.left = `${endPercent}%`;
             bottomSelected.style.left = `${startPercent}%`;
             bottomSelected.style.width = `${endPercent - startPercent}%`;
             
@@ -1697,17 +1619,20 @@
         topEndHandle.addEventListener('mousedown', (e) => startTopDrag('end', e));
         topSelected.addEventListener('mousedown', (e) => startTopDrag('range', e));
 
+        // Apply button handlers
+        applyStartBtn.addEventListener("click", () => {
+            updateViewRange();
+        });
+
+        applyEndBtn.addEventListener("click", () => {
+            updateViewRange();
+        });
 
         granularitySelect.addEventListener("change", () => {
             rebuildTicks();
             updateRangeSliders();
             updatePointerAndDetails();
-            populateCoarseDropdowns(); // Repopulate dropdowns when granularity changes
         });
-
-        // Event listeners for coarse slider dropdowns
-        coarseStartSelect.addEventListener("change", handleCoarseDropdownChange);
-        coarseEndSelect.addEventListener("change", handleCoarseDropdownChange);
 
         // Add event listeners to all date component inputs
         const allDateInputs = [
@@ -1718,25 +1643,17 @@
         allDateInputs.forEach(input => {
             input.addEventListener("change", () => {
                 updateViewRange();
-                populateCoarseDropdowns(); // Repopulate dropdowns when view range changes
             });
             input.addEventListener("keydown", event => {
                 if (event.key === "Enter") {
                     updateViewRange();
-                    populateCoarseDropdowns(); // Repopulate dropdowns when view range changes
                 }
             });
-        });
-
-        updateRangeButton.addEventListener("click", () => {
-            updateViewRange();
-            populateCoarseDropdowns(); // Repopulate dropdowns when view range changes
         });
 
         // Initialize
         initializeTimelines();
         updateDateInputs();
-        populateCoarseDropdowns(); // Initial population of dropdowns
         updateRangeSliders();
         refreshRangeDisplay();
         rebuildTicks();
