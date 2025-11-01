@@ -1082,8 +1082,8 @@
             endMinutes = clampMinutes(endMinutes);
 
             if (startMinutes === endMinutes) {
-                // Use a reasonable default minimum span (1 year)
-                const minimumSpan = MINUTES_PER_YEAR;
+                // Use a reasonable default minimum span (1 day)
+                const minimumSpan = 1440; // 1 day in minutes
                 if (endMinutes >= TIMELINE_MAX) {
                     startMinutes = Math.max(TIMELINE_MIN, endMinutes - minimumSpan);
                 }
@@ -1113,8 +1113,8 @@
                 bottomEndMinutes = midpoint + quarterSpan;
             }
             
-            // Ensure bottom timeline has a reasonable minimum span (1 year)
-            const minBottomSpan = MINUTES_PER_YEAR;
+            // Ensure bottom timeline has a reasonable minimum span (1 day)
+            const minBottomSpan = 1440; // 1 day in minutes
             if (bottomEndMinutes - bottomStartMinutes < minBottomSpan) {
                 bottomEndMinutes = Math.min(viewEndMinutes, bottomStartMinutes + minBottomSpan);
                 if (bottomEndMinutes - bottomStartMinutes < minBottomSpan) {
@@ -1534,7 +1534,7 @@
         function handleBottomDrag(deltaMinutes) {
             const boundaryMin = dragState.boundaryMin || viewStartMinutes;
             const boundaryMax = dragState.boundaryMax || viewEndMinutes;
-            const minBottomSpan = MINUTES_PER_YEAR; // Use a reasonable default
+            const minBottomSpan = 1440; // 1 day minimum span
             
             if (dragState.type === 'start') {
                 let newStart = dragState.startMinutesStart + deltaMinutes;
