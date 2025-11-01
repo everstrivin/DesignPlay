@@ -102,6 +102,33 @@
             margin-bottom: 0.25rem;
         }
 
+        .date-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .date-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .field-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .date-field input[type="number"],
+        .date-field select {
+            padding: 0.6rem 0.5rem;
+            font-size: 0.9rem;
+        }
+
         .hint {
             font-size: 0.85rem;
             color: var(--text-muted);
@@ -379,19 +406,67 @@
                     </select>
                 </div>
                 <div class="control-row">
-                    <label for="startYear"><span id="startLabel">View start (years from center)</span></label>
-                    <div>
-                        <input type="number" id="startYear" value="-1000000" step="1000" />
-                        <input type="range" id="startSlider" min="-4540000000" max="4540000000" value="-1000000" step="1000" />
-                        <div class="hint">Negative values move into the past.</div>
+                    <label><span id="startLabel">View start</span></label>
+                    <div class="date-inputs">
+                        <div class="date-field">
+                            <label for="startEra" class="field-label">Era</label>
+                            <select id="startEra">
+                                <option value="-1">BCE</option>
+                                <option value="1">CE</option>
+                            </select>
+                        </div>
+                        <div class="date-field">
+                            <label for="startYearComp" class="field-label">Year</label>
+                            <input type="number" id="startYearComp" value="1000001" min="1" max="4540000000" />
+                        </div>
+                        <div class="date-field">
+                            <label for="startMonth" class="field-label">Month</label>
+                            <input type="number" id="startMonth" value="1" min="1" max="12" />
+                        </div>
+                        <div class="date-field">
+                            <label for="startDay" class="field-label">Day</label>
+                            <input type="number" id="startDay" value="1" min="1" max="31" />
+                        </div>
+                        <div class="date-field">
+                            <label for="startHour" class="field-label">Hour</label>
+                            <input type="number" id="startHour" value="0" min="0" max="23" />
+                        </div>
+                        <div class="date-field">
+                            <label for="startMinute" class="field-label">Minute</label>
+                            <input type="number" id="startMinute" value="0" min="0" max="59" />
+                        </div>
                     </div>
                 </div>
                 <div class="control-row">
-                    <label for="endYear"><span id="endLabel">View end (years from center)</span></label>
-                    <div>
-                        <input type="number" id="endYear" value="1000000" step="1000" />
-                        <input type="range" id="endSlider" min="-4540000000" max="4540000000" value="1000000" step="1000" />
-                        <div class="hint">Positive values move into the future.</div>
+                    <label><span id="endLabel">View end</span></label>
+                    <div class="date-inputs">
+                        <div class="date-field">
+                            <label for="endEra" class="field-label">Era</label>
+                            <select id="endEra">
+                                <option value="-1">BCE</option>
+                                <option value="1" selected>CE</option>
+                            </select>
+                        </div>
+                        <div class="date-field">
+                            <label for="endYearComp" class="field-label">Year</label>
+                            <input type="number" id="endYearComp" value="1000001" min="1" max="4540000000" />
+                        </div>
+                        <div class="date-field">
+                            <label for="endMonth" class="field-label">Month</label>
+                            <input type="number" id="endMonth" value="1" min="1" max="12" />
+                        </div>
+                        <div class="date-field">
+                            <label for="endDay" class="field-label">Day</label>
+                            <input type="number" id="endDay" value="1" min="1" max="31" />
+                        </div>
+                        <div class="date-field">
+                            <label for="endHour" class="field-label">Hour</label>
+                            <input type="number" id="endHour" value="0" min="0" max="23" />
+                        </div>
+                        <div class="date-field">
+                            <label for="endMinute" class="field-label">Minute</label>
+                            <input type="number" id="endMinute" value="0" min="0" max="59" />
+                        </div>
                     </div>
                 </div>
                 <div class="controls-footer">
@@ -468,21 +543,6 @@
             Minute: { singular: "minute", plural: "minutes" }
         };
 
-        const STEP_SIZES = {
-            Eon: 1,
-            Epoch: 1,
-            Age: 10,
-            Millennium: 10,
-            Century: 10,
-            Decade: 10,
-            Year: 1000,
-            Month: 100,
-            Week: 100,
-            Day: 100,
-            Hour: 1000,
-            Minute: 1000
-        };
-
         const compactFormatter = new Intl.NumberFormat("en-US", {
             notation: "compact",
             maximumFractionDigits: 1
@@ -492,10 +552,23 @@
         const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
         const granularitySelect = document.getElementById("granularity");
-        const startYearInput = document.getElementById("startYear");
-        const endYearInput = document.getElementById("endYear");
-        const startSlider = document.getElementById("startSlider");
-        const endSlider = document.getElementById("endSlider");
+        
+        // Start date components
+        const startEra = document.getElementById("startEra");
+        const startYearComp = document.getElementById("startYearComp");
+        const startMonth = document.getElementById("startMonth");
+        const startDay = document.getElementById("startDay");
+        const startHour = document.getElementById("startHour");
+        const startMinute = document.getElementById("startMinute");
+        
+        // End date components
+        const endEra = document.getElementById("endEra");
+        const endYearComp = document.getElementById("endYearComp");
+        const endMonth = document.getElementById("endMonth");
+        const endDay = document.getElementById("endDay");
+        const endHour = document.getElementById("endHour");
+        const endMinute = document.getElementById("endMinute");
+        
         const startLabel = document.getElementById("startLabel");
         const endLabel = document.getElementById("endLabel");
         const updateRangeButton = document.getElementById("updateRange");
@@ -506,11 +579,6 @@
         const pointerLabel = document.getElementById("pointerLabel");
         const currentTime = document.getElementById("currentTime");
 
-        startYearInput.min = -EARTH_AGE_YEARS;
-        startYearInput.max = EARTH_AGE_YEARS;
-        endYearInput.min = -EARTH_AGE_YEARS;
-        endYearInput.max = EARTH_AGE_YEARS;
-
         let viewStartMinutes = -1_000_000 * MINUTES_PER_YEAR;
         let viewEndMinutes = 1_000_000 * MINUTES_PER_YEAR;
 
@@ -518,65 +586,111 @@
             return Math.min(Math.max(value, TIMELINE_MIN), TIMELINE_MAX);
         }
 
-        function updateInputLabelsAndRanges() {
-            const granularity = granularitySelect.value;
-            const unitMinutes = GRANULARITY_TO_MINUTES[granularity];
-            const unitLabel = getUnitLabel(granularity, true, false);
+        // Convert date components to minutes from center
+        function dateComponentsToMinutes(era, year, month, day, hour, minute) {
+            const eraSign = parseInt(era);
+            const y = parseInt(year) || 1;
+            const m = parseInt(month) || 1;
+            const d = parseInt(day) || 1;
+            const h = parseInt(hour) || 0;
+            const min = parseInt(minute) || 0;
             
-            // Update labels
-            startLabel.textContent = `View start (${unitLabel} from center)`;
-            endLabel.textContent = `View end (${unitLabel} from center)`;
+            // Calculate total minutes from year 1 CE
+            let totalMinutes = 0;
             
-            // Calculate the current values in the selected unit
-            const startUnits = viewStartMinutes / unitMinutes;
-            const endUnits = viewEndMinutes / unitMinutes;
+            // Years (year 1 CE is at 0 minutes)
+            totalMinutes += (y - 1) * MINUTES_PER_YEAR * eraSign;
             
-            // Calculate min/max in the selected unit
-            const minUnits = TIMELINE_MIN / unitMinutes;
-            const maxUnits = TIMELINE_MAX / unitMinutes;
+            // Months (subtract 1 because month 1 is the start)
+            totalMinutes += (m - 1) * MINUTES_PER_MONTH * eraSign;
             
-            // Get appropriate step size from configuration
-            const step = STEP_SIZES[granularity] || 1000;
+            // Days (subtract 1 because day 1 is the start)
+            totalMinutes += (d - 1) * MINUTES_PER_DAY * eraSign;
             
-            // Update input fields
-            const roundedStart = Math.round(startUnits * 1000) / 1000;
-            const roundedEnd = Math.round(endUnits * 1000) / 1000;
+            // Hours
+            totalMinutes += h * MINUTES_PER_HOUR * eraSign;
             
-            startYearInput.value = roundedStart;
-            endYearInput.value = roundedEnd;
-            startYearInput.step = step;
-            endYearInput.step = step;
-            startYearInput.min = minUnits;
-            startYearInput.max = maxUnits;
-            endYearInput.min = minUnits;
-            endYearInput.max = maxUnits;
+            // Minutes
+            totalMinutes += min * eraSign;
             
-            // Update sliders with same precision
-            startSlider.min = minUnits;
-            startSlider.max = maxUnits;
-            endSlider.min = minUnits;
-            endSlider.max = maxUnits;
-            startSlider.step = step;
-            endSlider.step = step;
-            startSlider.value = roundedStart;
-            endSlider.value = roundedEnd;
+            return totalMinutes;
+        }
+
+        // Convert minutes from center to date components
+        function minutesToDateComponents(minutes) {
+            const era = minutes >= 0 ? 1 : -1;
+            const absMinutes = Math.abs(minutes);
+            
+            let remaining = absMinutes;
+            const years = Math.floor(remaining / MINUTES_PER_YEAR);
+            remaining -= years * MINUTES_PER_YEAR;
+            
+            const months = Math.floor(remaining / MINUTES_PER_MONTH);
+            remaining -= months * MINUTES_PER_MONTH;
+            
+            const days = Math.floor(remaining / MINUTES_PER_DAY);
+            remaining -= days * MINUTES_PER_DAY;
+            
+            const hours = Math.floor(remaining / MINUTES_PER_HOUR);
+            remaining -= hours * MINUTES_PER_HOUR;
+            
+            const mins = Math.floor(remaining);
+            
+            return {
+                era: era,
+                year: years + 1,  // Add 1 because there's no year 0
+                month: months + 1,  // Add 1 because months are 1-indexed
+                day: days + 1,  // Add 1 because days are 1-indexed
+                hour: hours,
+                minute: mins
+            };
+        }
+
+        // Update the date component inputs based on current viewStartMinutes and viewEndMinutes
+        function updateDateInputs() {
+            const startComponents = minutesToDateComponents(viewStartMinutes);
+            startEra.value = startComponents.era;
+            startYearComp.value = startComponents.year;
+            startMonth.value = startComponents.month;
+            startDay.value = startComponents.day;
+            startHour.value = startComponents.hour;
+            startMinute.value = startComponents.minute;
+            
+            const endComponents = minutesToDateComponents(viewEndMinutes);
+            endEra.value = endComponents.era;
+            endYearComp.value = endComponents.year;
+            endMonth.value = endComponents.month;
+            endDay.value = endComponents.day;
+            endHour.value = endComponents.hour;
+            endMinute.value = endComponents.minute;
         }
 
         function updateViewRange() {
-            const granularity = granularitySelect.value;
-            const unitMinutes = GRANULARITY_TO_MINUTES[granularity];
+            // Get start date components
+            let startMinutes = dateComponentsToMinutes(
+                startEra.value,
+                startYearComp.value,
+                startMonth.value,
+                startDay.value,
+                startHour.value,
+                startMinute.value
+            );
             
-            let startUnits = parseFloat(startYearInput.value);
-            let endUnits = parseFloat(endYearInput.value);
-            if (Number.isNaN(startUnits) || Number.isNaN(endUnits)) {
-                return;
-            }
-
-            let startMinutes = clampMinutes(startUnits * unitMinutes);
-            let endMinutes = clampMinutes(endUnits * unitMinutes);
+            // Get end date components
+            let endMinutes = dateComponentsToMinutes(
+                endEra.value,
+                endYearComp.value,
+                endMonth.value,
+                endDay.value,
+                endHour.value,
+                endMinute.value
+            );
+            
+            startMinutes = clampMinutes(startMinutes);
+            endMinutes = clampMinutes(endMinutes);
 
             if (startMinutes === endMinutes) {
-                const minimumSpan = GRANULARITY_TO_MINUTES[granularity];
+                const minimumSpan = GRANULARITY_TO_MINUTES[granularitySelect.value];
                 if (endMinutes >= TIMELINE_MAX) {
                     startMinutes = Math.max(TIMELINE_MIN, endMinutes - minimumSpan);
                 }
@@ -590,7 +704,7 @@
             viewStartMinutes = startMinutes;
             viewEndMinutes = endMinutes;
 
-            updateInputLabelsAndRanges();
+            updateDateInputs();
 
             slider.value = 500;
             refreshRangeDisplay();
@@ -890,57 +1004,31 @@
         }
 
         granularitySelect.addEventListener("change", () => {
-            updateInputLabelsAndRanges();
             rebuildTicks();
             updatePointerAndDetails();
         });
 
-        // Synchronize start slider with input
-        startSlider.addEventListener("input", () => {
-            startYearInput.value = startSlider.value;
-        });
+        // Add event listeners to all date component inputs
+        const allDateInputs = [
+            startEra, startYearComp, startMonth, startDay, startHour, startMinute,
+            endEra, endYearComp, endMonth, endDay, endHour, endMinute
+        ];
         
-        startSlider.addEventListener("change", () => {
-            updateViewRange();
-        });
-        
-        startYearInput.addEventListener("input", () => {
-            const value = parseFloat(startYearInput.value);
-            if (!Number.isNaN(value)) {
-                startSlider.value = value;
-            }
-        });
-
-        // Synchronize end slider with input
-        endSlider.addEventListener("input", () => {
-            endYearInput.value = endSlider.value;
-        });
-        
-        endSlider.addEventListener("change", () => {
-            updateViewRange();
-        });
-        
-        endYearInput.addEventListener("input", () => {
-            const value = parseFloat(endYearInput.value);
-            if (!Number.isNaN(value)) {
-                endSlider.value = value;
-            }
-        });
-
-        slider.addEventListener("input", updatePointerAndDetails);
-        updateRangeButton.addEventListener("click", updateViewRange);
-        [startYearInput, endYearInput].forEach(input => {
+        allDateInputs.forEach(input => {
+            input.addEventListener("change", () => {
+                updateViewRange();
+            });
             input.addEventListener("keydown", event => {
                 if (event.key === "Enter") {
                     updateViewRange();
                 }
             });
-            input.addEventListener("change", () => {
-                updateViewRange();
-            });
         });
 
-        updateInputLabelsAndRanges();
+        slider.addEventListener("input", updatePointerAndDetails);
+        updateRangeButton.addEventListener("click", updateViewRange);
+
+        updateDateInputs();
         refreshRangeDisplay();
         rebuildTicks();
         updatePointerAndDetails();
