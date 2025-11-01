@@ -465,6 +465,8 @@
             maximumFractionDigits: 1
         });
         const numberFormatter = new Intl.NumberFormat("en-US");
+        
+        const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
         const granularitySelect = document.getElementById("granularity");
         const startYearInput = document.getElementById("startYear");
@@ -643,23 +645,22 @@
             
             const mins = Math.floor(remaining);
             
+            // Ensure month index is within bounds
+            const monthIndex = Math.min(Math.max(months, 0), 11);
+            
             // Format based on granularity
             if (granularity === "Month") {
                 // Show Month and Year
-                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                return `${monthNames[months]} ${years + 1} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${years + 1} ${era}`;
             } else if (granularity === "Week" || granularity === "Day") {
                 // Show Month, Day, and Year
-                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                return `${monthNames[months]} ${days + 1}, ${years + 1} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${years + 1} ${era}`;
             } else if (granularity === "Hour") {
-                // Show Day and Time
-                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                return `${monthNames[months]} ${days + 1}, ${pad(hours)}:00`;
+                // Show Day and Time with Era
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${pad(hours)}:00 ${era}`;
             } else if (granularity === "Minute") {
-                // Show Time with minutes
-                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                return `${monthNames[months]} ${days + 1}, ${pad(hours)}:${pad(mins)}`;
+                // Show Time with minutes and Era
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${pad(hours)}:${pad(mins)} ${era}`;
             }
             
             return formatYearLabel(minutes);
