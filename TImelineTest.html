@@ -612,22 +612,56 @@
         }
 
         function formatTickLabel(minutes) {
-            const years = Math.floor(Math.abs(minutes) / MINUTES_PER_YEAR);
-            if (years < 1) {
-                if (minutes === 0) {
-                    return "Center";
-                }
-                const days = Math.floor(Math.abs(minutes) / MINUTES_PER_DAY);
-                if (days >= 1) {
-                    return `${days} day${days === 1 ? "" : "s"}`;
-                }
-                const hours = Math.floor(Math.abs(minutes) / MINUTES_PER_HOUR);
-                if (hours >= 1) {
-                    return `${hours} hour${hours === 1 ? "" : "s"}`;
-                }
-                const mins = Math.max(1, Math.round(Math.abs(minutes)));
-                return `${mins} minute${mins === 1 ? "" : "s"}`;
+            if (minutes === 0) {
+                return "Center";
             }
+            
+            const granularity = granularitySelect.value;
+            const era = minutes >= 0 ? "CE" : "BCE";
+            const absMinutes = Math.abs(minutes);
+            
+            // For large time scales (Eon, Epoch, Age, Millennium, Century, Decade, Year), use year-based format
+            if (granularity === "Eon" || granularity === "Epoch" || granularity === "Age" || 
+                granularity === "Millennium" || granularity === "Century" || granularity === "Decade" || 
+                granularity === "Year") {
+                return formatYearLabel(minutes);
+            }
+            
+            // Calculate date components
+            let remaining = absMinutes;
+            const years = Math.floor(remaining / MINUTES_PER_YEAR);
+            remaining -= years * MINUTES_PER_YEAR;
+            
+            const months = Math.floor(remaining / MINUTES_PER_MONTH);
+            remaining -= months * MINUTES_PER_MONTH;
+            
+            const days = Math.floor(remaining / MINUTES_PER_DAY);
+            remaining -= days * MINUTES_PER_DAY;
+            
+            const hours = Math.floor(remaining / MINUTES_PER_HOUR);
+            remaining -= hours * MINUTES_PER_HOUR;
+            
+            const mins = Math.floor(remaining);
+            
+            // Format based on granularity
+            if (granularity === "Month") {
+                // Show Month and Year
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                return `${monthNames[months]} ${years + 1} ${era}`;
+            } else if (granularity === "Week" || granularity === "Day") {
+                // Show Month, Day, and Year
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                return `${monthNames[months]} ${days + 1}, ${years + 1} ${era}`;
+            } else if (granularity === "Hour") {
+                // Show Day and Time
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                return `${monthNames[months]} ${days + 1}, ${pad(hours)}:00`;
+            } else if (granularity === "Minute") {
+                // Show Time with minutes
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                return `${monthNames[months]} ${days + 1}, ${pad(hours)}:${pad(mins)}`;
+            }
+            
             return formatYearLabel(minutes);
         }
 
