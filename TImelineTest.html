@@ -970,9 +970,10 @@
         }
 
         function refreshRangeDisplay() {
-            const startLabel = formatYearLabel(viewStartMinutes);
-            const endLabel = formatYearLabel(viewEndMinutes);
-            const spanMinutes = viewEndMinutes - viewStartMinutes;
+            // Display the top timeline's current range, not the view boundaries
+            const startLabel = formatYearLabel(topStartMinutes);
+            const endLabel = formatYearLabel(topEndMinutes);
+            const spanMinutes = topEndMinutes - topStartMinutes;
             let spanLabel;
             if (spanMinutes >= MINUTES_PER_YEAR) {
                 spanLabel = `${numberFormatter.format(Math.round(spanMinutes / MINUTES_PER_YEAR))} years`;
@@ -993,7 +994,8 @@
         function rebuildTicks() {
             timelineTicks.innerHTML = "";
             const segments = 10;
-            const rangeMinutes = viewEndMinutes - viewStartMinutes;
+            // Use top timeline's range for the ticks, not the view boundaries
+            const rangeMinutes = topEndMinutes - topStartMinutes;
 
             for (let i = 0; i <= segments; i++) {
                 const tick = document.createElement("div");
@@ -1083,6 +1085,9 @@
             // Calculate fine granularity dynamically based on bottom slider span
             const bottomSpan = bottomEndMinutes - bottomStartMinutes;
             const fineGranularity = calculateFineGranularity(bottomSpan);
+            
+            // Use the midpoint of the top timeline as the current view position
+            currentViewMinutes = (topStartMinutes + topEndMinutes) / 2;
             
             // Format the pointer label with fine granularity
             const unitsLabel = formatSliderLabel(currentViewMinutes, fineGranularity);
@@ -1427,7 +1432,10 @@
             }
             
             updateRangeSliders();
-            updateViewFromTopTimeline();
+            // Update the main view display to show the top timeline's range
+            refreshRangeDisplay();
+            rebuildTicks();
+            updatePointerAndDetails();
         }
 
         function handleTopDrag(deltaMinutes) {
@@ -1461,7 +1469,10 @@
             }
             
             updateRangeSliders();
-            updateViewFromTopTimeline();
+            // Update the main view display to show the top timeline's range
+            refreshRangeDisplay();
+            rebuildTicks();
+            updatePointerAndDetails();
         }
 
         function endDrag() {
