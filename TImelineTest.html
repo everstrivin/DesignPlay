@@ -655,6 +655,11 @@
         const TIMELINE_MIN = -HALF_SPAN_MINUTES;
         const TIMELINE_MAX = HALF_SPAN_MINUTES;
 
+        // Dropdown generation constants
+        const TARGET_DROPDOWN_OPTIONS = 30;
+        const LARGE_SPAN_THRESHOLD = 1000;
+        const LARGE_SPAN_MIN_MULTIPLIER = 10;
+
         const GRANULARITY_TO_MINUTES = {
             Eon: MINUTES_PER_YEAR * 500_000_000,
             Epoch: MINUTES_PER_YEAR * 50_000_000,
@@ -1295,10 +1300,6 @@
 
         // Generate options for coarse dropdowns based on view boundaries
         function generateCoarseOptions() {
-            const TARGET_DROPDOWN_OPTIONS = 30;
-            const LARGE_SPAN_THRESHOLD = 1000;
-            const LARGE_SPAN_MIN_MULTIPLIER = 10;
-            
             const options = [];
             const granularity = granularitySelect.value;
             const granularityMinutes = GRANULARITY_TO_MINUTES[granularity];
