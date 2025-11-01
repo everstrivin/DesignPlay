@@ -1163,8 +1163,9 @@
             bottomSelected.style.left = `${startPercent}%`;
             bottomSelected.style.width = `${endPercent - startPercent}%`;
             
-            const startLabel = formatYearLabel(bottomStartMinutes);
-            const endLabel = formatYearLabel(bottomEndMinutes);
+            const granularity = granularitySelect.value;
+            const startLabel = formatSliderLabel(bottomStartMinutes, granularity);
+            const endLabel = formatSliderLabel(bottomEndMinutes, granularity);
             bottomInfo.textContent = `Range: ${startLabel} to ${endLabel}`;
         }
 
