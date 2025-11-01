@@ -1344,7 +1344,16 @@
                 let newStart = dragState.startMinutesStart + deltaMinutes;
                 // Constrain within date input boundaries
                 newStart = Math.max(boundaryMin, Math.min(newStart, bottomEndMinutes - minBottomSpan));
+                newStart = Math.max(boundaryMin, newStart); // Ensure it doesn't go below min
                 bottomStartMinutes = newStart;
+                
+                // If start moved, ensure end respects boundaries too
+                if (bottomEndMinutes > boundaryMax) {
+                    bottomEndMinutes = boundaryMax;
+                }
+                if (bottomEndMinutes - bottomStartMinutes < minBottomSpan) {
+                    bottomEndMinutes = Math.min(boundaryMax, bottomStartMinutes + minBottomSpan);
+                }
                 
                 // Constrain top timeline within new bottom bounds
                 const bottomSpan = bottomEndMinutes - bottomStartMinutes;
@@ -1356,7 +1365,16 @@
                 let newEnd = dragState.startMinutesEnd + deltaMinutes;
                 // Constrain within date input boundaries
                 newEnd = Math.min(boundaryMax, Math.max(newEnd, bottomStartMinutes + minBottomSpan));
+                newEnd = Math.min(boundaryMax, newEnd); // Ensure it doesn't go above max
                 bottomEndMinutes = newEnd;
+                
+                // If end moved, ensure start respects boundaries too
+                if (bottomStartMinutes < boundaryMin) {
+                    bottomStartMinutes = boundaryMin;
+                }
+                if (bottomEndMinutes - bottomStartMinutes < minBottomSpan) {
+                    bottomStartMinutes = Math.max(boundaryMin, bottomEndMinutes - minBottomSpan);
+                }
                 
                 // Constrain top timeline within new bottom bounds
                 const bottomSpan = bottomEndMinutes - bottomStartMinutes;
@@ -1384,6 +1402,10 @@
                     newEnd = boundaryMax;
                     newStart = newEnd - span;
                 }
+                
+                // Double-check both are within bounds
+                newStart = Math.max(boundaryMin, Math.min(newStart, boundaryMax - span));
+                newEnd = Math.min(boundaryMax, Math.max(newEnd, boundaryMin + span));
                 
                 bottomStartMinutes = newStart;
                 bottomEndMinutes = newEnd;
