@@ -784,45 +784,47 @@
             
             const monthIndex = Math.min(Math.max(months, 0), 11);
             
-            // Format one level smaller than the selected granularity
+            // Format at the same granularity level as selected
             if (granularity === "Eon") {
-                // One level smaller: Epoch (millions of years)
+                // Show in billions of years for Eon scale
+                const eonYears = Math.round(years / 1_000_000_000);
+                return `${compactFormatter.format(eonYears)} B yrs ${era}`;
+            } else if (granularity === "Epoch") {
+                // Show in millions of years for Epoch scale
                 const epochYears = Math.round(years / 1_000_000);
                 return `${compactFormatter.format(epochYears)} M yrs ${era}`;
-            } else if (granularity === "Epoch") {
-                // One level smaller: Age (thousands of years)
+            } else if (granularity === "Age") {
+                // Show in thousands of years for Age scale
                 const ageYears = Math.round(years / 1000);
                 return `${compactFormatter.format(ageYears)}K yrs ${era}`;
-            } else if (granularity === "Age") {
-                // One level smaller: Millennium - show specific year
-                return `Year ${compactFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Millennium") {
-                // One level smaller: Century - show specific year
+                // Show specific year for Millennium
                 return `Year ${compactFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Century") {
-                // One level smaller: Decade - show specific year
-                return `Year ${numberFormatter.format(years + 1)} ${era}`;
+                // Show specific year for Century
+                return `Year ${compactFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Decade") {
-                // One level smaller: Year
+                // Show specific year for Decade
                 return `Year ${numberFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Year") {
-                // One level smaller: Month
-                return `${MONTH_NAMES[monthIndex]} ${numberFormatter.format(years + 1)} ${era}`;
+                // Show specific year
+                return `Year ${numberFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Month") {
-                // One level smaller: Week/Day
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${era}`;
+                // Show Month and Year
+                return `${MONTH_NAMES[monthIndex]} ${numberFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Week") {
-                // One level smaller: Day (show with day of month)
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${era}`;
+                // Show Week (approximate using day of year)
+                const weekNum = Math.floor((months * 30 + days) / 7) + 1;
+                return `Week ${weekNum}, ${numberFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Day") {
-                // One level smaller: Hour
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${pad(hours)}:00 ${era}`;
+                // Show Month, Day, and Year
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Hour") {
-                // One level smaller: Minute
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${pad(hours)}:${pad(mins)} ${era}`;
+                // Show Day and Time with Era
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${pad(hours)}:00 ${era}`;
             } else if (granularity === "Minute") {
-                // Minute is the smallest, show seconds (always 00)
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${pad(hours)}:${pad(mins)}:00 ${era}`;
+                // Show Time with minutes and Era
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${pad(hours)}:${pad(mins)} ${era}`;
             }
             
             // Fallback
