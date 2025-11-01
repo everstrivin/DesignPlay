@@ -789,6 +789,15 @@
         });
         const numberFormatter = new Intl.NumberFormat("en-US");
         
+        // Custom formatter for years: no commas for 4-digit years (1000-9999)
+        function formatYear(year) {
+            const absYear = Math.abs(year);
+            if (absYear >= 1000 && absYear <= 9999) {
+                return absYear.toString();
+            }
+            return numberFormatter.format(absYear);
+        }
+        
         const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
         const granularitySelect = document.getElementById("granularity");
@@ -1189,28 +1198,28 @@
                 return `Year ${compactFormatter.format(components.year)} ${era}`;
             } else if (granularity === "Decade") {
                 // Show specific year for Decade
-                return `Year ${numberFormatter.format(components.year)} ${era}`;
+                return `Year ${formatYear(components.year)} ${era}`;
             } else if (granularity === "Year") {
                 // Show specific year
-                return `Year ${numberFormatter.format(components.year)} ${era}`;
+                return `Year ${formatYear(components.year)} ${era}`;
             } else if (granularity === "Month") {
                 // Show Month and Year
-                return `${MONTH_NAMES[monthIndex]} ${numberFormatter.format(components.year)} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${formatYear(components.year)} ${era}`;
             } else if (granularity === "Week") {
                 // Show Week (calculate from day of year using components)
                 // components.month and components.day already account for BCE calendar order
                 const dayOfYear = (components.month - 1) * 30 + (components.day - 1);
                 const weekNum = Math.floor(dayOfYear / 7) + 1;
-                return `Week ${weekNum}, ${numberFormatter.format(components.year)} ${era}`;
+                return `Week ${weekNum}, ${formatYear(components.year)} ${era}`;
             } else if (granularity === "Day") {
                 // Show Month, Day, and Year
-                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${numberFormatter.format(components.year)} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${formatYear(components.year)} ${era}`;
             } else if (granularity === "Hour") {
                 // Show Day and Time with Era
-                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${numberFormatter.format(components.year)} ${pad(components.hour)}:00 ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${formatYear(components.year)} ${pad(components.hour)}:00 ${era}`;
             } else if (granularity === "Minute") {
                 // Show Time with minutes and Era
-                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${numberFormatter.format(components.year)} ${pad(components.hour)}:${pad(components.minute)} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${formatYear(components.year)} ${pad(components.hour)}:${pad(components.minute)} ${era}`;
             }
             
             // Fallback
@@ -1275,16 +1284,16 @@
             // Format based on granularity
             if (granularity === "Month") {
                 // Show Month and Year
-                return `${MONTH_NAMES[monthIndex]} ${components.year} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${formatYear(components.year)} ${era}`;
             } else if (granularity === "Week" || granularity === "Day") {
                 // Show Month, Day, and Year
-                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${components.year} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${formatYear(components.year)} ${era}`;
             } else if (granularity === "Hour") {
                 // Show Day and Time with Era
-                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${components.year} at ${pad(components.hour)}:00 ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${formatYear(components.year)} at ${pad(components.hour)}:00 ${era}`;
             } else {
                 // Minute
-                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${components.year} at ${pad(components.hour)}:${pad(components.minute)} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${formatYear(components.year)} at ${pad(components.hour)}:${pad(components.minute)} ${era}`;
             }
         }
 
@@ -1306,23 +1315,23 @@
                 return `Year ${yearLabel} ${era}`;
             } else if (granularity === "Year") {
                 // Show full year
-                return `Year ${numberFormatter.format(components.year)} ${era}`;
+                return `Year ${formatYear(components.year)} ${era}`;
             } else if (granularity === "Month") {
                 // Show Month and Year
-                return `${MONTH_NAMES[monthIndex]} ${numberFormatter.format(components.year)} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${formatYear(components.year)} ${era}`;
             } else if (granularity === "Week" || granularity === "Day") {
                 // Show Month, Day, and Year
-                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${numberFormatter.format(components.year)} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${formatYear(components.year)} ${era}`;
             } else if (granularity === "Hour") {
                 // Show Day and Time with Era
-                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${numberFormatter.format(components.year)} at ${pad(components.hour)}:00 ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${formatYear(components.year)} at ${pad(components.hour)}:00 ${era}`;
             } else if (granularity === "Minute") {
                 // Show Time with minutes and Era
-                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${numberFormatter.format(components.year)} at ${pad(components.hour)}:${pad(components.minute)} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${components.day}, ${formatYear(components.year)} at ${pad(components.hour)}:${pad(components.minute)} ${era}`;
             }
 
             // Fallback to detailed format
-            return `Year ${numberFormatter.format(components.year)} ${era} · Month ${components.month} · Day ${components.day} · ${pad(components.hour)}:${pad(components.minute)}`;
+            return `Year ${formatYear(components.year)} ${era} · Month ${components.month} · Day ${components.day} · ${pad(components.hour)}:${pad(components.minute)}`;
         }
 
         function formatDifference(minutes, granularity) {
