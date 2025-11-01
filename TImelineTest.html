@@ -1170,6 +1170,17 @@
 
         function updateTopSlider() {
             const totalRange = bottomEndMinutes - bottomStartMinutes;
+            
+            // Prevent division by zero
+            if (totalRange === 0) {
+                topStartHandle.style.left = '50%';
+                topEndHandle.style.left = '50%';
+                topSelected.style.left = '50%';
+                topSelected.style.width = '0%';
+                topInfo.textContent = 'Fine range: Invalid (bottom range is zero)';
+                return;
+            }
+            
             const startPercent = ((topStartMinutes - bottomStartMinutes) / totalRange) * 100;
             const endPercent = ((topEndMinutes - bottomStartMinutes) / totalRange) * 100;
             
@@ -1285,9 +1296,14 @@
                 
                 // Move top timeline proportionally
                 const topSpan = topEndMinutes - topStartMinutes;
-                const topRelativeStart = (topStartMinutes - dragState.startMinutesStart) / (dragState.startMinutesEnd - dragState.startMinutesStart);
-                topStartMinutes = bottomStartMinutes + topRelativeStart * (bottomEndMinutes - bottomStartMinutes);
-                topEndMinutes = topStartMinutes + topSpan;
+                const dragSpan = dragState.startMinutesEnd - dragState.startMinutesStart;
+                
+                // This check should never fail since we already checked at line 1266-1268, but adding for safety
+                if (dragSpan !== 0) {
+                    const topRelativeStart = (topStartMinutes - dragState.startMinutesStart) / dragSpan;
+                    topStartMinutes = bottomStartMinutes + topRelativeStart * (bottomEndMinutes - bottomStartMinutes);
+                    topEndMinutes = topStartMinutes + topSpan;
+                }
                 
                 // Ensure top stays within bottom bounds
                 topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - topSpan));
