@@ -813,8 +813,10 @@
                 // Show Month and Year
                 return `${MONTH_NAMES[monthIndex]} ${numberFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Week") {
-                // Show Week (approximate using day of year)
-                const weekNum = Math.floor((months * 30 + days) / 7) + 1;
+                // Show Week (calculate from total days)
+                const totalDays = Math.floor(absMinutes / MINUTES_PER_DAY);
+                const daysInYear = Math.floor(totalDays % 365);
+                const weekNum = Math.floor(daysInYear / 7) + 1;
                 return `Week ${weekNum}, ${numberFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Day") {
                 // Show Month, Day, and Year
