@@ -629,13 +629,13 @@
                 return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${era}`;
             } else if (granularity === "Day") {
                 // One level smaller: Hour
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${pad(hours)}:00 ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${pad(hours)}:00 ${era}`;
             } else if (granularity === "Hour") {
                 // One level smaller: Minute
-                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${pad(hours)}:${pad(mins)} ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${pad(hours)}:${pad(mins)} ${era}`;
             } else if (granularity === "Minute") {
                 // Minute is the smallest, show seconds (always 00)
-                return `${pad(hours)}:${pad(mins)}:00 ${era}`;
+                return `${MONTH_NAMES[monthIndex]} ${days + 1}, ${numberFormatter.format(years + 1)} ${pad(hours)}:${pad(mins)}:00 ${era}`;
             }
             
             // Fallback
