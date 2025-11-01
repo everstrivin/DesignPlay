@@ -281,6 +281,37 @@
             margin-top: 0.25rem;
         }
 
+        .coarse-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .coarse-control-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .coarse-control-item select {
+            padding: 0.6rem 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        /* Hide bottom slider handles by default */
+        #bottomSliderWrapper .range-handle {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        /* Show bottom slider handles only on hover of the slider wrapper */
+        #bottomSliderWrapper:hover .range-handle {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
         input[type="range"] {
             -webkit-appearance: none;
             appearance: none;
@@ -580,6 +611,16 @@
                 <!-- Bottom Timeline: Coarse Range Selector -->
                 <div class="range-slider-container">
                     <div class="range-slider-label">Bottom Timeline (Coarse Level)</div>
+                    <div class="coarse-controls">
+                        <div class="coarse-control-item">
+                            <label for="coarseStartSelect" class="field-label">Start</label>
+                            <select id="coarseStartSelect"></select>
+                        </div>
+                        <div class="coarse-control-item">
+                            <label for="coarseEndSelect" class="field-label">End</label>
+                            <select id="coarseEndSelect"></select>
+                        </div>
+                    </div>
                     <div class="range-slider-wrapper" id="bottomSliderWrapper">
                         <div class="range-slider-track"></div>
                         <div class="range-slider-selected" id="bottomSelected"></div>
@@ -685,6 +726,8 @@
         const bottomStartHandle = document.getElementById("bottomStartHandle");
         const bottomEndHandle = document.getElementById("bottomEndHandle");
         const bottomInfo = document.getElementById("bottomInfo");
+        const coarseStartSelect = document.getElementById("coarseStartSelect");
+        const coarseEndSelect = document.getElementById("coarseEndSelect");
 
         // Top timeline elements
         const topSliderWrapper = document.getElementById("topSliderWrapper");
@@ -1222,6 +1265,151 @@
             return value.toString().padStart(2, "0");
         }
 
+        // Populate coarse slider dropdowns with preset options
+        function populateCoarseDropdowns() {
+            const options = generateCoarseOptions();
+            
+            // Clear existing options
+            coarseStartSelect.innerHTML = '';
+            coarseEndSelect.innerHTML = '';
+            
+            // Populate start dropdown
+            options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.minutes;
+                option.textContent = opt.label;
+                coarseStartSelect.appendChild(option);
+            });
+            
+            // Populate end dropdown
+            options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.minutes;
+                option.textContent = opt.label;
+                coarseEndSelect.appendChild(option);
+            });
+            
+            // Set current values
+            updateCoarseDropdownSelections();
+        }
+
+        // Generate options for coarse dropdowns based on view boundaries
+        function generateCoarseOptions() {
+            const options = [];
+            const granularity = granularitySelect.value;
+            const granularityMinutes = GRANULARITY_TO_MINUTES[granularity];
+            
+            // Calculate appropriate step size (make it larger for coarse selection)
+            // We want roughly 20-40 options
+            const viewSpan = viewEndMinutes - viewStartMinutes;
+            const targetSteps = 30;
+            let stepMultiplier = Math.max(1, Math.round(viewSpan / (granularityMinutes * targetSteps)));
+            
+            // For very large spans, use larger steps
+            if (viewSpan > granularityMinutes * 1000) {
+                stepMultiplier = Math.max(10, stepMultiplier);
+            }
+            
+            const stepSize = granularityMinutes * stepMultiplier;
+            
+            // Generate options from viewStartMinutes to viewEndMinutes
+            for (let minutes = viewStartMinutes; minutes <= viewEndMinutes; minutes += stepSize) {
+                const clampedMinutes = Math.min(minutes, viewEndMinutes);
+                options.push({
+                    minutes: clampedMinutes,
+                    label: formatSliderLabel(clampedMinutes, granularity)
+                });
+                
+                if (clampedMinutes >= viewEndMinutes) break;
+            }
+            
+            return options;
+        }
+
+        // Update dropdown selections to match current bottom slider values
+        function updateCoarseDropdownSelections() {
+            // Find closest option to current bottomStartMinutes
+            let closestStartIndex = 0;
+            let minStartDiff = Infinity;
+            
+            for (let i = 0; i < coarseStartSelect.options.length; i++) {
+                const optionMinutes = parseFloat(coarseStartSelect.options[i].value);
+                const diff = Math.abs(optionMinutes - bottomStartMinutes);
+                if (diff < minStartDiff) {
+                    minStartDiff = diff;
+                    closestStartIndex = i;
+                }
+            }
+            
+            coarseStartSelect.selectedIndex = closestStartIndex;
+            
+            // Find closest option to current bottomEndMinutes
+            let closestEndIndex = coarseEndSelect.options.length - 1;
+            let minEndDiff = Infinity;
+            
+            for (let i = 0; i < coarseEndSelect.options.length; i++) {
+                const optionMinutes = parseFloat(coarseEndSelect.options[i].value);
+                const diff = Math.abs(optionMinutes - bottomEndMinutes);
+                if (diff < minEndDiff) {
+                    minEndDiff = diff;
+                    closestEndIndex = i;
+                }
+            }
+            
+            coarseEndSelect.selectedIndex = closestEndIndex;
+        }
+
+        // Handle coarse dropdown changes
+        function handleCoarseDropdownChange() {
+            const newStart = parseFloat(coarseStartSelect.value);
+            const newEnd = parseFloat(coarseEndSelect.value);
+            
+            // Ensure start is before end
+            if (newStart >= newEnd) {
+                // If start >= end, adjust the other dropdown
+                if (coarseStartSelect === document.activeElement) {
+                    // User changed start, so adjust end
+                    const nextEndIndex = Math.min(coarseEndSelect.selectedIndex + 1, coarseEndSelect.options.length - 1);
+                    coarseEndSelect.selectedIndex = nextEndIndex;
+                    bottomEndMinutes = parseFloat(coarseEndSelect.value);
+                } else {
+                    // User changed end, so adjust start
+                    const prevStartIndex = Math.max(coarseStartSelect.selectedIndex - 1, 0);
+                    coarseStartSelect.selectedIndex = prevStartIndex;
+                    bottomStartMinutes = parseFloat(coarseStartSelect.value);
+                }
+            }
+            
+            bottomStartMinutes = parseFloat(coarseStartSelect.value);
+            bottomEndMinutes = parseFloat(coarseEndSelect.value);
+            
+            // Constrain top timeline within new bottom bounds
+            const bottomSpan = bottomEndMinutes - bottomStartMinutes;
+            const fineGranularity = calculateFineGranularity(bottomSpan);
+            const minTopSpan = GRANULARITY_TO_MINUTES[fineGranularity];
+            
+            // Adjust top timeline if it's outside new bottom bounds
+            if (topStartMinutes < bottomStartMinutes || topEndMinutes > bottomEndMinutes) {
+                const bottomMidpoint = (bottomStartMinutes + bottomEndMinutes) / 2;
+                const topHalfSpan = Math.min(bottomSpan / 4, minTopSpan * 10) / 2;
+                topStartMinutes = Math.max(bottomStartMinutes, bottomMidpoint - topHalfSpan);
+                topEndMinutes = Math.min(bottomEndMinutes, bottomMidpoint + topHalfSpan);
+            }
+            
+            // Ensure minimum span
+            if (topEndMinutes - topStartMinutes < minTopSpan) {
+                topEndMinutes = Math.min(bottomEndMinutes, topStartMinutes + minTopSpan);
+                if (topEndMinutes - topStartMinutes < minTopSpan) {
+                    topStartMinutes = Math.max(bottomStartMinutes, topEndMinutes - minTopSpan);
+                }
+            }
+            
+            updateRangeSliders();
+            refreshRangeDisplay();
+            rebuildTicks();
+            updatePointerAndDetails();
+        }
+
         // Range slider functionality
         function updateRangeSliders() {
             updateBottomSlider();
@@ -1509,7 +1697,12 @@
             rebuildTicks();
             updateRangeSliders();
             updatePointerAndDetails();
+            populateCoarseDropdowns(); // Repopulate dropdowns when granularity changes
         });
+
+        // Event listeners for coarse slider dropdowns
+        coarseStartSelect.addEventListener("change", handleCoarseDropdownChange);
+        coarseEndSelect.addEventListener("change", handleCoarseDropdownChange);
 
         // Add event listeners to all date component inputs
         const allDateInputs = [
@@ -1520,19 +1713,25 @@
         allDateInputs.forEach(input => {
             input.addEventListener("change", () => {
                 updateViewRange();
+                populateCoarseDropdowns(); // Repopulate dropdowns when view range changes
             });
             input.addEventListener("keydown", event => {
                 if (event.key === "Enter") {
                     updateViewRange();
+                    populateCoarseDropdowns(); // Repopulate dropdowns when view range changes
                 }
             });
         });
 
-        updateRangeButton.addEventListener("click", updateViewRange);
+        updateRangeButton.addEventListener("click", () => {
+            updateViewRange();
+            populateCoarseDropdowns(); // Repopulate dropdowns when view range changes
+        });
 
         // Initialize
         initializeTimelines();
         updateDateInputs();
+        populateCoarseDropdowns(); // Initial population of dropdowns
         updateRangeSliders();
         refreshRangeDisplay();
         rebuildTicks();
