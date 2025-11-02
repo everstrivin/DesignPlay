@@ -226,6 +226,7 @@
             background: linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(37, 99, 235, 0.15));
             border-radius: 12px;
             padding: 0 12px;
+            flex: 1;
         }
 
         .range-slider-track {
@@ -275,12 +276,19 @@
             transform: translate(-50%, -50%) scale(1.05);
         }
 
-        /* Slider boundary control wrappers at ends of coarse slider */
+        /* Wrapper for slider and boundary controls */
+        .range-slider-with-controls {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Slider boundary control wrappers outside of slider track */
         .slider-boundary-control {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
+            position: relative;
             z-index: 100;
+            flex-shrink: 0;
         }
 
         .slider-boundary-icon {
@@ -385,7 +393,8 @@
         }
 
         /* Position start control popup to the right */
-        #sliderStartControl .range-controls {
+        #sliderStartControl .range-controls,
+        #topSliderStartControl .range-controls {
             left: 0;
         }
 
@@ -606,14 +615,9 @@
                 <!-- Top Timeline: Fine Range Selector -->
                 <div class="range-slider-container">
                     <div class="range-slider-label">Top Timeline (Fine Level)</div>
-                    <div class="range-slider-wrapper" id="topSliderWrapper">
-                        <div class="range-slider-track"></div>
-                        <div class="range-slider-selected" id="topSelected"></div>
-                        <div class="range-handle" id="topStartHandle"></div>
-                        <div class="range-handle" id="topEndHandle"></div>
-                        
-                        <!-- Fine Granularity Control at left end of fine slider track -->
-                        <div class="slider-boundary-control" id="topSliderStartControl" style="left: 0;">
+                    <div class="range-slider-with-controls">
+                        <!-- Fine Granularity Control at left side -->
+                        <div class="slider-boundary-control" id="topSliderStartControl">
                             <div class="slider-boundary-icon">
                                 <span>⚙</span>
                             </div>
@@ -648,6 +652,12 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="range-slider-wrapper" id="topSliderWrapper">
+                            <div class="range-slider-track"></div>
+                            <div class="range-slider-selected" id="topSelected"></div>
+                            <div class="range-handle" id="topStartHandle"></div>
+                            <div class="range-handle" id="topEndHandle"></div>
+                        </div>
                     </div>
                     <div class="range-slider-info" id="topInfo"></div>
                 </div>
@@ -655,14 +665,9 @@
                 <!-- Bottom Timeline: Coarse Range Selector -->
                 <div class="range-slider-container">
                     <div class="range-slider-label">Bottom Timeline (Coarse Level)</div>
-                    <div class="range-slider-wrapper" id="bottomSliderWrapper">
-                        <div class="range-slider-track"></div>
-                        <div class="range-slider-selected" id="bottomSelected"></div>
-                        <div class="range-handle" id="bottomStartHandle"></div>
-                        <div class="range-handle" id="bottomEndHandle"></div>
-                        
-                        <!-- View Start Control at left end of coarse slider track -->
-                        <div class="slider-boundary-control" id="sliderStartControl" style="left: 0;">
+                    <div class="range-slider-with-controls">
+                        <!-- View Start Control at left side -->
+                        <div class="slider-boundary-control" id="sliderStartControl">
                             <div class="slider-boundary-icon">
                                 <span>⚙</span>
                             </div>
@@ -702,9 +707,14 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- View End Control at right end of coarse slider track -->
-                        <div class="slider-boundary-control" id="sliderEndControl" style="right: 0;">
+                        <div class="range-slider-wrapper" id="bottomSliderWrapper">
+                            <div class="range-slider-track"></div>
+                            <div class="range-slider-selected" id="bottomSelected"></div>
+                            <div class="range-handle" id="bottomStartHandle"></div>
+                            <div class="range-handle" id="bottomEndHandle"></div>
+                        </div>
+                        <!-- View End Control at right side -->
+                        <div class="slider-boundary-control" id="sliderEndControl">
                             <div class="slider-boundary-icon">
                                 <span>⚙</span>
                             </div>
@@ -1409,6 +1419,13 @@
             return value.toString().padStart(2, "0");
         }
 
+        // Calculate minimum span in minutes to allow grabbing the range between handles
+        function calculateMinPixelSpan(wrapperWidth, totalRange) {
+            const minPixels = 50; // Minimum pixel separation to allow grabbing the range bar
+            const effectiveWidth = wrapperWidth - 24; // Account for padding
+            return (minPixels / effectiveWidth) * totalRange;
+        }
+
         // Range slider functionality
         function updateRangeSliders() {
             updateBottomSlider();
@@ -1536,10 +1553,16 @@
             const boundaryMax = dragState.boundaryMax || viewEndMinutes;
             const minBottomSpan = 1440; // 1 day minimum span
             
+            // Calculate minimum span based on 20px minimum separation
+            const minPixelSpan = calculateMinPixelSpan(dragState.wrapperRect.width, dragState.totalRange);
+            
+            // Use the larger of the time-based minimum or the pixel-based minimum
+            const effectiveMinSpan = Math.max(minBottomSpan, minPixelSpan);
+            
             if (dragState.type === 'start') {
                 let newStart = dragState.startMinutesStart + deltaMinutes;
                 // Constrain within date input boundaries
-                newStart = Math.max(boundaryMin, Math.min(newStart, bottomEndMinutes - minBottomSpan));
+                newStart = Math.max(boundaryMin, Math.min(newStart, bottomEndMinutes - effectiveMinSpan));
                 newStart = Math.max(boundaryMin, newStart); // Ensure it doesn't go below min
                 bottomStartMinutes = newStart;
                 
@@ -1547,8 +1570,8 @@
                 if (bottomEndMinutes > boundaryMax) {
                     bottomEndMinutes = boundaryMax;
                 }
-                if (bottomEndMinutes - bottomStartMinutes < minBottomSpan) {
-                    bottomEndMinutes = Math.min(boundaryMax, bottomStartMinutes + minBottomSpan);
+                if (bottomEndMinutes - bottomStartMinutes < effectiveMinSpan) {
+                    bottomEndMinutes = Math.min(boundaryMax, bottomStartMinutes + effectiveMinSpan);
                 }
                 
                 // Constrain top timeline within new bottom bounds
@@ -1560,7 +1583,7 @@
             } else if (dragState.type === 'end') {
                 let newEnd = dragState.startMinutesEnd + deltaMinutes;
                 // Constrain within date input boundaries
-                newEnd = Math.min(boundaryMax, Math.max(newEnd, bottomStartMinutes + minBottomSpan));
+                newEnd = Math.min(boundaryMax, Math.max(newEnd, bottomStartMinutes + effectiveMinSpan));
                 newEnd = Math.min(boundaryMax, newEnd); // Ensure it doesn't go above max
                 bottomEndMinutes = newEnd;
                 
@@ -1568,8 +1591,8 @@
                 if (bottomStartMinutes < boundaryMin) {
                     bottomStartMinutes = boundaryMin;
                 }
-                if (bottomEndMinutes - bottomStartMinutes < minBottomSpan) {
-                    bottomStartMinutes = Math.max(boundaryMin, bottomEndMinutes - minBottomSpan);
+                if (bottomEndMinutes - bottomStartMinutes < effectiveMinSpan) {
+                    bottomStartMinutes = Math.max(boundaryMin, bottomEndMinutes - effectiveMinSpan);
                 }
                 
                 // Constrain top timeline within new bottom bounds
@@ -1633,15 +1656,21 @@
             const fineGranularity = getCurrentFineGranularity();
             const minTopSpan = GRANULARITY_TO_MINUTES[fineGranularity];
             
+            // Calculate minimum span based on 20px minimum separation
+            const minPixelSpan = calculateMinPixelSpan(dragState.wrapperRect.width, dragState.totalRange);
+            
+            // Use the larger of the time-based minimum or the pixel-based minimum
+            const effectiveMinSpan = Math.max(minTopSpan, minPixelSpan);
+            
             if (dragState.type === 'start') {
                 let newStart = dragState.startMinutesStart + deltaMinutes;
                 newStart = Math.max(bottomStartMinutes, newStart);
-                newStart = Math.min(newStart, topEndMinutes - minTopSpan);
+                newStart = Math.min(newStart, topEndMinutes - effectiveMinSpan);
                 topStartMinutes = newStart;
             } else if (dragState.type === 'end') {
                 let newEnd = dragState.startMinutesEnd + deltaMinutes;
                 newEnd = Math.min(bottomEndMinutes, newEnd);
-                newEnd = Math.max(newEnd, topStartMinutes + minTopSpan);
+                newEnd = Math.max(newEnd, topStartMinutes + effectiveMinSpan);
                 topEndMinutes = newEnd;
             } else if (dragState.type === 'range') {
                 const span = dragState.startMinutesEnd - dragState.startMinutesStart;
