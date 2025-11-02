@@ -327,7 +327,7 @@
 
         .range-controls {
             position: absolute;
-            top: calc(100% + 8px);
+            bottom: calc(100% + 8px);
             background: white;
             border-radius: 14px;
             box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
@@ -338,13 +338,14 @@
             pointer-events: none;
             transition: opacity 0.2s ease 0.15s, visibility 0s linear 0.35s;
             border: 1px solid rgba(148, 163, 184, 0.25);
+            z-index: 1000;
         }
         
         /* Add invisible bridge to maintain hover state */
         .range-controls::before {
             content: '';
             position: absolute;
-            bottom: 100%;
+            top: 100%;
             left: 0;
             right: 0;
             height: 16px;
