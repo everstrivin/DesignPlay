@@ -607,70 +607,12 @@
 </head>
 <body>
     <div class="app">
-        <header>
-            <h1>Deep Time Timeline Explorer</h1>
-            <p>
-                Navigate the grand sweep of time from Earth's formation (~4.54 billion BCE) to an equally distant
-                future. The exact midpoint is fixed at 12:00:01&nbsp;AM on January&nbsp;1, 0001.
-            </p>
-        </header>
-        <section class="panel">
-            <div class="control-grid">
-                <div class="controls-footer">
-                    <div class="footnote">
-                        Bounds: &minus;4.54 billion years to +4.54 billion years relative to the center point.
-                    </div>
-                </div>
-            </div>
-        </section>
         <section class="timeline-card">
-            <div class="timeline-meta">
-                <div><strong>Earliest point:</strong> ~4.54&nbsp;billion&nbsp;BCE</div>
-                <div><strong>Midpoint:</strong> 12:00:01&nbsp;AM · January&nbsp;1, 0001</div>
-                <div><strong>Most distant future:</strong> ~4.54&nbsp;billion&nbsp;CE</div>
-            </div>
             <div class="range-display" id="rangeDisplay"></div>
             <div class="dual-timeline-container">
                 <!-- Top Timeline: Fine Range Selector -->
                 <div class="range-slider-container">
-                    <div class="range-slider-label">Top Timeline (Fine Level)</div>
                     <div class="range-slider-with-controls">
-                        <!-- Fine Granularity Control at left side -->
-                        <div class="slider-boundary-control" id="topSliderStartControl">
-                            <div class="slider-boundary-icon">
-                                <span>⚙</span>
-                            </div>
-                            <div class="range-controls" id="topStartControls">
-                                <div class="range-controls-header">
-                                    <span>Fine Granularity</span>
-                                    <button class="apply-btn" id="applyTopGranularityBtn">Apply</button>
-                                </div>
-                                <div class="date-inputs">
-                                    <div class="date-field" style="grid-column: 1 / -1;">
-                                        <label for="fineGranularitySelect" class="field-label">Granularity Level</label>
-                                        <select id="fineGranularitySelect" style="width: 100%;">
-                                            <option value="Eon">Eon (500M years)</option>
-                                            <option value="Epoch">Epoch (50M years)</option>
-                                            <option value="Age">Age (5M years)</option>
-                                            <option value="Millennium">Millennium (1K years)</option>
-                                            <option value="Century">Century (100 years)</option>
-                                            <option value="Decade">Decade (10 years)</option>
-                                            <option value="Year">Year</option>
-                                            <option value="Month">Month</option>
-                                            <option value="Week">Week</option>
-                                            <option value="Day">Day</option>
-                                            <option value="Hour">Hour</option>
-                                            <option value="Minute">Minute</option>
-                                        </select>
-                                    </div>
-                                    <div class="date-field" style="grid-column: 1 / -1;">
-                                        <p style="font-size: 0.85rem; color: #475569; margin: 0.5rem 0 0 0; line-height: 1.4;">
-                                            This controls the granularity of the fine slider and automatically adjusts its span to maintain smooth navigation (at least 10 units).
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         <div class="range-slider-wrapper" id="topSliderWrapper">
                             <div class="range-slider-track" id="topSliderTrack"></div>
                             <div class="range-slider-selected" id="topSelected"></div>
@@ -678,12 +620,10 @@
                             <div class="range-handle" id="topEndHandle"></div>
                         </div>
                     </div>
-                    <div class="range-slider-info" id="topInfo"></div>
                 </div>
 
                 <!-- Bottom Timeline: Coarse Range Selector -->
                 <div class="range-slider-container">
-                    <div class="range-slider-label">Bottom Timeline (Coarse Level)</div>
                     <div class="range-slider-with-controls">
                         <!-- View Start Control at left side -->
                         <div class="slider-boundary-control" id="sliderStartControl">
@@ -774,19 +714,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="range-slider-info" id="bottomInfo"></div>
                 </div>
             </div>
-            <div class="timeline">
-                <div class="timeline-inner">
-                    <div class="timeline-track" id="mainTimelineTrack"></div>
-                    <div class="timeline-ticks" id="timelineTicks"></div>
-                    <div class="pointer" id="timelinePointer">
-                        <span class="pointer-label" id="pointerLabel">Center</span>
-                    </div>
-                </div>
-            </div>
-            <div class="current-time" id="currentTime"></div>
         </section>
     </div>
 
@@ -894,12 +823,8 @@
         const endDay = document.getElementById("endDay");
         const endHour = document.getElementById("endHour");
         const endMinute = document.getElementById("endMinute");
-        
+
         const rangeDisplay = document.getElementById("rangeDisplay");
-        const timelineTicks = document.getElementById("timelineTicks");
-        const pointer = document.getElementById("timelinePointer");
-        const pointerLabel = document.getElementById("pointerLabel");
-        const currentTime = document.getElementById("currentTime");
 
         // Bottom timeline elements
         const bottomSliderWrapper = document.getElementById("bottomSliderWrapper");
@@ -907,7 +832,6 @@
         const bottomSelected = document.getElementById("bottomSelected");
         const bottomStartHandle = document.getElementById("bottomStartHandle");
         const bottomEndHandle = document.getElementById("bottomEndHandle");
-        const bottomInfo = document.getElementById("bottomInfo");
         const applyStartBtn = document.getElementById("applyStartBtn");
         const applyEndBtn = document.getElementById("applyEndBtn");
 
@@ -917,10 +841,7 @@
         const topSelected = document.getElementById("topSelected");
         const topStartHandle = document.getElementById("topStartHandle");
         const topEndHandle = document.getElementById("topEndHandle");
-        const topInfo = document.getElementById("topInfo");
-        
-        // Main timeline track
-        const mainTimelineTrack = document.getElementById("mainTimelineTrack");
+
 
         // Timeline state
         // Bottom timeline: user's coarse range selection (boundaries are TIMELINE_MIN to TIMELINE_MAX)
@@ -1222,61 +1143,24 @@
         }
 
         function refreshRangeDisplay() {
-            // Display the top timeline's current range, not the view boundaries
-            const startLabel = formatYearLabel(topStartMinutes);
-            const endLabel = formatYearLabel(topEndMinutes);
-            const spanMinutes = topEndMinutes - topStartMinutes;
-            let spanLabel;
-            if (spanMinutes >= MINUTES_PER_YEAR) {
-                spanLabel = `${numberFormatter.format(Math.round(spanMinutes / MINUTES_PER_YEAR))} years`;
-            } else if (spanMinutes >= MINUTES_PER_MONTH) {
-                spanLabel = `${numberFormatter.format(Math.round(spanMinutes / MINUTES_PER_MONTH))} months`;
-            } else if (spanMinutes >= MINUTES_PER_DAY) {
-                spanLabel = `${numberFormatter.format(Math.round(spanMinutes / MINUTES_PER_DAY))} days`;
-            } else if (spanMinutes >= MINUTES_PER_HOUR) {
-                spanLabel = `${numberFormatter.format(Math.round(spanMinutes / MINUTES_PER_HOUR))} hours`;
-            } else {
-                spanLabel = `${numberFormatter.format(Math.max(1, Math.round(spanMinutes)))} minutes`;
-            }
-
-            rangeDisplay.innerHTML = `Viewing from <strong>${startLabel}</strong> to <strong>${endLabel}</strong><br />`
-                + `Window width: <strong>${spanLabel}</strong>`;
+            // Display the top timeline's current range with full date/time details
+            const startComponents = minutesToDateComponents(topStartMinutes);
+            const endComponents = minutesToDateComponents(topEndMinutes);
+            
+            const startEra = startComponents.era === 1 ? "CE" : "BCE";
+            const endEra = endComponents.era === 1 ? "CE" : "BCE";
+            
+            const startMonthIndex = Math.min(Math.max(startComponents.month - 1, 0), 11);
+            const endMonthIndex = Math.min(Math.max(endComponents.month - 1, 0), 11);
+            
+            const startLabel = `${MONTH_NAMES[startMonthIndex]} ${startComponents.day}, ${formatYear(startComponents.year)} ${pad(startComponents.hour)}:${pad(startComponents.minute)} ${startEra}`;
+            const endLabel = `${MONTH_NAMES[endMonthIndex]} ${endComponents.day}, ${formatYear(endComponents.year)} ${pad(endComponents.hour)}:${pad(endComponents.minute)} ${endEra}`;
+            
+            rangeDisplay.innerHTML = `<strong>${startLabel}</strong> to <strong>${endLabel}</strong>`;
         }
 
         function rebuildTicks() {
-            timelineTicks.innerHTML = "";
-            const segments = 10;
-            // Use top timeline's range for the ticks, not the view boundaries
-            const rangeMinutes = topEndMinutes - topStartMinutes;
-
-            for (let i = 0; i <= segments; i++) {
-                const tick = document.createElement("div");
-                tick.className = "tick";
-                const percent = (i / segments) * 100;
-                tick.style.left = `${percent}%`;
-
-                const tickLine = document.createElement("span");
-                tickLine.className = "tick-line";
-                tick.appendChild(tickLine);
-
-                const tickMinutes = topStartMinutes + rangeMinutes * (i / segments);
-                
-                // Apply future styling if tick is in the future
-                if (tickMinutes > CURRENT_DATE_MINUTES) {
-                    tick.classList.add('future');
-                }
-                
-                const tickLabel = document.createElement("span");
-                tickLabel.className = "tick-label";
-                tickLabel.textContent = formatTickLabel(tickMinutes);
-                tickLabel.title = formatDetailedTime(tickMinutes);
-                tick.appendChild(tickLabel);
-
-                timelineTicks.appendChild(tick);
-            }
-            
-            // Apply two-tone gradient to the main timeline track
-            applyTwoToneGradient(mainTimelineTrack, topStartMinutes, topEndMinutes, false, true);
+            // Removed - no longer displaying timeline ticks
         }
 
         function formatSliderLabel(minutes, granularity) {
@@ -1338,26 +1222,7 @@
         }
 
         function updatePointerAndDetails() {
-            // Position pointer at the center of the current view (top timeline)
-            const percent = 50; // Always show at center
-            pointer.style.left = `${percent}%`;
-
-            // Use current fine granularity (manual or auto-calculated)
-            const fineGranularity = getCurrentFineGranularity();
-            
-            // Use the midpoint of the top timeline as the current view position
-            currentViewMinutes = (topStartMinutes + topEndMinutes) / 2;
-            
-            // Format the pointer label with fine granularity
-            const unitsLabel = formatSliderLabel(currentViewMinutes, fineGranularity);
-
-            pointerLabel.textContent = unitsLabel;
-
-            currentTime.innerHTML = `
-                <h3>Selected moment</h3>
-                <span>${formatDetailedTime(currentViewMinutes, fineGranularity)}</span>
-                <span>${formatDifference(currentViewMinutes, fineGranularity)}</span>
-            `;
+            // Removed - no longer displaying pointer and details
         }
 
         function formatYearLabel(minutes) {
@@ -1555,7 +1420,6 @@
                 bottomEndHandle.style.left = '50%';
                 bottomSelected.style.left = '50%';
                 bottomSelected.style.width = '0%';
-                bottomInfo.textContent = 'Range: Invalid (date range is zero)';
                 return;
             }
             
@@ -1581,12 +1445,6 @@
             // Apply two-tone gradient to track and wrapper
             applyTwoToneGradient(bottomSliderTrack, viewStartMinutes, viewEndMinutes, false);
             applyTwoToneGradient(bottomSliderWrapper, viewStartMinutes, viewEndMinutes, true);
-            
-            // Use fine granularity for labeling
-            const granularity = getCurrentFineGranularity();
-            const startLabel = formatSliderLabel(bottomStartMinutes, granularity);
-            const endLabel = formatSliderLabel(bottomEndMinutes, granularity);
-            bottomInfo.textContent = `Range: ${startLabel} to ${endLabel}`;
         }
 
         function updateTopSlider() {
@@ -1598,7 +1456,6 @@
                 topEndHandle.style.left = '50%';
                 topSelected.style.left = '50%';
                 topSelected.style.width = '0%';
-                topInfo.textContent = 'Fine range: Invalid (bottom range is zero)';
                 return;
             }
             
@@ -1624,12 +1481,6 @@
             // Apply two-tone gradient to track and wrapper
             applyTwoToneGradient(topSliderTrack, bottomStartMinutes, bottomEndMinutes, false);
             applyTwoToneGradient(topSliderWrapper, bottomStartMinutes, bottomEndMinutes, true);
-            
-            // Use current fine granularity (manual or auto-calculated)
-            const fineGranularity = getCurrentFineGranularity();
-            const startLabel = formatSliderLabel(topStartMinutes, fineGranularity);
-            const endLabel = formatSliderLabel(topEndMinutes, fineGranularity);
-            topInfo.textContent = `Fine range (${fineGranularity}): ${startLabel} to ${endLabel}`;
         }
 
         // Drag handling for bottom timeline
@@ -1892,59 +1743,6 @@
             });
         });
 
-        // Fine granularity controls
-        const fineGranularitySelect = document.getElementById("fineGranularitySelect");
-        const applyTopGranularityBtn = document.getElementById("applyTopGranularityBtn");
-        
-        // Function to apply manual fine granularity override
-        function applyFineGranularity() {
-            const selectedGranularity = fineGranularitySelect.value;
-            
-            // Set the manual override
-            manualFineGranularity = selectedGranularity;
-            
-            const minTopSpan = GRANULARITY_TO_MINUTES[selectedGranularity] * 10; // At least 10 units
-            
-            // Calculate new top slider span based on selected granularity
-            const bottomSpan = bottomEndMinutes - bottomStartMinutes;
-            
-            // Try to use 1/4 of bottom span, but ensure at least 10 units of selected granularity
-            let targetTopSpan = Math.max(bottomSpan / 4, minTopSpan);
-            
-            // Ensure it doesn't exceed bottom span
-            if (targetTopSpan > bottomSpan) {
-                targetTopSpan = bottomSpan;
-            }
-            
-            // Center the new top slider range within bottom slider
-            const bottomMidpoint = (bottomStartMinutes + bottomEndMinutes) / 2;
-            const halfSpan = targetTopSpan / 2;
-            
-            topStartMinutes = Math.max(bottomStartMinutes, bottomMidpoint - halfSpan);
-            topEndMinutes = Math.min(bottomEndMinutes, bottomMidpoint + halfSpan);
-            
-            // If we hit boundaries, adjust
-            if (topEndMinutes - topStartMinutes < minTopSpan) {
-                topEndMinutes = Math.min(bottomEndMinutes, topStartMinutes + minTopSpan);
-                if (topEndMinutes - topStartMinutes < minTopSpan) {
-                    topStartMinutes = Math.max(bottomStartMinutes, topEndMinutes - minTopSpan);
-                }
-            }
-            
-            updateRangeSliders();
-            refreshRangeDisplay();
-            rebuildTicks();
-            updatePointerAndDetails();
-        }
-        
-        applyTopGranularityBtn.addEventListener("click", applyFineGranularity);
-        
-        // Update the fine granularity select to show the current granularity
-        function updateFineGranularitySelects() {
-            const currentFineGranularity = getCurrentFineGranularity();
-            fineGranularitySelect.value = currentFineGranularity;
-        }
-
         // Initialize
         initializeTimelines();
         updateDateInputs();
@@ -1952,7 +1750,6 @@
         refreshRangeDisplay();
         rebuildTicks();
         updatePointerAndDetails();
-        updateFineGranularitySelects();
     </script>
 </body>
 </html>
