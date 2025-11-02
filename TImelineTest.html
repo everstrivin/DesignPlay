@@ -12,6 +12,8 @@
             --surface: rgba(255, 255, 255, 0.88);
             --shadow: 0 25px 60px rgba(15, 23, 42, 0.18);
             --text-muted: #475569;
+            --future-accent: #a855f7;
+            --future-accent-dark: #7e22ce;
         }
 
         * {
@@ -254,6 +256,10 @@
             cursor: grabbing;
         }
 
+        .range-slider-selected.future {
+            background: linear-gradient(90deg, var(--future-accent), var(--future-accent-dark));
+        }
+
         .range-handle {
             position: absolute;
             top: 50%;
@@ -274,6 +280,11 @@
 
         .range-handle:active {
             transform: translate(-50%, -50%) scale(1.05);
+        }
+
+        .range-handle.future {
+            background: linear-gradient(135deg, var(--future-accent), var(--future-accent-dark));
+            box-shadow: 0 8px 16px rgba(168, 85, 247, 0.3);
         }
 
         /* Wrapper for slider and boundary controls */
@@ -482,6 +493,14 @@
             width: 120px;
         }
 
+        .tick.future .tick-line {
+            background: linear-gradient(180deg, rgba(168, 85, 247, 0.25), rgba(168, 85, 247, 0));
+        }
+
+        .tick.future .tick-label {
+            color: #7e22ce;
+        }
+
         .tick-line {
             display: block;
             margin: 0 auto 0.6rem;
@@ -653,7 +672,7 @@
                             </div>
                         </div>
                         <div class="range-slider-wrapper" id="topSliderWrapper">
-                            <div class="range-slider-track"></div>
+                            <div class="range-slider-track" id="topSliderTrack"></div>
                             <div class="range-slider-selected" id="topSelected"></div>
                             <div class="range-handle" id="topStartHandle"></div>
                             <div class="range-handle" id="topEndHandle"></div>
@@ -708,7 +727,7 @@
                             </div>
                         </div>
                         <div class="range-slider-wrapper" id="bottomSliderWrapper">
-                            <div class="range-slider-track"></div>
+                            <div class="range-slider-track" id="bottomSliderTrack"></div>
                             <div class="range-slider-selected" id="bottomSelected"></div>
                             <div class="range-handle" id="bottomStartHandle"></div>
                             <div class="range-handle" id="bottomEndHandle"></div>
@@ -760,7 +779,7 @@
             </div>
             <div class="timeline">
                 <div class="timeline-inner">
-                    <div class="timeline-track"></div>
+                    <div class="timeline-track" id="mainTimelineTrack"></div>
                     <div class="timeline-ticks" id="timelineTicks"></div>
                     <div class="pointer" id="timelinePointer">
                         <span class="pointer-label" id="pointerLabel">Center</span>
@@ -782,6 +801,27 @@
         const HALF_SPAN_MINUTES = EARTH_AGE_YEARS * MINUTES_PER_YEAR;
         const TIMELINE_MIN = -HALF_SPAN_MINUTES;
         const TIMELINE_MAX = HALF_SPAN_MINUTES;
+
+        // Calculate current date in timeline minutes
+        function getCurrentDateMinutes() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1; // JavaScript months are 0-indexed
+            const day = now.getDate();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            
+            // Year 1 CE is at 0 minutes, so we calculate from there
+            let totalMinutes = (year - 1) * MINUTES_PER_YEAR;
+            totalMinutes += (month - 1) * MINUTES_PER_MONTH;
+            totalMinutes += (day - 1) * MINUTES_PER_DAY;
+            totalMinutes += hour * MINUTES_PER_HOUR;
+            totalMinutes += minute;
+            
+            return totalMinutes;
+        }
+        
+        const CURRENT_DATE_MINUTES = getCurrentDateMinutes();
 
         const GRANULARITY_TO_MINUTES = {
             Eon: MINUTES_PER_YEAR * 500_000_000,
@@ -854,6 +894,7 @@
 
         // Bottom timeline elements
         const bottomSliderWrapper = document.getElementById("bottomSliderWrapper");
+        const bottomSliderTrack = document.getElementById("bottomSliderTrack");
         const bottomSelected = document.getElementById("bottomSelected");
         const bottomStartHandle = document.getElementById("bottomStartHandle");
         const bottomEndHandle = document.getElementById("bottomEndHandle");
@@ -863,10 +904,14 @@
 
         // Top timeline elements
         const topSliderWrapper = document.getElementById("topSliderWrapper");
+        const topSliderTrack = document.getElementById("topSliderTrack");
         const topSelected = document.getElementById("topSelected");
         const topStartHandle = document.getElementById("topStartHandle");
         const topEndHandle = document.getElementById("topEndHandle");
         const topInfo = document.getElementById("topInfo");
+        
+        // Main timeline track
+        const mainTimelineTrack = document.getElementById("mainTimelineTrack");
 
         // Timeline state
         // Bottom timeline: user's coarse range selection (boundaries are TIMELINE_MIN to TIMELINE_MAX)
@@ -1212,6 +1257,12 @@
                 tick.appendChild(tickLine);
 
                 const tickMinutes = topStartMinutes + rangeMinutes * (i / segments);
+                
+                // Apply future styling if tick is in the future
+                if (tickMinutes > CURRENT_DATE_MINUTES) {
+                    tick.classList.add('future');
+                }
+                
                 const tickLabel = document.createElement("span");
                 tickLabel.className = "tick-label";
                 tickLabel.textContent = formatTickLabel(tickMinutes);
@@ -1220,6 +1271,9 @@
 
                 timelineTicks.appendChild(tick);
             }
+            
+            // Apply two-tone gradient to the main timeline track
+            applyTwoToneGradient(mainTimelineTrack, topStartMinutes, topEndMinutes, false, true);
         }
 
         function formatSliderLabel(minutes, granularity) {
@@ -1428,6 +1482,60 @@
             return (minPixels / effectiveWidth) * totalRange;
         }
 
+        // Apply two-tone gradient to track based on current date position
+        function applyTwoToneGradient(element, startMinutes, endMinutes, isWrapper = false, isMainTrack = false) {
+            const totalRange = endMinutes - startMinutes;
+            
+            // If current date is outside the range, use single color
+            if (CURRENT_DATE_MINUTES <= startMinutes) {
+                // Entire range is in the future
+                if (isWrapper) {
+                    element.style.background = 'linear-gradient(90deg, rgba(168, 85, 247, 0.15), rgba(126, 34, 206, 0.15))';
+                } else if (isMainTrack) {
+                    element.style.background = 'linear-gradient(90deg, rgba(168, 85, 247, 0.3), rgba(126, 34, 206, 0.6), rgba(168, 85, 247, 0.3))';
+                    element.style.boxShadow = 'inset 0 0 12px rgba(168, 85, 247, 0.35)';
+                } else {
+                    element.style.background = 'rgba(168, 85, 247, 0.3)';
+                }
+            } else if (CURRENT_DATE_MINUTES >= endMinutes) {
+                // Entire range is in the past
+                if (isWrapper) {
+                    element.style.background = 'linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(37, 99, 235, 0.15))';
+                } else if (isMainTrack) {
+                    element.style.background = 'linear-gradient(90deg, rgba(14, 165, 233, 0.3), rgba(2, 132, 199, 0.6), rgba(14, 165, 233, 0.3))';
+                    element.style.boxShadow = 'inset 0 0 12px rgba(14, 165, 233, 0.35)';
+                } else {
+                    element.style.background = 'rgba(148, 163, 184, 0.3)';
+                }
+            } else {
+                // Current date falls within the range - create split gradient
+                const currentPercent = ((CURRENT_DATE_MINUTES - startMinutes) / totalRange) * 100;
+                
+                if (isWrapper) {
+                    element.style.background = `linear-gradient(90deg, 
+                        rgba(14, 165, 233, 0.15) 0%, 
+                        rgba(37, 99, 235, 0.15) ${currentPercent}%, 
+                        rgba(168, 85, 247, 0.15) ${currentPercent}%, 
+                        rgba(126, 34, 206, 0.15) 100%)`;
+                } else if (isMainTrack) {
+                    element.style.background = `linear-gradient(90deg, 
+                        rgba(14, 165, 233, 0.3) 0%,
+                        rgba(2, 132, 199, 0.6) ${currentPercent / 2}%,
+                        rgba(14, 165, 233, 0.3) ${currentPercent}%,
+                        rgba(168, 85, 247, 0.3) ${currentPercent}%,
+                        rgba(126, 34, 206, 0.6) ${(100 + currentPercent) / 2}%,
+                        rgba(168, 85, 247, 0.3) 100%)`;
+                    element.style.boxShadow = 'inset 0 0 12px rgba(14, 165, 233, 0.2), inset 0 0 12px rgba(168, 85, 247, 0.2)';
+                } else {
+                    element.style.background = `linear-gradient(90deg, 
+                        rgba(148, 163, 184, 0.3) 0%, 
+                        rgba(148, 163, 184, 0.3) ${currentPercent}%, 
+                        rgba(168, 85, 247, 0.3) ${currentPercent}%, 
+                        rgba(168, 85, 247, 0.3) 100%)`;
+                }
+            }
+        }
+
         // Range slider functionality
         function updateRangeSliders() {
             updateBottomSlider();
@@ -1456,6 +1564,21 @@
             bottomSelected.style.left = `${startPercent}%`;
             bottomSelected.style.width = `${endPercent - startPercent}%`;
             
+            // Apply future styling if the range end is in the future
+            if (bottomEndMinutes > CURRENT_DATE_MINUTES) {
+                bottomSelected.classList.add('future');
+                bottomStartHandle.classList.add('future');
+                bottomEndHandle.classList.add('future');
+            } else {
+                bottomSelected.classList.remove('future');
+                bottomStartHandle.classList.remove('future');
+                bottomEndHandle.classList.remove('future');
+            }
+            
+            // Apply two-tone gradient to track and wrapper
+            applyTwoToneGradient(bottomSliderTrack, viewStartMinutes, viewEndMinutes, false);
+            applyTwoToneGradient(bottomSliderWrapper, viewStartMinutes, viewEndMinutes, true);
+            
             // Use fine granularity for labeling
             const granularity = getCurrentFineGranularity();
             const startLabel = formatSliderLabel(bottomStartMinutes, granularity);
@@ -1483,6 +1606,21 @@
             topEndHandle.style.left = `${endPercent}%`;
             topSelected.style.left = `${startPercent}%`;
             topSelected.style.width = `${endPercent - startPercent}%`;
+            
+            // Apply future styling if the range end is in the future
+            if (topEndMinutes > CURRENT_DATE_MINUTES) {
+                topSelected.classList.add('future');
+                topStartHandle.classList.add('future');
+                topEndHandle.classList.add('future');
+            } else {
+                topSelected.classList.remove('future');
+                topStartHandle.classList.remove('future');
+                topEndHandle.classList.remove('future');
+            }
+            
+            // Apply two-tone gradient to track and wrapper
+            applyTwoToneGradient(topSliderTrack, bottomStartMinutes, bottomEndMinutes, false);
+            applyTwoToneGradient(topSliderWrapper, bottomStartMinutes, bottomEndMinutes, true);
             
             // Use current fine granularity (manual or auto-calculated)
             const fineGranularity = getCurrentFineGranularity();
