@@ -608,6 +608,7 @@
 <body>
     <div class="app">
         <section class="timeline-card">
+            <div class="range-display" id="rangeDisplay"></div>
             <div class="dual-timeline-container">
                 <!-- Top Timeline: Fine Range Selector -->
                 <div class="range-slider-container">
@@ -822,6 +823,8 @@
         const endDay = document.getElementById("endDay");
         const endHour = document.getElementById("endHour");
         const endMinute = document.getElementById("endMinute");
+
+        const rangeDisplay = document.getElementById("rangeDisplay");
 
         // Bottom timeline elements
         const bottomSliderWrapper = document.getElementById("bottomSliderWrapper");
@@ -1140,7 +1143,10 @@
         }
 
         function refreshRangeDisplay() {
-            // Removed - no longer displaying range
+            // Display the top timeline's current range
+            const startLabel = formatYearLabel(topStartMinutes);
+            const endLabel = formatYearLabel(topEndMinutes);
+            rangeDisplay.innerHTML = `<strong>${startLabel}</strong> to <strong>${endLabel}</strong>`;
         }
 
         function rebuildTicks() {
