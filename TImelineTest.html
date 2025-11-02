@@ -1419,9 +1419,9 @@
             return value.toString().padStart(2, "0");
         }
 
-        // Calculate minimum span in minutes based on 20px minimum separation
+        // Calculate minimum span in minutes to allow grabbing the range between handles
         function calculateMinPixelSpan(wrapperWidth, totalRange) {
-            const minPixels = 20; // Minimum pixel separation between handles
+            const minPixels = 50; // Minimum pixel separation to allow grabbing the range bar
             const effectiveWidth = wrapperWidth - 24; // Account for padding
             return (minPixels / effectiveWidth) * totalRange;
         }
