@@ -1124,7 +1124,7 @@
             }
             
             // Ensure bottom timeline has minimum span to allow grabbing the range bar
-            // Use pixel-based minimum (e.g., 50px worth of time)
+            // Use pixel-based minimum: the time span equivalent to 50 pixels on the slider track
             const wrapperWidth = bottomSliderWrapper.getBoundingClientRect().width;
             const minPixelSpan = calculateMinPixelSpan(wrapperWidth, viewSpan);
             if (bottomEndMinutes - bottomStartMinutes < minPixelSpan) {
