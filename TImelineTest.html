@@ -1502,8 +1502,8 @@
             bottomSelected.style.left = `${startPercent}%`;
             bottomSelected.style.width = `${endPercent - startPercent}%`;
             
-            // Apply future styling if the range is in the future
-            if (bottomStartMinutes > CURRENT_DATE_MINUTES) {
+            // Apply future styling if the range end is in the future
+            if (bottomEndMinutes > CURRENT_DATE_MINUTES) {
                 bottomSelected.classList.add('future');
                 bottomStartHandle.classList.add('future');
                 bottomEndHandle.classList.add('future');
@@ -1541,8 +1541,8 @@
             topSelected.style.left = `${startPercent}%`;
             topSelected.style.width = `${endPercent - startPercent}%`;
             
-            // Apply future styling if the range is in the future
-            if (topStartMinutes > CURRENT_DATE_MINUTES) {
+            // Apply future styling if the range end is in the future
+            if (topEndMinutes > CURRENT_DATE_MINUTES) {
                 topSelected.classList.add('future');
                 topStartHandle.classList.add('future');
                 topEndHandle.classList.add('future');
