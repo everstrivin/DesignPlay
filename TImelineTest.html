@@ -226,6 +226,7 @@
             background: linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(37, 99, 235, 0.15));
             border-radius: 12px;
             padding: 0 12px;
+            flex: 1;
         }
 
         .range-slider-track {
@@ -275,12 +276,19 @@
             transform: translate(-50%, -50%) scale(1.05);
         }
 
-        /* Slider boundary control wrappers at ends of coarse slider */
+        /* Wrapper for slider and boundary controls */
+        .range-slider-with-controls {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Slider boundary control wrappers outside of slider track */
         .slider-boundary-control {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
+            position: relative;
             z-index: 100;
+            flex-shrink: 0;
         }
 
         .slider-boundary-icon {
@@ -385,7 +393,8 @@
         }
 
         /* Position start control popup to the right */
-        #sliderStartControl .range-controls {
+        #sliderStartControl .range-controls,
+        #topSliderStartControl .range-controls {
             left: 0;
         }
 
@@ -606,14 +615,9 @@
                 <!-- Top Timeline: Fine Range Selector -->
                 <div class="range-slider-container">
                     <div class="range-slider-label">Top Timeline (Fine Level)</div>
-                    <div class="range-slider-wrapper" id="topSliderWrapper">
-                        <div class="range-slider-track"></div>
-                        <div class="range-slider-selected" id="topSelected"></div>
-                        <div class="range-handle" id="topStartHandle"></div>
-                        <div class="range-handle" id="topEndHandle"></div>
-                        
-                        <!-- Fine Granularity Control at left end of fine slider track -->
-                        <div class="slider-boundary-control" id="topSliderStartControl" style="left: 0;">
+                    <div class="range-slider-with-controls">
+                        <!-- Fine Granularity Control at left side -->
+                        <div class="slider-boundary-control" id="topSliderStartControl">
                             <div class="slider-boundary-icon">
                                 <span>⚙</span>
                             </div>
@@ -648,6 +652,12 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="range-slider-wrapper" id="topSliderWrapper">
+                            <div class="range-slider-track"></div>
+                            <div class="range-slider-selected" id="topSelected"></div>
+                            <div class="range-handle" id="topStartHandle"></div>
+                            <div class="range-handle" id="topEndHandle"></div>
+                        </div>
                     </div>
                     <div class="range-slider-info" id="topInfo"></div>
                 </div>
@@ -655,14 +665,9 @@
                 <!-- Bottom Timeline: Coarse Range Selector -->
                 <div class="range-slider-container">
                     <div class="range-slider-label">Bottom Timeline (Coarse Level)</div>
-                    <div class="range-slider-wrapper" id="bottomSliderWrapper">
-                        <div class="range-slider-track"></div>
-                        <div class="range-slider-selected" id="bottomSelected"></div>
-                        <div class="range-handle" id="bottomStartHandle"></div>
-                        <div class="range-handle" id="bottomEndHandle"></div>
-                        
-                        <!-- View Start Control at left end of coarse slider track -->
-                        <div class="slider-boundary-control" id="sliderStartControl" style="left: 0;">
+                    <div class="range-slider-with-controls">
+                        <!-- View Start Control at left side -->
+                        <div class="slider-boundary-control" id="sliderStartControl">
                             <div class="slider-boundary-icon">
                                 <span>⚙</span>
                             </div>
@@ -702,9 +707,14 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- View End Control at right end of coarse slider track -->
-                        <div class="slider-boundary-control" id="sliderEndControl" style="right: 0;">
+                        <div class="range-slider-wrapper" id="bottomSliderWrapper">
+                            <div class="range-slider-track"></div>
+                            <div class="range-slider-selected" id="bottomSelected"></div>
+                            <div class="range-handle" id="bottomStartHandle"></div>
+                            <div class="range-handle" id="bottomEndHandle"></div>
+                        </div>
+                        <!-- View End Control at right side -->
+                        <div class="slider-boundary-control" id="sliderEndControl">
                             <div class="slider-boundary-icon">
                                 <span>⚙</span>
                             </div>
