@@ -607,33 +607,10 @@
 </head>
 <body>
     <div class="app">
-        <header>
-            <h1>Deep Time Timeline Explorer</h1>
-            <p>
-                Navigate the grand sweep of time from Earth's formation (~4.54 billion BCE) to an equally distant
-                future. The exact midpoint is fixed at 12:00:01&nbsp;AM on January&nbsp;1, 0001.
-            </p>
-        </header>
-        <section class="panel">
-            <div class="control-grid">
-                <div class="controls-footer">
-                    <div class="footnote">
-                        Bounds: &minus;4.54 billion years to +4.54 billion years relative to the center point.
-                    </div>
-                </div>
-            </div>
-        </section>
         <section class="timeline-card">
-            <div class="timeline-meta">
-                <div><strong>Earliest point:</strong> ~4.54&nbsp;billion&nbsp;BCE</div>
-                <div><strong>Midpoint:</strong> 12:00:01&nbsp;AM · January&nbsp;1, 0001</div>
-                <div><strong>Most distant future:</strong> ~4.54&nbsp;billion&nbsp;CE</div>
-            </div>
-            <div class="range-display" id="rangeDisplay"></div>
             <div class="dual-timeline-container">
                 <!-- Top Timeline: Fine Range Selector -->
                 <div class="range-slider-container">
-                    <div class="range-slider-label">Top Timeline (Fine Level)</div>
                     <div class="range-slider-with-controls">
                         <div class="range-slider-wrapper" id="topSliderWrapper">
                             <div class="range-slider-track" id="topSliderTrack"></div>
@@ -642,12 +619,10 @@
                             <div class="range-handle" id="topEndHandle"></div>
                         </div>
                     </div>
-                    <div class="range-slider-info" id="topInfo"></div>
                 </div>
 
                 <!-- Bottom Timeline: Coarse Range Selector -->
                 <div class="range-slider-container">
-                    <div class="range-slider-label">Bottom Timeline (Coarse Level)</div>
                     <div class="range-slider-with-controls">
                         <!-- View Start Control at left side -->
                         <div class="slider-boundary-control" id="sliderStartControl">
@@ -738,19 +713,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="range-slider-info" id="bottomInfo"></div>
                 </div>
             </div>
-            <div class="timeline">
-                <div class="timeline-inner">
-                    <div class="timeline-track" id="mainTimelineTrack"></div>
-                    <div class="timeline-ticks" id="timelineTicks"></div>
-                    <div class="pointer" id="timelinePointer">
-                        <span class="pointer-label" id="pointerLabel">Center</span>
-                    </div>
-                </div>
-            </div>
-            <div class="current-time" id="currentTime"></div>
         </section>
     </div>
 
@@ -858,12 +822,6 @@
         const endDay = document.getElementById("endDay");
         const endHour = document.getElementById("endHour");
         const endMinute = document.getElementById("endMinute");
-        
-        const rangeDisplay = document.getElementById("rangeDisplay");
-        const timelineTicks = document.getElementById("timelineTicks");
-        const pointer = document.getElementById("timelinePointer");
-        const pointerLabel = document.getElementById("pointerLabel");
-        const currentTime = document.getElementById("currentTime");
 
         // Bottom timeline elements
         const bottomSliderWrapper = document.getElementById("bottomSliderWrapper");
@@ -871,7 +829,6 @@
         const bottomSelected = document.getElementById("bottomSelected");
         const bottomStartHandle = document.getElementById("bottomStartHandle");
         const bottomEndHandle = document.getElementById("bottomEndHandle");
-        const bottomInfo = document.getElementById("bottomInfo");
         const applyStartBtn = document.getElementById("applyStartBtn");
         const applyEndBtn = document.getElementById("applyEndBtn");
 
@@ -881,10 +838,7 @@
         const topSelected = document.getElementById("topSelected");
         const topStartHandle = document.getElementById("topStartHandle");
         const topEndHandle = document.getElementById("topEndHandle");
-        const topInfo = document.getElementById("topInfo");
-        
-        // Main timeline track
-        const mainTimelineTrack = document.getElementById("mainTimelineTrack");
+
 
         // Timeline state
         // Bottom timeline: user's coarse range selection (boundaries are TIMELINE_MIN to TIMELINE_MAX)
@@ -1186,61 +1140,11 @@
         }
 
         function refreshRangeDisplay() {
-            // Display the top timeline's current range, not the view boundaries
-            const startLabel = formatYearLabel(topStartMinutes);
-            const endLabel = formatYearLabel(topEndMinutes);
-            const spanMinutes = topEndMinutes - topStartMinutes;
-            let spanLabel;
-            if (spanMinutes >= MINUTES_PER_YEAR) {
-                spanLabel = `${numberFormatter.format(Math.round(spanMinutes / MINUTES_PER_YEAR))} years`;
-            } else if (spanMinutes >= MINUTES_PER_MONTH) {
-                spanLabel = `${numberFormatter.format(Math.round(spanMinutes / MINUTES_PER_MONTH))} months`;
-            } else if (spanMinutes >= MINUTES_PER_DAY) {
-                spanLabel = `${numberFormatter.format(Math.round(spanMinutes / MINUTES_PER_DAY))} days`;
-            } else if (spanMinutes >= MINUTES_PER_HOUR) {
-                spanLabel = `${numberFormatter.format(Math.round(spanMinutes / MINUTES_PER_HOUR))} hours`;
-            } else {
-                spanLabel = `${numberFormatter.format(Math.max(1, Math.round(spanMinutes)))} minutes`;
-            }
-
-            rangeDisplay.innerHTML = `Viewing from <strong>${startLabel}</strong> to <strong>${endLabel}</strong><br />`
-                + `Window width: <strong>${spanLabel}</strong>`;
+            // Removed - no longer displaying range
         }
 
         function rebuildTicks() {
-            timelineTicks.innerHTML = "";
-            const segments = 10;
-            // Use top timeline's range for the ticks, not the view boundaries
-            const rangeMinutes = topEndMinutes - topStartMinutes;
-
-            for (let i = 0; i <= segments; i++) {
-                const tick = document.createElement("div");
-                tick.className = "tick";
-                const percent = (i / segments) * 100;
-                tick.style.left = `${percent}%`;
-
-                const tickLine = document.createElement("span");
-                tickLine.className = "tick-line";
-                tick.appendChild(tickLine);
-
-                const tickMinutes = topStartMinutes + rangeMinutes * (i / segments);
-                
-                // Apply future styling if tick is in the future
-                if (tickMinutes > CURRENT_DATE_MINUTES) {
-                    tick.classList.add('future');
-                }
-                
-                const tickLabel = document.createElement("span");
-                tickLabel.className = "tick-label";
-                tickLabel.textContent = formatTickLabel(tickMinutes);
-                tickLabel.title = formatDetailedTime(tickMinutes);
-                tick.appendChild(tickLabel);
-
-                timelineTicks.appendChild(tick);
-            }
-            
-            // Apply two-tone gradient to the main timeline track
-            applyTwoToneGradient(mainTimelineTrack, topStartMinutes, topEndMinutes, false, true);
+            // Removed - no longer displaying timeline ticks
         }
 
         function formatSliderLabel(minutes, granularity) {
@@ -1302,26 +1206,7 @@
         }
 
         function updatePointerAndDetails() {
-            // Position pointer at the center of the current view (top timeline)
-            const percent = 50; // Always show at center
-            pointer.style.left = `${percent}%`;
-
-            // Use current fine granularity (manual or auto-calculated)
-            const fineGranularity = getCurrentFineGranularity();
-            
-            // Use the midpoint of the top timeline as the current view position
-            currentViewMinutes = (topStartMinutes + topEndMinutes) / 2;
-            
-            // Format the pointer label with fine granularity
-            const unitsLabel = formatSliderLabel(currentViewMinutes, fineGranularity);
-
-            pointerLabel.textContent = unitsLabel;
-
-            currentTime.innerHTML = `
-                <h3>Selected moment</h3>
-                <span>${formatDetailedTime(currentViewMinutes, fineGranularity)}</span>
-                <span>${formatDifference(currentViewMinutes, fineGranularity)}</span>
-            `;
+            // Removed - no longer displaying pointer and details
         }
 
         function formatYearLabel(minutes) {
@@ -1519,7 +1404,6 @@
                 bottomEndHandle.style.left = '50%';
                 bottomSelected.style.left = '50%';
                 bottomSelected.style.width = '0%';
-                bottomInfo.textContent = 'Range: Invalid (date range is zero)';
                 return;
             }
             
@@ -1545,12 +1429,6 @@
             // Apply two-tone gradient to track and wrapper
             applyTwoToneGradient(bottomSliderTrack, viewStartMinutes, viewEndMinutes, false);
             applyTwoToneGradient(bottomSliderWrapper, viewStartMinutes, viewEndMinutes, true);
-            
-            // Use fine granularity for labeling
-            const granularity = getCurrentFineGranularity();
-            const startLabel = formatSliderLabel(bottomStartMinutes, granularity);
-            const endLabel = formatSliderLabel(bottomEndMinutes, granularity);
-            bottomInfo.textContent = `Range: ${startLabel} to ${endLabel}`;
         }
 
         function updateTopSlider() {
@@ -1562,7 +1440,6 @@
                 topEndHandle.style.left = '50%';
                 topSelected.style.left = '50%';
                 topSelected.style.width = '0%';
-                topInfo.textContent = 'Fine range: Invalid (bottom range is zero)';
                 return;
             }
             
@@ -1588,12 +1465,6 @@
             // Apply two-tone gradient to track and wrapper
             applyTwoToneGradient(topSliderTrack, bottomStartMinutes, bottomEndMinutes, false);
             applyTwoToneGradient(topSliderWrapper, bottomStartMinutes, bottomEndMinutes, true);
-            
-            // Use current fine granularity (manual or auto-calculated)
-            const fineGranularity = getCurrentFineGranularity();
-            const startLabel = formatSliderLabel(topStartMinutes, fineGranularity);
-            const endLabel = formatSliderLabel(topEndMinutes, fineGranularity);
-            topInfo.textContent = `Fine range (${fineGranularity}): ${startLabel} to ${endLabel}`;
         }
 
         // Drag handling for bottom timeline
