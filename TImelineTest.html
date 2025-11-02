@@ -1143,9 +1143,19 @@
         }
 
         function refreshRangeDisplay() {
-            // Display the top timeline's current range
-            const startLabel = formatYearLabel(topStartMinutes);
-            const endLabel = formatYearLabel(topEndMinutes);
+            // Display the top timeline's current range with full date/time details
+            const startComponents = minutesToDateComponents(topStartMinutes);
+            const endComponents = minutesToDateComponents(topEndMinutes);
+            
+            const startEra = startComponents.era === 1 ? "CE" : "BCE";
+            const endEra = endComponents.era === 1 ? "CE" : "BCE";
+            
+            const startMonthIndex = Math.min(Math.max(startComponents.month - 1, 0), 11);
+            const endMonthIndex = Math.min(Math.max(endComponents.month - 1, 0), 11);
+            
+            const startLabel = `${MONTH_NAMES[startMonthIndex]} ${startComponents.day}, ${formatYear(startComponents.year)} ${pad(startComponents.hour)}:${pad(startComponents.minute)} ${startEra}`;
+            const endLabel = `${MONTH_NAMES[endMonthIndex]} ${endComponents.day}, ${formatYear(endComponents.year)} ${pad(endComponents.hour)}:${pad(endComponents.minute)} ${endEra}`;
+            
             rangeDisplay.innerHTML = `<strong>${startLabel}</strong> to <strong>${endLabel}</strong>`;
         }
 
