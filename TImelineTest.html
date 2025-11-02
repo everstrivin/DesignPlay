@@ -231,6 +231,10 @@
             flex: 1;
         }
 
+        .range-slider-wrapper.future {
+            background: linear-gradient(90deg, rgba(168, 85, 247, 0.15), rgba(126, 34, 206, 0.15));
+        }
+
         .range-slider-track {
             position: absolute;
             top: 50%;
@@ -240,6 +244,10 @@
             transform: translateY(-50%);
             border-radius: 999px;
             background: rgba(148, 163, 184, 0.3);
+        }
+
+        .range-slider-track.future {
+            background: rgba(168, 85, 247, 0.3);
         }
 
         .range-slider-selected {
@@ -479,6 +487,11 @@
             box-shadow: inset 0 0 12px rgba(14, 165, 233, 0.35);
         }
 
+        .timeline-track.future {
+            background: linear-gradient(90deg, rgba(168, 85, 247, 0.3), rgba(126, 34, 206, 0.6), rgba(168, 85, 247, 0.3));
+            box-shadow: inset 0 0 12px rgba(168, 85, 247, 0.35);
+        }
+
         .timeline-ticks {
             position: relative;
             min-height: 140px;
@@ -672,7 +685,7 @@
                             </div>
                         </div>
                         <div class="range-slider-wrapper" id="topSliderWrapper">
-                            <div class="range-slider-track"></div>
+                            <div class="range-slider-track" id="topSliderTrack"></div>
                             <div class="range-slider-selected" id="topSelected"></div>
                             <div class="range-handle" id="topStartHandle"></div>
                             <div class="range-handle" id="topEndHandle"></div>
@@ -727,7 +740,7 @@
                             </div>
                         </div>
                         <div class="range-slider-wrapper" id="bottomSliderWrapper">
-                            <div class="range-slider-track"></div>
+                            <div class="range-slider-track" id="bottomSliderTrack"></div>
                             <div class="range-slider-selected" id="bottomSelected"></div>
                             <div class="range-handle" id="bottomStartHandle"></div>
                             <div class="range-handle" id="bottomEndHandle"></div>
@@ -779,7 +792,7 @@
             </div>
             <div class="timeline">
                 <div class="timeline-inner">
-                    <div class="timeline-track"></div>
+                    <div class="timeline-track" id="mainTimelineTrack"></div>
                     <div class="timeline-ticks" id="timelineTicks"></div>
                     <div class="pointer" id="timelinePointer">
                         <span class="pointer-label" id="pointerLabel">Center</span>
@@ -894,6 +907,7 @@
 
         // Bottom timeline elements
         const bottomSliderWrapper = document.getElementById("bottomSliderWrapper");
+        const bottomSliderTrack = document.getElementById("bottomSliderTrack");
         const bottomSelected = document.getElementById("bottomSelected");
         const bottomStartHandle = document.getElementById("bottomStartHandle");
         const bottomEndHandle = document.getElementById("bottomEndHandle");
@@ -903,10 +917,14 @@
 
         // Top timeline elements
         const topSliderWrapper = document.getElementById("topSliderWrapper");
+        const topSliderTrack = document.getElementById("topSliderTrack");
         const topSelected = document.getElementById("topSelected");
         const topStartHandle = document.getElementById("topStartHandle");
         const topEndHandle = document.getElementById("topEndHandle");
         const topInfo = document.getElementById("topInfo");
+        
+        // Main timeline track
+        const mainTimelineTrack = document.getElementById("mainTimelineTrack");
 
         // Timeline state
         // Bottom timeline: user's coarse range selection (boundaries are TIMELINE_MIN to TIMELINE_MAX)
@@ -1266,6 +1284,13 @@
 
                 timelineTicks.appendChild(tick);
             }
+            
+            // Apply future styling to the main timeline track if the view is in the future
+            if (topEndMinutes > CURRENT_DATE_MINUTES) {
+                mainTimelineTrack.classList.add('future');
+            } else {
+                mainTimelineTrack.classList.remove('future');
+            }
         }
 
         function formatSliderLabel(minutes, granularity) {
@@ -1507,10 +1532,14 @@
                 bottomSelected.classList.add('future');
                 bottomStartHandle.classList.add('future');
                 bottomEndHandle.classList.add('future');
+                bottomSliderTrack.classList.add('future');
+                bottomSliderWrapper.classList.add('future');
             } else {
                 bottomSelected.classList.remove('future');
                 bottomStartHandle.classList.remove('future');
                 bottomEndHandle.classList.remove('future');
+                bottomSliderTrack.classList.remove('future');
+                bottomSliderWrapper.classList.remove('future');
             }
             
             // Use fine granularity for labeling
@@ -1546,10 +1575,14 @@
                 topSelected.classList.add('future');
                 topStartHandle.classList.add('future');
                 topEndHandle.classList.add('future');
+                topSliderTrack.classList.add('future');
+                topSliderWrapper.classList.add('future');
             } else {
                 topSelected.classList.remove('future');
                 topStartHandle.classList.remove('future');
                 topEndHandle.classList.remove('future');
+                topSliderTrack.classList.remove('future');
+                topSliderWrapper.classList.remove('future');
             }
             
             // Use current fine granularity (manual or auto-calculated)
