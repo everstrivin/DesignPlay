@@ -12,6 +12,8 @@
             --surface: rgba(255, 255, 255, 0.88);
             --shadow: 0 25px 60px rgba(15, 23, 42, 0.18);
             --text-muted: #475569;
+            --future-accent: #a855f7;
+            --future-accent-dark: #7e22ce;
         }
 
         * {
@@ -254,6 +256,10 @@
             cursor: grabbing;
         }
 
+        .range-slider-selected.future {
+            background: linear-gradient(90deg, var(--future-accent), var(--future-accent-dark));
+        }
+
         .range-handle {
             position: absolute;
             top: 50%;
@@ -274,6 +280,11 @@
 
         .range-handle:active {
             transform: translate(-50%, -50%) scale(1.05);
+        }
+
+        .range-handle.future {
+            background: linear-gradient(135deg, var(--future-accent), var(--future-accent-dark));
+            box-shadow: 0 8px 16px rgba(168, 85, 247, 0.3);
         }
 
         /* Wrapper for slider and boundary controls */
@@ -480,6 +491,14 @@
             text-align: center;
             color: var(--text-muted);
             width: 120px;
+        }
+
+        .tick.future .tick-line {
+            background: linear-gradient(180deg, rgba(168, 85, 247, 0.25), rgba(168, 85, 247, 0));
+        }
+
+        .tick.future .tick-label {
+            color: #7e22ce;
         }
 
         .tick-line {
@@ -782,6 +801,27 @@
         const HALF_SPAN_MINUTES = EARTH_AGE_YEARS * MINUTES_PER_YEAR;
         const TIMELINE_MIN = -HALF_SPAN_MINUTES;
         const TIMELINE_MAX = HALF_SPAN_MINUTES;
+
+        // Calculate current date in timeline minutes
+        function getCurrentDateMinutes() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1; // JavaScript months are 0-indexed
+            const day = now.getDate();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            
+            // Year 1 CE is at 0 minutes, so we calculate from there
+            let totalMinutes = (year - 1) * MINUTES_PER_YEAR;
+            totalMinutes += (month - 1) * MINUTES_PER_MONTH;
+            totalMinutes += (day - 1) * MINUTES_PER_DAY;
+            totalMinutes += hour * MINUTES_PER_HOUR;
+            totalMinutes += minute;
+            
+            return totalMinutes;
+        }
+        
+        const CURRENT_DATE_MINUTES = getCurrentDateMinutes();
 
         const GRANULARITY_TO_MINUTES = {
             Eon: MINUTES_PER_YEAR * 500_000_000,
@@ -1212,6 +1252,12 @@
                 tick.appendChild(tickLine);
 
                 const tickMinutes = topStartMinutes + rangeMinutes * (i / segments);
+                
+                // Apply future styling if tick is in the future
+                if (tickMinutes > CURRENT_DATE_MINUTES) {
+                    tick.classList.add('future');
+                }
+                
                 const tickLabel = document.createElement("span");
                 tickLabel.className = "tick-label";
                 tickLabel.textContent = formatTickLabel(tickMinutes);
@@ -1456,6 +1502,17 @@
             bottomSelected.style.left = `${startPercent}%`;
             bottomSelected.style.width = `${endPercent - startPercent}%`;
             
+            // Apply future styling if the range is in the future
+            if (bottomStartMinutes > CURRENT_DATE_MINUTES) {
+                bottomSelected.classList.add('future');
+                bottomStartHandle.classList.add('future');
+                bottomEndHandle.classList.add('future');
+            } else {
+                bottomSelected.classList.remove('future');
+                bottomStartHandle.classList.remove('future');
+                bottomEndHandle.classList.remove('future');
+            }
+            
             // Use fine granularity for labeling
             const granularity = getCurrentFineGranularity();
             const startLabel = formatSliderLabel(bottomStartMinutes, granularity);
@@ -1483,6 +1540,17 @@
             topEndHandle.style.left = `${endPercent}%`;
             topSelected.style.left = `${startPercent}%`;
             topSelected.style.width = `${endPercent - startPercent}%`;
+            
+            // Apply future styling if the range is in the future
+            if (topStartMinutes > CURRENT_DATE_MINUTES) {
+                topSelected.classList.add('future');
+                topStartHandle.classList.add('future');
+                topEndHandle.classList.add('future');
+            } else {
+                topSelected.classList.remove('future');
+                topStartHandle.classList.remove('future');
+                topEndHandle.classList.remove('future');
+            }
             
             // Use current fine granularity (manual or auto-calculated)
             const fineGranularity = getCurrentFineGranularity();
