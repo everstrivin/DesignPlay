@@ -1123,12 +1123,14 @@
                 bottomEndMinutes = midpoint + quarterSpan;
             }
             
-            // Ensure bottom timeline has a reasonable minimum span (1 day)
-            const minBottomSpan = 1440; // 1 day in minutes
-            if (bottomEndMinutes - bottomStartMinutes < minBottomSpan) {
-                bottomEndMinutes = Math.min(viewEndMinutes, bottomStartMinutes + minBottomSpan);
-                if (bottomEndMinutes - bottomStartMinutes < minBottomSpan) {
-                    bottomStartMinutes = Math.max(viewStartMinutes, bottomEndMinutes - minBottomSpan);
+            // Ensure bottom timeline has minimum span to allow grabbing the range bar
+            // Use pixel-based minimum: the time span equivalent to 50 pixels on the slider track
+            const wrapperWidth = bottomSliderWrapper.getBoundingClientRect().width;
+            const minPixelSpan = calculateMinPixelSpan(wrapperWidth, viewSpan);
+            if (bottomEndMinutes - bottomStartMinutes < minPixelSpan) {
+                bottomEndMinutes = Math.min(viewEndMinutes, bottomStartMinutes + minPixelSpan);
+                if (bottomEndMinutes - bottomStartMinutes < minPixelSpan) {
+                    bottomStartMinutes = Math.max(viewStartMinutes, bottomEndMinutes - minPixelSpan);
                 }
             }
             
@@ -1551,13 +1553,12 @@
         function handleBottomDrag(deltaMinutes) {
             const boundaryMin = dragState.boundaryMin || viewStartMinutes;
             const boundaryMax = dragState.boundaryMax || viewEndMinutes;
-            const minBottomSpan = 1440; // 1 day minimum span
             
-            // Calculate minimum span based on 20px minimum separation
+            // Calculate minimum span based on 50px minimum separation to allow grabbing the range bar
             const minPixelSpan = calculateMinPixelSpan(dragState.wrapperRect.width, dragState.totalRange);
             
-            // Use the larger of the time-based minimum or the pixel-based minimum
-            const effectiveMinSpan = Math.max(minBottomSpan, minPixelSpan);
+            // Use only the pixel-based minimum (no hardcoded time-based minimum)
+            const effectiveMinSpan = minPixelSpan;
             
             if (dragState.type === 'start') {
                 let newStart = dragState.startMinutesStart + deltaMinutes;
