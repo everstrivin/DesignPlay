@@ -231,10 +231,6 @@
             flex: 1;
         }
 
-        .range-slider-wrapper.future {
-            background: linear-gradient(90deg, rgba(168, 85, 247, 0.15), rgba(126, 34, 206, 0.15));
-        }
-
         .range-slider-track {
             position: absolute;
             top: 50%;
@@ -244,10 +240,6 @@
             transform: translateY(-50%);
             border-radius: 999px;
             background: rgba(148, 163, 184, 0.3);
-        }
-
-        .range-slider-track.future {
-            background: rgba(168, 85, 247, 0.3);
         }
 
         .range-slider-selected {
@@ -485,11 +477,6 @@
             border-radius: 999px;
             background: linear-gradient(90deg, rgba(14, 165, 233, 0.3), rgba(2, 132, 199, 0.6), rgba(14, 165, 233, 0.3));
             box-shadow: inset 0 0 12px rgba(14, 165, 233, 0.35);
-        }
-
-        .timeline-track.future {
-            background: linear-gradient(90deg, rgba(168, 85, 247, 0.3), rgba(126, 34, 206, 0.6), rgba(168, 85, 247, 0.3));
-            box-shadow: inset 0 0 12px rgba(168, 85, 247, 0.35);
         }
 
         .timeline-ticks {
@@ -1285,12 +1272,8 @@
                 timelineTicks.appendChild(tick);
             }
             
-            // Apply future styling to the main timeline track if the view is in the future
-            if (topEndMinutes > CURRENT_DATE_MINUTES) {
-                mainTimelineTrack.classList.add('future');
-            } else {
-                mainTimelineTrack.classList.remove('future');
-            }
+            // Apply two-tone gradient to the main timeline track
+            applyTwoToneGradient(mainTimelineTrack, topStartMinutes, topEndMinutes, false, true);
         }
 
         function formatSliderLabel(minutes, granularity) {
@@ -1499,6 +1482,60 @@
             return (minPixels / effectiveWidth) * totalRange;
         }
 
+        // Apply two-tone gradient to track based on current date position
+        function applyTwoToneGradient(element, startMinutes, endMinutes, isWrapper = false, isMainTrack = false) {
+            const totalRange = endMinutes - startMinutes;
+            
+            // If current date is outside the range, use single color
+            if (CURRENT_DATE_MINUTES <= startMinutes) {
+                // Entire range is in the future
+                if (isWrapper) {
+                    element.style.background = 'linear-gradient(90deg, rgba(168, 85, 247, 0.15), rgba(126, 34, 206, 0.15))';
+                } else if (isMainTrack) {
+                    element.style.background = 'linear-gradient(90deg, rgba(168, 85, 247, 0.3), rgba(126, 34, 206, 0.6), rgba(168, 85, 247, 0.3))';
+                    element.style.boxShadow = 'inset 0 0 12px rgba(168, 85, 247, 0.35)';
+                } else {
+                    element.style.background = 'rgba(168, 85, 247, 0.3)';
+                }
+            } else if (CURRENT_DATE_MINUTES >= endMinutes) {
+                // Entire range is in the past
+                if (isWrapper) {
+                    element.style.background = 'linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(37, 99, 235, 0.15))';
+                } else if (isMainTrack) {
+                    element.style.background = 'linear-gradient(90deg, rgba(14, 165, 233, 0.3), rgba(2, 132, 199, 0.6), rgba(14, 165, 233, 0.3))';
+                    element.style.boxShadow = 'inset 0 0 12px rgba(14, 165, 233, 0.35)';
+                } else {
+                    element.style.background = 'rgba(148, 163, 184, 0.3)';
+                }
+            } else {
+                // Current date falls within the range - create split gradient
+                const currentPercent = ((CURRENT_DATE_MINUTES - startMinutes) / totalRange) * 100;
+                
+                if (isWrapper) {
+                    element.style.background = `linear-gradient(90deg, 
+                        rgba(14, 165, 233, 0.15) 0%, 
+                        rgba(37, 99, 235, 0.15) ${currentPercent}%, 
+                        rgba(168, 85, 247, 0.15) ${currentPercent}%, 
+                        rgba(126, 34, 206, 0.15) 100%)`;
+                } else if (isMainTrack) {
+                    element.style.background = `linear-gradient(90deg, 
+                        rgba(14, 165, 233, 0.3) 0%,
+                        rgba(2, 132, 199, 0.6) ${currentPercent / 2}%,
+                        rgba(14, 165, 233, 0.3) ${currentPercent}%,
+                        rgba(168, 85, 247, 0.3) ${currentPercent}%,
+                        rgba(126, 34, 206, 0.6) ${(100 + currentPercent) / 2}%,
+                        rgba(168, 85, 247, 0.3) 100%)`;
+                    element.style.boxShadow = 'inset 0 0 12px rgba(14, 165, 233, 0.2), inset 0 0 12px rgba(168, 85, 247, 0.2)';
+                } else {
+                    element.style.background = `linear-gradient(90deg, 
+                        rgba(148, 163, 184, 0.3) 0%, 
+                        rgba(148, 163, 184, 0.3) ${currentPercent}%, 
+                        rgba(168, 85, 247, 0.3) ${currentPercent}%, 
+                        rgba(168, 85, 247, 0.3) 100%)`;
+                }
+            }
+        }
+
         // Range slider functionality
         function updateRangeSliders() {
             updateBottomSlider();
@@ -1532,15 +1569,15 @@
                 bottomSelected.classList.add('future');
                 bottomStartHandle.classList.add('future');
                 bottomEndHandle.classList.add('future');
-                bottomSliderTrack.classList.add('future');
-                bottomSliderWrapper.classList.add('future');
             } else {
                 bottomSelected.classList.remove('future');
                 bottomStartHandle.classList.remove('future');
                 bottomEndHandle.classList.remove('future');
-                bottomSliderTrack.classList.remove('future');
-                bottomSliderWrapper.classList.remove('future');
             }
+            
+            // Apply two-tone gradient to track and wrapper
+            applyTwoToneGradient(bottomSliderTrack, viewStartMinutes, viewEndMinutes, false);
+            applyTwoToneGradient(bottomSliderWrapper, viewStartMinutes, viewEndMinutes, true);
             
             // Use fine granularity for labeling
             const granularity = getCurrentFineGranularity();
@@ -1575,15 +1612,15 @@
                 topSelected.classList.add('future');
                 topStartHandle.classList.add('future');
                 topEndHandle.classList.add('future');
-                topSliderTrack.classList.add('future');
-                topSliderWrapper.classList.add('future');
             } else {
                 topSelected.classList.remove('future');
                 topStartHandle.classList.remove('future');
                 topEndHandle.classList.remove('future');
-                topSliderTrack.classList.remove('future');
-                topSliderWrapper.classList.remove('future');
             }
+            
+            // Apply two-tone gradient to track and wrapper
+            applyTwoToneGradient(topSliderTrack, bottomStartMinutes, bottomEndMinutes, false);
+            applyTwoToneGradient(topSliderWrapper, bottomStartMinutes, bottomEndMinutes, true);
             
             // Use current fine granularity (manual or auto-calculated)
             const fineGranularity = getCurrentFineGranularity();
