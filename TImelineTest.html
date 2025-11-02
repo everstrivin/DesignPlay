@@ -822,6 +822,15 @@
         }
         
         const CURRENT_DATE_MINUTES = getCurrentDateMinutes();
+        
+        // Calculate default range: from last week to tomorrow night
+        const LAST_WEEK_MINUTES = CURRENT_DATE_MINUTES - (7 * MINUTES_PER_DAY);
+        // Tomorrow night = end of tomorrow day (23:59)
+        // First, calculate minutes elapsed today
+        const now = new Date();
+        const minutesTodaySoFar = now.getHours() * MINUTES_PER_HOUR + now.getMinutes();
+        // Tomorrow night is: go back to start of today, forward 2 days, minus 1 minute
+        const TOMORROW_NIGHT_MINUTES = CURRENT_DATE_MINUTES - minutesTodaySoFar + (2 * MINUTES_PER_DAY) - 1;
 
         const GRANULARITY_TO_MINUTES = {
             Eon: MINUTES_PER_YEAR * 500_000_000,
@@ -915,14 +924,14 @@
 
         // Timeline state
         // Bottom timeline: user's coarse range selection (boundaries are TIMELINE_MIN to TIMELINE_MAX)
-        let bottomStartMinutes = -1_000_000 * MINUTES_PER_YEAR;
-        let bottomEndMinutes = 1_000_000 * MINUTES_PER_YEAR;
+        let bottomStartMinutes = LAST_WEEK_MINUTES;
+        let bottomEndMinutes = TOMORROW_NIGHT_MINUTES;
         // Top timeline: user's fine range selection (boundaries are bottomStart to bottomEnd)
-        let topStartMinutes = -500_000 * MINUTES_PER_YEAR;
-        let topEndMinutes = 500_000 * MINUTES_PER_YEAR;
+        let topStartMinutes = LAST_WEEK_MINUTES;
+        let topEndMinutes = TOMORROW_NIGHT_MINUTES;
 
-        let viewStartMinutes = -1_000_000 * MINUTES_PER_YEAR;
-        let viewEndMinutes = 1_000_000 * MINUTES_PER_YEAR;
+        let viewStartMinutes = LAST_WEEK_MINUTES;
+        let viewEndMinutes = TOMORROW_NIGHT_MINUTES;
         let currentViewMinutes = 0; // Current position shown on the timeline
         
         // Track manual fine granularity override (null means auto-calculate)
@@ -977,16 +986,10 @@
         }
 
         function initializeTimelines() {
-            // Initialize view boundaries from date inputs (will be updated by updateDateInputs)
-            // Bottom timeline range should start within these boundaries
-            const midpoint = (viewStartMinutes + viewEndMinutes) / 2;
-            const quarterSpan = (viewEndMinutes - viewStartMinutes) / 4;
+            // Bottom timeline (coarse selector) is already set to LAST_WEEK to TOMORROW_NIGHT
+            // Just need to set the top timeline to fit within it
             
-            // Set bottom timeline to middle half of the view range
-            bottomStartMinutes = midpoint - quarterSpan;
-            bottomEndMinutes = midpoint + quarterSpan;
-            
-            // Set top timeline to take up 1/4 of bottom range width
+            // Set top timeline to take up a portion of bottom range width
             const topMidpoint = (bottomStartMinutes + bottomEndMinutes) / 2;
             const topHalfSpan = (bottomEndMinutes - bottomStartMinutes) / 8; // 1/8 to get 1/4 total
             topStartMinutes = topMidpoint - topHalfSpan;
