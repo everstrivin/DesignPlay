@@ -421,6 +421,86 @@
             margin-top: 0.25rem;
         }
 
+        /* Geologic period segments */
+        .geologic-segments-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .geologic-segment {
+            position: absolute;
+            height: 100%;
+            cursor: pointer;
+            transition: opacity 0.2s ease, filter 0.2s ease;
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .geologic-segment:hover {
+            filter: brightness(1.15);
+            opacity: 0.95;
+            z-index: 5;
+        }
+
+        /* Geologic period tooltip */
+        .geologic-tooltip {
+            position: fixed;
+            background: white;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            max-width: 300px;
+        }
+
+        .geologic-tooltip.visible {
+            opacity: 1;
+        }
+
+        .geologic-tooltip-header {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid;
+        }
+
+        .geologic-tooltip-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.35rem;
+            font-size: 0.9rem;
+        }
+
+        .geologic-tooltip-label {
+            font-weight: 600;
+            color: var(--text-muted);
+            min-width: 60px;
+        }
+
+        .geologic-tooltip-value {
+            color: #0f172a;
+        }
+
+        .geologic-tooltip-dates {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
         input[type="range"] {
             -webkit-appearance: none;
             appearance: none;
@@ -614,7 +694,9 @@
                 <div class="range-slider-container">
                     <div class="range-slider-with-controls">
                         <div class="range-slider-wrapper" id="topSliderWrapper">
-                            <div class="range-slider-track" id="topSliderTrack"></div>
+                            <div class="range-slider-track" id="topSliderTrack">
+                                <div class="geologic-segments-container" id="topGeologicSegments"></div>
+                            </div>
                             <div class="range-slider-selected" id="topSelected"></div>
                             <div class="range-handle" id="topStartHandle"></div>
                             <div class="range-handle" id="topEndHandle"></div>
@@ -667,7 +749,9 @@
                             </div>
                         </div>
                         <div class="range-slider-wrapper" id="bottomSliderWrapper">
-                            <div class="range-slider-track" id="bottomSliderTrack"></div>
+                            <div class="range-slider-track" id="bottomSliderTrack">
+                                <div class="geologic-segments-container" id="bottomGeologicSegments"></div>
+                            </div>
                             <div class="range-slider-selected" id="bottomSelected"></div>
                             <div class="range-handle" id="bottomStartHandle"></div>
                             <div class="range-handle" id="bottomEndHandle"></div>
@@ -717,6 +801,28 @@
                 </div>
             </div>
         </section>
+    </div>
+
+    <!-- Geologic period tooltip -->
+    <div class="geologic-tooltip" id="geologicTooltip">
+        <div class="geologic-tooltip-header" id="tooltipHeader"></div>
+        <div class="geologic-tooltip-row">
+            <span class="geologic-tooltip-label">Eon:</span>
+            <span class="geologic-tooltip-value" id="tooltipEon"></span>
+        </div>
+        <div class="geologic-tooltip-row">
+            <span class="geologic-tooltip-label">Era:</span>
+            <span class="geologic-tooltip-value" id="tooltipEra"></span>
+        </div>
+        <div class="geologic-tooltip-row">
+            <span class="geologic-tooltip-label">Period:</span>
+            <span class="geologic-tooltip-value" id="tooltipPeriod"></span>
+        </div>
+        <div class="geologic-tooltip-row">
+            <span class="geologic-tooltip-label">Epoch:</span>
+            <span class="geologic-tooltip-value" id="tooltipEpoch"></span>
+        </div>
+        <div class="geologic-tooltip-dates" id="tooltipDates"></div>
     </div>
 
     <script>
@@ -790,6 +896,472 @@
             Hour: { singular: "hour", plural: "hours" },
             Minute: { singular: "minute", plural: "minutes" }
         };
+
+        // Geologic Time Periods Data
+        // Based on the International Commission on Stratigraphy (ICS) timescale
+        // All dates are in millions of years ago (Ma), converted to BCE years
+        // Note: BCE years are negative in our timeline system
+        const GEOLOGIC_PERIODS = [
+            // PHANEROZOIC EON
+            {
+                eon: "Phanerozoic",
+                era: "Cenozoic",
+                period: "Quaternary",
+                epoch: "Holocene",
+                startMya: 0.0117,
+                endMya: 0,
+                color: "#FEF2E0"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Cenozoic",
+                period: "Quaternary",
+                epoch: "Pleistocene",
+                startMya: 2.58,
+                endMya: 0.0117,
+                color: "#FFF2CC"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Cenozoic",
+                period: "Neogene",
+                epoch: "Pliocene",
+                startMya: 5.333,
+                endMya: 2.58,
+                color: "#FFFF99"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Cenozoic",
+                period: "Neogene",
+                epoch: "Miocene",
+                startMya: 23.03,
+                endMya: 5.333,
+                color: "#FFFF00"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Cenozoic",
+                period: "Paleogene",
+                epoch: "Oligocene",
+                startMya: 33.9,
+                endMya: 23.03,
+                color: "#FED8B1"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Cenozoic",
+                period: "Paleogene",
+                epoch: "Eocene",
+                startMya: 56.0,
+                endMya: 33.9,
+                color: "#FDC07A"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Cenozoic",
+                period: "Paleogene",
+                epoch: "Paleocene",
+                startMya: 66.0,
+                endMya: 56.0,
+                color: "#FDA75F"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Mesozoic",
+                period: "Cretaceous",
+                epoch: "Late Cretaceous",
+                startMya: 100.5,
+                endMya: 66.0,
+                color: "#7FC64E"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Mesozoic",
+                period: "Cretaceous",
+                epoch: "Early Cretaceous",
+                startMya: 145.0,
+                endMya: 100.5,
+                color: "#8FD14F"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Mesozoic",
+                period: "Jurassic",
+                epoch: "Late Jurassic",
+                startMya: 163.5,
+                endMya: 145.0,
+                color: "#34B2C9"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Mesozoic",
+                period: "Jurassic",
+                epoch: "Middle Jurassic",
+                startMya: 174.7,
+                endMya: 163.5,
+                color: "#5FC4D3"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Mesozoic",
+                period: "Jurassic",
+                epoch: "Early Jurassic",
+                startMya: 201.4,
+                endMya: 174.7,
+                color: "#7AD5DD"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Mesozoic",
+                period: "Triassic",
+                epoch: "Late Triassic",
+                startMya: 237.0,
+                endMya: 201.4,
+                color: "#983999"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Mesozoic",
+                period: "Triassic",
+                epoch: "Middle Triassic",
+                startMya: 247.2,
+                endMya: 237.0,
+                color: "#B051A5"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Mesozoic",
+                period: "Triassic",
+                epoch: "Early Triassic",
+                startMya: 251.9,
+                endMya: 247.2,
+                color: "#C869B0"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Permian",
+                epoch: "Lopingian",
+                startMya: 259.1,
+                endMya: 251.9,
+                color: "#F04028"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Permian",
+                epoch: "Guadalupian",
+                startMya: 273.0,
+                endMya: 259.1,
+                color: "#F36E4C"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Permian",
+                epoch: "Cisuralian",
+                startMya: 298.9,
+                endMya: 273.0,
+                color: "#F69A70"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Carboniferous",
+                epoch: "Pennsylvanian",
+                startMya: 323.2,
+                endMya: 298.9,
+                color: "#67A599"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Carboniferous",
+                epoch: "Mississippian",
+                startMya: 358.9,
+                endMya: 323.2,
+                color: "#8CB4A9"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Devonian",
+                epoch: "Late Devonian",
+                startMya: 382.7,
+                endMya: 358.9,
+                color: "#CB8C37"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Devonian",
+                epoch: "Middle Devonian",
+                startMya: 393.3,
+                endMya: 382.7,
+                color: "#D9A85A"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Devonian",
+                epoch: "Early Devonian",
+                startMya: 419.2,
+                endMya: 393.3,
+                color: "#E7C37D"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Silurian",
+                epoch: "Pridoli",
+                startMya: 423.0,
+                endMya: 419.2,
+                color: "#B3E1E6"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Silurian",
+                epoch: "Ludlow",
+                startMya: 427.4,
+                endMya: 423.0,
+                color: "#B3E1E6"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Silurian",
+                epoch: "Wenlock",
+                startMya: 433.4,
+                endMya: 427.4,
+                color: "#B3E1E6"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Silurian",
+                epoch: "Llandovery",
+                startMya: 443.8,
+                endMya: 433.4,
+                color: "#B3E1E6"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Ordovician",
+                epoch: "Late Ordovician",
+                startMya: 458.4,
+                endMya: 443.8,
+                color: "#009270"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Ordovician",
+                epoch: "Middle Ordovician",
+                startMya: 470.0,
+                endMya: 458.4,
+                color: "#26A789"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Ordovician",
+                epoch: "Early Ordovician",
+                startMya: 485.4,
+                endMya: 470.0,
+                color: "#4DBCA2"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Cambrian",
+                epoch: "Furongian",
+                startMya: 497.0,
+                endMya: 485.4,
+                color: "#7FA056"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Cambrian",
+                epoch: "Series 3",
+                startMya: 509.0,
+                endMya: 497.0,
+                color: "#8DB06C"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Cambrian",
+                epoch: "Series 2",
+                startMya: 521.0,
+                endMya: 509.0,
+                color: "#9BC082"
+            },
+            {
+                eon: "Phanerozoic",
+                era: "Paleozoic",
+                period: "Cambrian",
+                epoch: "Terreneuvian",
+                startMya: 538.8,
+                endMya: 521.0,
+                color: "#A9D098"
+            },
+            // PROTEROZOIC EON
+            {
+                eon: "Proterozoic",
+                era: "Neoproterozoic",
+                period: "Ediacaran",
+                epoch: "Ediacaran",
+                startMya: 635.0,
+                endMya: 538.8,
+                color: "#FED99C"
+            },
+            {
+                eon: "Proterozoic",
+                era: "Neoproterozoic",
+                period: "Cryogenian",
+                epoch: "Cryogenian",
+                startMya: 720.0,
+                endMya: 635.0,
+                color: "#FECC9F"
+            },
+            {
+                eon: "Proterozoic",
+                era: "Neoproterozoic",
+                period: "Tonian",
+                epoch: "Tonian",
+                startMya: 1000.0,
+                endMya: 720.0,
+                color: "#FEBFA2"
+            },
+            {
+                eon: "Proterozoic",
+                era: "Mesoproterozoic",
+                period: "Stenian",
+                epoch: "Stenian",
+                startMya: 1200.0,
+                endMya: 1000.0,
+                color: "#FDB46C"
+            },
+            {
+                eon: "Proterozoic",
+                era: "Mesoproterozoic",
+                period: "Ectasian",
+                epoch: "Ectasian",
+                startMya: 1400.0,
+                endMya: 1200.0,
+                color: "#FCA75B"
+            },
+            {
+                eon: "Proterozoic",
+                era: "Mesoproterozoic",
+                period: "Calymmian",
+                epoch: "Calymmian",
+                startMya: 1600.0,
+                endMya: 1400.0,
+                color: "#FC9A4A"
+            },
+            {
+                eon: "Proterozoic",
+                era: "Paleoproterozoic",
+                period: "Statherian",
+                epoch: "Statherian",
+                startMya: 1800.0,
+                endMya: 1600.0,
+                color: "#F48C61"
+            },
+            {
+                eon: "Proterozoic",
+                era: "Paleoproterozoic",
+                period: "Orosirian",
+                epoch: "Orosirian",
+                startMya: 2050.0,
+                endMya: 1800.0,
+                color: "#F27E75"
+            },
+            {
+                eon: "Proterozoic",
+                era: "Paleoproterozoic",
+                period: "Rhyacian",
+                epoch: "Rhyacian",
+                startMya: 2300.0,
+                endMya: 2050.0,
+                color: "#F07089"
+            },
+            {
+                eon: "Proterozoic",
+                era: "Paleoproterozoic",
+                period: "Siderian",
+                epoch: "Siderian",
+                startMya: 2500.0,
+                endMya: 2300.0,
+                color: "#EF629D"
+            },
+            // ARCHEAN EON
+            {
+                eon: "Archean",
+                era: "Neoarchean",
+                period: "Neoarchean",
+                epoch: "Neoarchean",
+                startMya: 2800.0,
+                endMya: 2500.0,
+                color: "#F2A4C6"
+            },
+            {
+                eon: "Archean",
+                era: "Mesoarchean",
+                period: "Mesoarchean",
+                epoch: "Mesoarchean",
+                startMya: 3200.0,
+                endMya: 2800.0,
+                color: "#F5B5D4"
+            },
+            {
+                eon: "Archean",
+                era: "Paleoarchean",
+                period: "Paleoarchean",
+                epoch: "Paleoarchean",
+                startMya: 3600.0,
+                endMya: 3200.0,
+                color: "#F8C6E2"
+            },
+            {
+                eon: "Archean",
+                era: "Eoarchean",
+                period: "Eoarchean",
+                epoch: "Eoarchean",
+                startMya: 4000.0,
+                endMya: 3600.0,
+                color: "#FBD7F0"
+            },
+            // HADEAN EON
+            {
+                eon: "Hadean",
+                era: "Hadean",
+                period: "Hadean",
+                epoch: "Hadean",
+                startMya: 4540.0,
+                endMya: 4000.0,
+                color: "#D4C5C0"
+            }
+        ];
+
+        // Convert Mya (millions of years ago) to timeline minutes (BCE)
+        function myaToMinutes(mya) {
+            // Mya = millions of years ago, which are BCE years
+            // BCE years are negative in our system
+            const yearsAgo = mya * 1_000_000;
+            return -yearsAgo * MINUTES_PER_YEAR;
+        }
+
+        // Add timeline minutes to each geologic period
+        GEOLOGIC_PERIODS.forEach(period => {
+            period.startMinutes = myaToMinutes(period.startMya);
+            period.endMinutes = myaToMinutes(period.endMya);
+        });
 
         const compactFormatter = new Intl.NumberFormat("en-US", {
             notation: "compact",
@@ -1034,6 +1606,116 @@
             endDay.value = endComponents.day;
             endHour.value = endComponents.hour;
             endMinute.value = endComponents.minute;
+        }
+
+        // Geologic period visualization functions
+        const topGeologicSegments = document.getElementById('topGeologicSegments');
+        const bottomGeologicSegments = document.getElementById('bottomGeologicSegments');
+        const geologicTooltip = document.getElementById('geologicTooltip');
+        const tooltipHeader = document.getElementById('tooltipHeader');
+        const tooltipEon = document.getElementById('tooltipEon');
+        const tooltipEra = document.getElementById('tooltipEra');
+        const tooltipPeriod = document.getElementById('tooltipPeriod');
+        const tooltipEpoch = document.getElementById('tooltipEpoch');
+        const tooltipDates = document.getElementById('tooltipDates');
+
+        function renderGeologicSegments(container, rangeStartMinutes, rangeEndMinutes) {
+            // Clear existing segments
+            container.innerHTML = '';
+            
+            // Find all periods that overlap with the visible range
+            const visiblePeriods = GEOLOGIC_PERIODS.filter(period => {
+                return period.endMinutes < rangeEndMinutes && period.startMinutes > rangeStartMinutes;
+            });
+            
+            if (visiblePeriods.length === 0) {
+                return; // No geologic periods in this range
+            }
+            
+            const totalRange = rangeEndMinutes - rangeStartMinutes;
+            
+            visiblePeriods.forEach(period => {
+                // Calculate the visible portion of this period
+                const segmentStart = Math.max(period.startMinutes, rangeStartMinutes);
+                const segmentEnd = Math.min(period.endMinutes, rangeEndMinutes);
+                
+                // Calculate position as percentage
+                const leftPercent = ((segmentStart - rangeStartMinutes) / totalRange) * 100;
+                const widthPercent = ((segmentEnd - segmentStart) / totalRange) * 100;
+                
+                // Skip if the segment is too small to see (< 0.1%)
+                if (widthPercent < 0.1) {
+                    return;
+                }
+                
+                // Create segment element
+                const segment = document.createElement('div');
+                segment.className = 'geologic-segment';
+                segment.style.left = `${leftPercent}%`;
+                segment.style.width = `${widthPercent}%`;
+                segment.style.backgroundColor = period.color;
+                
+                // Add hover tooltip
+                segment.addEventListener('mouseenter', (e) => {
+                    showGeologicTooltip(period, e);
+                });
+                
+                segment.addEventListener('mousemove', (e) => {
+                    updateTooltipPosition(e);
+                });
+                
+                segment.addEventListener('mouseleave', () => {
+                    hideGeologicTooltip();
+                });
+                
+                container.appendChild(segment);
+            });
+        }
+
+        function showGeologicTooltip(period, event) {
+            tooltipHeader.textContent = period.epoch;
+            tooltipHeader.style.borderBottomColor = period.color;
+            tooltipEon.textContent = period.eon;
+            tooltipEra.textContent = period.era;
+            tooltipPeriod.textContent = period.period;
+            tooltipEpoch.textContent = period.epoch;
+            
+            // Format dates
+            const startMya = period.startMya;
+            const endMya = period.endMya;
+            let dateText;
+            if (endMya === 0) {
+                dateText = `${startMya.toFixed(2)} Ma - Present`;
+            } else {
+                dateText = `${startMya.toFixed(2)} - ${endMya.toFixed(2)} Ma`;
+            }
+            tooltipDates.textContent = dateText;
+            
+            geologicTooltip.classList.add('visible');
+            updateTooltipPosition(event);
+        }
+
+        function updateTooltipPosition(event) {
+            const tooltipRect = geologicTooltip.getBoundingClientRect();
+            const offset = 15;
+            
+            let left = event.clientX + offset;
+            let top = event.clientY + offset;
+            
+            // Prevent tooltip from going off-screen
+            if (left + tooltipRect.width > window.innerWidth) {
+                left = event.clientX - tooltipRect.width - offset;
+            }
+            if (top + tooltipRect.height > window.innerHeight) {
+                top = event.clientY - tooltipRect.height - offset;
+            }
+            
+            geologicTooltip.style.left = `${left}px`;
+            geologicTooltip.style.top = `${top}px`;
+        }
+
+        function hideGeologicTooltip() {
+            geologicTooltip.classList.remove('visible');
         }
 
         function updateViewRange() {
@@ -1445,6 +2127,9 @@
             // Apply two-tone gradient to track and wrapper
             applyTwoToneGradient(bottomSliderTrack, viewStartMinutes, viewEndMinutes, false);
             applyTwoToneGradient(bottomSliderWrapper, viewStartMinutes, viewEndMinutes, true);
+            
+            // Render geologic segments
+            renderGeologicSegments(bottomGeologicSegments, viewStartMinutes, viewEndMinutes);
         }
 
         function updateTopSlider() {
@@ -1481,6 +2166,9 @@
             // Apply two-tone gradient to track and wrapper
             applyTwoToneGradient(topSliderTrack, bottomStartMinutes, bottomEndMinutes, false);
             applyTwoToneGradient(topSliderWrapper, bottomStartMinutes, bottomEndMinutes, true);
+            
+            // Render geologic segments
+            renderGeologicSegments(topGeologicSegments, bottomStartMinutes, bottomEndMinutes);
         }
 
         // Drag handling for bottom timeline
