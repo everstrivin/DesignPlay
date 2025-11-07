@@ -2087,10 +2087,23 @@
                 const currentPercent = ((CURRENT_DATE_MINUTES - startMinutes) / totalRange) * 100;
                 
                 if (isWrapper) {
+                    // Wrapper has 12px padding on each side, so we need to adjust the percentage
+                    // to account for the padding. The gradient transition should align with the track area.
+                    // If wrapper width is W, track width is W-24, so we need to map track percentage to wrapper percentage:
+                    // wrapperPercent = 12/W + trackPercent * (W-24)/W = 12/W + trackPercent * (1 - 24/W)
+                    // We can approximate using: wrapperPercent ≈ padding% + trackPercent * (1 - 2*padding%)
+                    // For 12px padding in a typical ~1000px wrapper, padding% ≈ 1.2%, so adjustment is small
+                    // But we need exact alignment, so we calculate: wrapperPercent = (12 + trackPercent * trackWidth) / wrapperWidth
+                    // Simplifying: wrapperPercent = paddingPercent + currentPercent * (1 - 2*paddingPercent)
+                    const paddingPx = 12;
+                    const wrapperWidth = element.offsetWidth;
+                    const paddingPercent = (paddingPx / wrapperWidth) * 100;
+                    const adjustedPercent = paddingPercent + currentPercent * (1 - 2 * paddingPercent / 100);
+                    
                     element.style.background = `linear-gradient(90deg, 
                         rgba(14, 165, 233, 0.15) 0%, 
-                        rgba(37, 99, 235, 0.15) ${currentPercent}%, 
-                        rgba(168, 85, 247, 0.15) ${currentPercent}%, 
+                        rgba(37, 99, 235, 0.15) ${adjustedPercent}%, 
+                        rgba(168, 85, 247, 0.15) ${adjustedPercent}%, 
                         rgba(126, 34, 206, 0.15) 100%)`;
                 } else if (isMainTrack) {
                     element.style.background = `linear-gradient(90deg, 
@@ -2123,12 +2136,20 @@
                 element.style.background = 'linear-gradient(90deg, var(--accent), var(--accent-dark))';
             } else {
                 // Range spans the current date
-                // Calculate the percentage based on the SELECTED RANGE (not view range)
-                const selectedRange = rangeEndMinutes - rangeStartMinutes;
-                const currentPercentInSelected = ((CURRENT_DATE_MINUTES - rangeStartMinutes) / selectedRange) * 100;
+                // Calculate where "today" falls in the wrapper's coordinate system
+                const wrapperRange = viewEndMinutes - viewStartMinutes;
+                const currentPercentInWrapper = ((CURRENT_DATE_MINUTES - viewStartMinutes) / wrapperRange) * 100;
                 
-                // Apply gradient using the selected range percentage
-                // This ensures the transition aligns with the geologic segments in the background
+                // Calculate where the selected range is positioned in the wrapper
+                const rangeStartPercentInWrapper = ((rangeStartMinutes - viewStartMinutes) / wrapperRange) * 100;
+                const rangeEndPercentInWrapper = ((rangeEndMinutes - viewStartMinutes) / wrapperRange) * 100;
+                const rangeWidthInWrapper = rangeEndPercentInWrapper - rangeStartPercentInWrapper;
+                
+                // Convert wrapper transition position to selected range coordinate system
+                const currentPercentInSelected = ((currentPercentInWrapper - rangeStartPercentInWrapper) / rangeWidthInWrapper) * 100;
+                
+                // Apply gradient using the converted percentage
+                // This ensures the transition aligns with the wrapper background gradient
                 element.style.background = `linear-gradient(90deg, 
                     var(--accent) 0%, 
                     var(--accent-dark) ${currentPercentInSelected}%, 
