@@ -2079,7 +2079,8 @@
                     element.style.background = 'linear-gradient(90deg, rgba(14, 165, 233, 0.3), rgba(2, 132, 199, 0.6), rgba(14, 165, 233, 0.3))';
                     element.style.boxShadow = 'inset 0 0 12px rgba(14, 165, 233, 0.35)';
                 } else {
-                    element.style.background = 'rgba(148, 163, 184, 0.3)';
+                    // Regular track - use blue for past
+                    element.style.background = 'rgba(14, 165, 233, 0.3)';
                 }
             } else {
                 // Current date falls within the range - create split gradient
@@ -2101,9 +2102,10 @@
                         rgba(168, 85, 247, 0.3) 100%)`;
                     element.style.boxShadow = 'inset 0 0 12px rgba(14, 165, 233, 0.2), inset 0 0 12px rgba(168, 85, 247, 0.2)';
                 } else {
+                    // Regular track - use blue for past, purple for future
                     element.style.background = `linear-gradient(90deg, 
-                        rgba(148, 163, 184, 0.3) 0%, 
-                        rgba(148, 163, 184, 0.3) ${currentPercent}%, 
+                        rgba(14, 165, 233, 0.3) 0%, 
+                        rgba(14, 165, 233, 0.3) ${currentPercent}%, 
                         rgba(168, 85, 247, 0.3) ${currentPercent}%, 
                         rgba(168, 85, 247, 0.3) 100%)`;
                 }
