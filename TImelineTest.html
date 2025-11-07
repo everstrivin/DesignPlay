@@ -1589,7 +1589,7 @@
             
             // Find all periods that overlap with the visible range
             const visiblePeriods = GEOLOGIC_PERIODS.filter(period => {
-                return period.endMinutes < rangeEndMinutes && period.startMinutes > rangeStartMinutes;
+                return period.endMinutes >= rangeStartMinutes && period.startMinutes <= rangeEndMinutes;
             });
             
             if (visiblePeriods.length === 0) {
