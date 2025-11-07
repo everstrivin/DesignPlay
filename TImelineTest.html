@@ -1587,18 +1587,19 @@
             // Clear existing segments
             container.innerHTML = '';
             
+            // Helper function to get the actual end time for a period (extends Holocene to present)
+            const getPeriodEnd = (period) => (period.endMya === 0) ? CURRENT_DATE_MINUTES : period.endMinutes;
+            
             // Find all periods that overlap with the visible range
             const visiblePeriods = GEOLOGIC_PERIODS.filter(period => {
-                // Extend Holocene to current date
-                const periodEnd = (period.endMya === 0) ? CURRENT_DATE_MINUTES : period.endMinutes;
+                const periodEnd = getPeriodEnd(period);
                 return periodEnd >= rangeStartMinutes && period.startMinutes <= rangeEndMinutes;
             });
             
             const totalRange = rangeEndMinutes - rangeStartMinutes;
             
             visiblePeriods.forEach(period => {
-                // Extend Holocene to current date
-                const periodEnd = (period.endMya === 0) ? CURRENT_DATE_MINUTES : period.endMinutes;
+                const periodEnd = getPeriodEnd(period);
                 
                 // Calculate the visible portion of this period
                 const segmentStart = Math.max(period.startMinutes, rangeStartMinutes);
