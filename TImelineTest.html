@@ -327,7 +327,8 @@
 
         .range-controls {
             position: absolute;
-            top: calc(100% + 8px);
+            top: 50%;
+            transform: translateY(-50%);
             background: white;
             border-radius: 14px;
             box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
@@ -344,26 +345,36 @@
         
         /* Position start control popup */
         #sliderStartControl .range-controls {
-            left: 0;
-            transform-origin: left top;
+            left: calc(100% + 8px);
+            transform: translateY(-50%);
+            transform-origin: left center;
         }
         
         /* Position end control popup to not overflow right */
         #sliderEndControl .range-controls {
-            right: 0;
+            right: calc(100% + 8px);
             left: auto;
-            transform-origin: right top;
+            transform: translateY(-50%);
+            transform-origin: right center;
         }
         
         /* Add invisible bridge to maintain hover state */
         .range-controls::before {
             content: '';
             position: absolute;
-            bottom: 100%;
-            left: 0;
-            right: 0;
-            height: 16px;
+            top: 0;
+            bottom: 0;
+            width: 16px;
             background: transparent;
+        }
+        
+        /* Position bridge on appropriate side */
+        #sliderStartControl .range-controls::before {
+            right: 100%;
+        }
+        
+        #sliderEndControl .range-controls::before {
+            left: 100%;
         }
 
         /* Keep popup visible with delay when hovering either icon or popup */
