@@ -326,19 +326,33 @@
         }
 
         .range-controls {
-            position: fixed;
+            position: absolute;
+            top: calc(100% + 8px);
             background: white;
             border-radius: 14px;
             box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
             padding: 1rem;
             min-width: 420px;
-            max-width: 90vw;
+            max-width: calc(100vw - 40px);
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
             transition: opacity 0.2s ease 0.15s, visibility 0s linear 0.35s;
             border: 1px solid rgba(148, 163, 184, 0.25);
             z-index: 100;
+        }
+        
+        /* Position start control popup */
+        #sliderStartControl .range-controls {
+            left: 0;
+            transform-origin: left top;
+        }
+        
+        /* Position end control popup to not overflow right */
+        #sliderEndControl .range-controls {
+            right: 0;
+            left: auto;
+            transform-origin: right top;
         }
         
         /* Add invisible bridge to maintain hover state */
@@ -1718,51 +1732,6 @@
         function hideGeologicTooltip() {
             geologicTooltip.classList.remove('visible');
         }
-
-        // Position range control popups within timeline bounds
-        function positionRangeControlPopup(control, popup) {
-            const timelineContainer = document.querySelector('.dual-timeline-container');
-            const containerRect = timelineContainer.getBoundingClientRect();
-            const controlRect = control.getBoundingClientRect();
-            const popupRect = popup.getBoundingClientRect();
-            
-            const offset = 8;
-            let left = controlRect.left;
-            let top = controlRect.bottom + offset;
-            
-            // Constrain horizontally within timeline container
-            if (left + popupRect.width > containerRect.right) {
-                left = containerRect.right - popupRect.width - offset;
-            }
-            if (left < containerRect.left) {
-                left = containerRect.left + offset;
-            }
-            
-            // Constrain vertically within timeline container
-            if (top + popupRect.height > containerRect.bottom) {
-                top = controlRect.top - popupRect.height - offset;
-            }
-            if (top < containerRect.top) {
-                top = containerRect.top + offset;
-            }
-            
-            popup.style.left = `${left}px`;
-            popup.style.top = `${top}px`;
-        }
-
-        // Set up positioning for slider boundary controls
-        const sliderStartControl = document.getElementById('sliderStartControl');
-        const sliderEndControl = document.getElementById('sliderEndControl');
-        const startControls = document.getElementById('startControls');
-        const endControls = document.getElementById('endControls');
-
-        sliderStartControl.addEventListener('mouseenter', () => {
-            positionRangeControlPopup(sliderStartControl, startControls);
-        });
-
-        sliderEndControl.addEventListener('mouseenter', () => {
-            positionRangeControlPopup(sliderEndControl, endControls);
-        });
 
         function updateViewRange() {
             // Get start date components
