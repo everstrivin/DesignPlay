@@ -2176,8 +2176,7 @@
                 bottomEndHandle.classList.remove('future');
             }
             
-            // Apply two-tone gradient to track and wrapper
-            applyTwoToneGradient(bottomSliderTrack, viewStartMinutes, viewEndMinutes, false);
+            // Apply two-tone gradient to wrapper only (track gradient is provided by geologic segments)
             applyTwoToneGradient(bottomSliderWrapper, viewStartMinutes, viewEndMinutes, true);
             
             // Render geologic segments
@@ -2216,8 +2215,7 @@
                 topEndHandle.classList.remove('future');
             }
             
-            // Apply two-tone gradient to track and wrapper
-            applyTwoToneGradient(topSliderTrack, bottomStartMinutes, bottomEndMinutes, false);
+            // Apply two-tone gradient to wrapper only (track gradient is provided by geologic segments)
             applyTwoToneGradient(topSliderWrapper, bottomStartMinutes, bottomEndMinutes, true);
             
             // Render geologic segments
