@@ -2110,6 +2110,28 @@
             }
         }
 
+        // Apply two-tone gradient to selected range bar based on current date position
+        function applySelectedRangeGradient(element, rangeStartMinutes, rangeEndMinutes) {
+            // If range doesn't span the current date, use simple gradient
+            if (CURRENT_DATE_MINUTES <= rangeStartMinutes) {
+                // Entire range is in the future
+                element.style.background = 'linear-gradient(90deg, var(--future-accent), var(--future-accent-dark))';
+            } else if (CURRENT_DATE_MINUTES >= rangeEndMinutes) {
+                // Entire range is in the past
+                element.style.background = 'linear-gradient(90deg, var(--accent), var(--accent-dark))';
+            } else {
+                // Range spans the current date - create split gradient
+                const totalRange = rangeEndMinutes - rangeStartMinutes;
+                const currentPercent = ((CURRENT_DATE_MINUTES - rangeStartMinutes) / totalRange) * 100;
+                
+                element.style.background = `linear-gradient(90deg, 
+                    var(--accent) 0%, 
+                    var(--accent-dark) ${currentPercent}%, 
+                    var(--future-accent) ${currentPercent}%, 
+                    var(--future-accent-dark) 100%)`;
+            }
+        }
+
         // Range slider functionality
         function updateRangeSliders() {
             updateBottomSlider();
@@ -2137,13 +2159,14 @@
             bottomSelected.style.left = `${startPercent}%`;
             bottomSelected.style.width = `${endPercent - startPercent}%`;
             
-            // Apply future styling if the range end is in the future
+            // Apply gradient to selected range based on whether it spans the current date
+            applySelectedRangeGradient(bottomSelected, bottomStartMinutes, bottomEndMinutes);
+            
+            // Apply future styling to handles if the range end is in the future
             if (bottomEndMinutes > CURRENT_DATE_MINUTES) {
-                bottomSelected.classList.add('future');
                 bottomStartHandle.classList.add('future');
                 bottomEndHandle.classList.add('future');
             } else {
-                bottomSelected.classList.remove('future');
                 bottomStartHandle.classList.remove('future');
                 bottomEndHandle.classList.remove('future');
             }
@@ -2176,13 +2199,14 @@
             topSelected.style.left = `${startPercent}%`;
             topSelected.style.width = `${endPercent - startPercent}%`;
             
-            // Apply future styling if the range end is in the future
+            // Apply gradient to selected range based on whether it spans the current date
+            applySelectedRangeGradient(topSelected, topStartMinutes, topEndMinutes);
+            
+            // Apply future styling to handles if the range end is in the future
             if (topEndMinutes > CURRENT_DATE_MINUTES) {
-                topSelected.classList.add('future');
                 topStartHandle.classList.add('future');
                 topEndHandle.classList.add('future');
             } else {
-                topSelected.classList.remove('future');
                 topStartHandle.classList.remove('future');
                 topEndHandle.classList.remove('future');
             }
