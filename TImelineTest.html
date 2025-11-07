@@ -1587,21 +1587,23 @@
             // Clear existing segments
             container.innerHTML = '';
             
+            // Helper function to get the actual end time for a period (extends Holocene to present)
+            const getPeriodEnd = (period) => (period.endMya === 0) ? CURRENT_DATE_MINUTES : period.endMinutes;
+            
             // Find all periods that overlap with the visible range
             const visiblePeriods = GEOLOGIC_PERIODS.filter(period => {
-                return period.endMinutes < rangeEndMinutes && period.startMinutes > rangeStartMinutes;
+                const periodEnd = getPeriodEnd(period);
+                return periodEnd >= rangeStartMinutes && period.startMinutes <= rangeEndMinutes;
             });
-            
-            if (visiblePeriods.length === 0) {
-                return; // No geologic periods in this range
-            }
             
             const totalRange = rangeEndMinutes - rangeStartMinutes;
             
             visiblePeriods.forEach(period => {
+                const periodEnd = getPeriodEnd(period);
+                
                 // Calculate the visible portion of this period
                 const segmentStart = Math.max(period.startMinutes, rangeStartMinutes);
-                const segmentEnd = Math.min(period.endMinutes, rangeEndMinutes);
+                const segmentEnd = Math.min(periodEnd, rangeEndMinutes);
                 
                 // Calculate position as percentage
                 const leftPercent = ((segmentStart - rangeStartMinutes) / totalRange) * 100;
@@ -1634,6 +1636,39 @@
                 
                 container.appendChild(segment);
             });
+            
+            // Add future segment if range extends into the future
+            if (rangeEndMinutes > CURRENT_DATE_MINUTES && rangeStartMinutes < TIMELINE_MAX) {
+                const futureStart = Math.max(CURRENT_DATE_MINUTES, rangeStartMinutes);
+                const futureEnd = Math.min(TIMELINE_MAX, rangeEndMinutes);
+                
+                const leftPercent = ((futureStart - rangeStartMinutes) / totalRange) * 100;
+                const widthPercent = ((futureEnd - futureStart) / totalRange) * 100;
+                
+                // Only render if visible (> 0.1%)
+                if (widthPercent >= 0.1) {
+                    const futureSegment = document.createElement('div');
+                    futureSegment.className = 'geologic-segment';
+                    futureSegment.style.left = `${leftPercent}%`;
+                    futureSegment.style.width = `${widthPercent}%`;
+                    futureSegment.style.backgroundColor = 'rgba(168, 85, 247, 0.3)'; // Purple for future
+                    
+                    // Add hover tooltip for future
+                    futureSegment.addEventListener('mouseenter', (e) => {
+                        showFutureTooltip(e);
+                    });
+                    
+                    futureSegment.addEventListener('mousemove', (e) => {
+                        updateTooltipPosition(e);
+                    });
+                    
+                    futureSegment.addEventListener('mouseleave', () => {
+                        hideGeologicTooltip();
+                    });
+                    
+                    container.appendChild(futureSegment);
+                }
+            }
         }
 
         function showGeologicTooltip(period, event) {
@@ -1654,6 +1689,19 @@
                 dateText = `${startMya.toFixed(2)} - ${endMya.toFixed(2)} Ma`;
             }
             tooltipDates.textContent = dateText;
+            
+            geologicTooltip.classList.add('visible');
+            updateTooltipPosition(event);
+        }
+
+        function showFutureTooltip(event) {
+            tooltipHeader.textContent = 'Future';
+            tooltipHeader.style.borderBottomColor = 'rgba(168, 85, 247, 0.8)';
+            tooltipEon.textContent = '—';
+            tooltipEra.textContent = '—';
+            tooltipPeriod.textContent = '—';
+            tooltipEpoch.textContent = 'Future';
+            tooltipDates.textContent = 'Present onward';
             
             geologicTooltip.classList.add('visible');
             updateTooltipPosition(event);
@@ -2031,7 +2079,8 @@
                     element.style.background = 'linear-gradient(90deg, rgba(14, 165, 233, 0.3), rgba(2, 132, 199, 0.6), rgba(14, 165, 233, 0.3))';
                     element.style.boxShadow = 'inset 0 0 12px rgba(14, 165, 233, 0.35)';
                 } else {
-                    element.style.background = 'rgba(148, 163, 184, 0.3)';
+                    // Regular track - use blue for past
+                    element.style.background = 'rgba(14, 165, 233, 0.3)';
                 }
             } else {
                 // Current date falls within the range - create split gradient
@@ -2053,12 +2102,38 @@
                         rgba(168, 85, 247, 0.3) 100%)`;
                     element.style.boxShadow = 'inset 0 0 12px rgba(14, 165, 233, 0.2), inset 0 0 12px rgba(168, 85, 247, 0.2)';
                 } else {
+                    // Regular track - use blue for past, purple for future
                     element.style.background = `linear-gradient(90deg, 
-                        rgba(148, 163, 184, 0.3) 0%, 
-                        rgba(148, 163, 184, 0.3) ${currentPercent}%, 
+                        rgba(14, 165, 233, 0.3) 0%, 
+                        rgba(14, 165, 233, 0.3) ${currentPercent}%, 
                         rgba(168, 85, 247, 0.3) ${currentPercent}%, 
                         rgba(168, 85, 247, 0.3) 100%)`;
                 }
+            }
+        }
+
+        // Apply two-tone gradient to selected range bar based on current date position
+        function applySelectedRangeGradient(element, rangeStartMinutes, rangeEndMinutes, viewStartMinutes, viewEndMinutes) {
+            // If range doesn't span the current date, use simple gradient
+            if (CURRENT_DATE_MINUTES <= rangeStartMinutes) {
+                // Entire range is in the future
+                element.style.background = 'linear-gradient(90deg, var(--future-accent), var(--future-accent-dark))';
+            } else if (CURRENT_DATE_MINUTES >= rangeEndMinutes) {
+                // Entire range is in the past
+                element.style.background = 'linear-gradient(90deg, var(--accent), var(--accent-dark))';
+            } else {
+                // Range spans the current date
+                // Use the SAME percentage as the background to ensure perfect alignment
+                const viewRange = viewEndMinutes - viewStartMinutes;
+                const currentPercentInView = ((CURRENT_DATE_MINUTES - viewStartMinutes) / viewRange) * 100;
+                
+                // Apply gradient using the view percentage directly
+                // This ensures the transition aligns with the wrapper and track backgrounds
+                element.style.background = `linear-gradient(90deg, 
+                    var(--accent) 0%, 
+                    var(--accent-dark) ${currentPercentInView}%, 
+                    var(--future-accent) ${currentPercentInView}%, 
+                    var(--future-accent-dark) 100%)`;
             }
         }
 
@@ -2089,13 +2164,14 @@
             bottomSelected.style.left = `${startPercent}%`;
             bottomSelected.style.width = `${endPercent - startPercent}%`;
             
-            // Apply future styling if the range end is in the future
+            // Apply gradient to selected range based on whether it spans the current date
+            applySelectedRangeGradient(bottomSelected, bottomStartMinutes, bottomEndMinutes, viewStartMinutes, viewEndMinutes);
+            
+            // Apply future styling to handles if the range end is in the future
             if (bottomEndMinutes > CURRENT_DATE_MINUTES) {
-                bottomSelected.classList.add('future');
                 bottomStartHandle.classList.add('future');
                 bottomEndHandle.classList.add('future');
             } else {
-                bottomSelected.classList.remove('future');
                 bottomStartHandle.classList.remove('future');
                 bottomEndHandle.classList.remove('future');
             }
@@ -2128,13 +2204,14 @@
             topSelected.style.left = `${startPercent}%`;
             topSelected.style.width = `${endPercent - startPercent}%`;
             
-            // Apply future styling if the range end is in the future
+            // Apply gradient to selected range based on whether it spans the current date
+            applySelectedRangeGradient(topSelected, topStartMinutes, topEndMinutes, bottomStartMinutes, bottomEndMinutes);
+            
+            // Apply future styling to handles if the range end is in the future
             if (topEndMinutes > CURRENT_DATE_MINUTES) {
-                topSelected.classList.add('future');
                 topStartHandle.classList.add('future');
                 topEndHandle.classList.add('future');
             } else {
-                topSelected.classList.remove('future');
                 topStartHandle.classList.remove('future');
                 topEndHandle.classList.remove('future');
             }
