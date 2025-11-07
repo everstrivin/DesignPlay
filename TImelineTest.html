@@ -1589,19 +1589,20 @@
             
             // Find all periods that overlap with the visible range
             const visiblePeriods = GEOLOGIC_PERIODS.filter(period => {
-                return period.endMinutes >= rangeStartMinutes && period.startMinutes <= rangeEndMinutes;
+                // Extend Holocene to current date
+                const periodEnd = (period.endMya === 0) ? CURRENT_DATE_MINUTES : period.endMinutes;
+                return periodEnd >= rangeStartMinutes && period.startMinutes <= rangeEndMinutes;
             });
-            
-            if (visiblePeriods.length === 0) {
-                return; // No geologic periods in this range
-            }
             
             const totalRange = rangeEndMinutes - rangeStartMinutes;
             
             visiblePeriods.forEach(period => {
+                // Extend Holocene to current date
+                const periodEnd = (period.endMya === 0) ? CURRENT_DATE_MINUTES : period.endMinutes;
+                
                 // Calculate the visible portion of this period
                 const segmentStart = Math.max(period.startMinutes, rangeStartMinutes);
-                const segmentEnd = Math.min(period.endMinutes, rangeEndMinutes);
+                const segmentEnd = Math.min(periodEnd, rangeEndMinutes);
                 
                 // Calculate position as percentage
                 const leftPercent = ((segmentStart - rangeStartMinutes) / totalRange) * 100;
@@ -1634,6 +1635,39 @@
                 
                 container.appendChild(segment);
             });
+            
+            // Add future segment if range extends into the future
+            if (rangeEndMinutes > CURRENT_DATE_MINUTES && rangeStartMinutes < TIMELINE_MAX) {
+                const futureStart = Math.max(CURRENT_DATE_MINUTES, rangeStartMinutes);
+                const futureEnd = Math.min(TIMELINE_MAX, rangeEndMinutes);
+                
+                const leftPercent = ((futureStart - rangeStartMinutes) / totalRange) * 100;
+                const widthPercent = ((futureEnd - futureStart) / totalRange) * 100;
+                
+                // Only render if visible (> 0.1%)
+                if (widthPercent >= 0.1) {
+                    const futureSegment = document.createElement('div');
+                    futureSegment.className = 'geologic-segment';
+                    futureSegment.style.left = `${leftPercent}%`;
+                    futureSegment.style.width = `${widthPercent}%`;
+                    futureSegment.style.backgroundColor = 'rgba(168, 85, 247, 0.3)'; // Purple for future
+                    
+                    // Add hover tooltip for future
+                    futureSegment.addEventListener('mouseenter', (e) => {
+                        showFutureTooltip(e);
+                    });
+                    
+                    futureSegment.addEventListener('mousemove', (e) => {
+                        updateTooltipPosition(e);
+                    });
+                    
+                    futureSegment.addEventListener('mouseleave', () => {
+                        hideGeologicTooltip();
+                    });
+                    
+                    container.appendChild(futureSegment);
+                }
+            }
         }
 
         function showGeologicTooltip(period, event) {
@@ -1654,6 +1688,19 @@
                 dateText = `${startMya.toFixed(2)} - ${endMya.toFixed(2)} Ma`;
             }
             tooltipDates.textContent = dateText;
+            
+            geologicTooltip.classList.add('visible');
+            updateTooltipPosition(event);
+        }
+
+        function showFutureTooltip(event) {
+            tooltipHeader.textContent = 'Future';
+            tooltipHeader.style.borderBottomColor = 'rgba(168, 85, 247, 0.8)';
+            tooltipEon.textContent = '—';
+            tooltipEra.textContent = '—';
+            tooltipPeriod.textContent = '—';
+            tooltipEpoch.textContent = 'Future';
+            tooltipDates.textContent = 'Present onward';
             
             geologicTooltip.classList.add('visible');
             updateTooltipPosition(event);
