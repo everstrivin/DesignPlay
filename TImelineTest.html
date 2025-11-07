@@ -725,10 +725,6 @@
                                 <span>⚙</span>
                             </div>
                             <div class="range-controls" id="startControls">
-                                <div class="range-controls-header">
-                                    <span>View Start</span>
-                                    <button class="apply-btn" id="applyStartBtn">Apply</button>
-                                </div>
                                 <div class="date-inputs">
                                     <div class="date-field">
                                         <label for="startEra" class="field-label">Era</label>
@@ -774,10 +770,6 @@
                                 <span>⚙</span>
                             </div>
                             <div class="range-controls" id="endControls">
-                                <div class="range-controls-header">
-                                    <span>View End</span>
-                                    <button class="apply-btn" id="applyEndBtn">Apply</button>
-                                </div>
                                 <div class="date-inputs">
                                     <div class="date-field">
                                         <label for="endEra" class="field-label">Era</label>
@@ -1416,8 +1408,6 @@
         const bottomSelected = document.getElementById("bottomSelected");
         const bottomStartHandle = document.getElementById("bottomStartHandle");
         const bottomEndHandle = document.getElementById("bottomEndHandle");
-        const applyStartBtn = document.getElementById("applyStartBtn");
-        const applyEndBtn = document.getElementById("applyEndBtn");
 
         // Top timeline elements
         const topSliderWrapper = document.getElementById("topSliderWrapper");
@@ -2428,15 +2418,6 @@
         topStartHandle.addEventListener('mousedown', (e) => startTopDrag('start', e));
         topEndHandle.addEventListener('mousedown', (e) => startTopDrag('end', e));
         topSelected.addEventListener('mousedown', (e) => startTopDrag('range', e));
-
-        // Apply button handlers
-        applyStartBtn.addEventListener("click", () => {
-            updateViewRange();
-        });
-
-        applyEndBtn.addEventListener("click", () => {
-            updateViewRange();
-        });
 
         // Add event listeners to all date component inputs
         const allDateInputs = [
