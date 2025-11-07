@@ -327,8 +327,7 @@
 
         .range-controls {
             position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
+            top: 0;
             background: white;
             border-radius: 14px;
             box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
@@ -346,14 +345,14 @@
         /* Position start control popup */
         #sliderStartControl .range-controls {
             left: calc(100% + 8px);
-            transform-origin: left center;
+            transform-origin: left top;
         }
         
         /* Position end control popup to not overflow right */
         #sliderEndControl .range-controls {
             right: calc(100% + 8px);
             left: auto;
-            transform-origin: right center;
+            transform-origin: right top;
         }
         
         /* Add invisible bridge to maintain hover state */
