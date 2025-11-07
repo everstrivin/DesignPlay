@@ -2057,7 +2057,7 @@
         }
 
         // Apply two-tone gradient to track based on current date position
-        function applyTwoToneGradient(element, startMinutes, endMinutes, isWrapper = false, isMainTrack = false) {
+        function applyTwoToneGradient(element, startMinutes, endMinutes, isWrapper = false, isMainTrack = false, selectedRangeIncludesToday = false) {
             const totalRange = endMinutes - startMinutes;
             
             // If current date is outside the range, use single color
@@ -2087,11 +2087,20 @@
                 const currentPercent = ((CURRENT_DATE_MINUTES - startMinutes) / totalRange) * 100;
                 
                 if (isWrapper) {
-                    // Use the same percentage as track/selected elements for alignment
+                    // Apply padding adjustment only when selected range does NOT include today
+                    let adjustedPercent = currentPercent;
+                    if (!selectedRangeIncludesToday) {
+                        // Wrapper has 12px padding on each side, adjust percentage to align with track area
+                        const paddingPx = 12;
+                        const wrapperWidth = element.offsetWidth;
+                        const paddingPercent = (paddingPx / wrapperWidth) * 100;
+                        adjustedPercent = paddingPercent + currentPercent * (1 - 2 * paddingPercent / 100);
+                    }
+                    
                     element.style.background = `linear-gradient(90deg, 
                         rgba(14, 165, 233, 0.15) 0%, 
-                        rgba(37, 99, 235, 0.15) ${currentPercent}%, 
-                        rgba(168, 85, 247, 0.15) ${currentPercent}%, 
+                        rgba(37, 99, 235, 0.15) ${adjustedPercent}%, 
+                        rgba(168, 85, 247, 0.15) ${adjustedPercent}%, 
                         rgba(126, 34, 206, 0.15) 100%)`;
                 } else if (isMainTrack) {
                     element.style.background = `linear-gradient(90deg, 
@@ -2179,7 +2188,9 @@
             }
             
             // Apply two-tone gradient to wrapper only (track gradient is provided by geologic segments)
-            applyTwoToneGradient(bottomSliderWrapper, viewStartMinutes, viewEndMinutes, true);
+            // Pass whether the selected range (bottom range) includes today
+            const bottomRangeIncludesToday = (CURRENT_DATE_MINUTES >= bottomStartMinutes && CURRENT_DATE_MINUTES <= bottomEndMinutes);
+            applyTwoToneGradient(bottomSliderWrapper, viewStartMinutes, viewEndMinutes, true, false, bottomRangeIncludesToday);
             
             // Render geologic segments
             renderGeologicSegments(bottomGeologicSegments, viewStartMinutes, viewEndMinutes);
@@ -2218,7 +2229,9 @@
             }
             
             // Apply two-tone gradient to wrapper only (track gradient is provided by geologic segments)
-            applyTwoToneGradient(topSliderWrapper, bottomStartMinutes, bottomEndMinutes, true);
+            // Pass whether the selected range (top range) includes today
+            const topRangeIncludesToday = (CURRENT_DATE_MINUTES >= topStartMinutes && CURRENT_DATE_MINUTES <= topEndMinutes);
+            applyTwoToneGradient(topSliderWrapper, bottomStartMinutes, bottomEndMinutes, true, false, topRangeIncludesToday);
             
             // Render geologic segments
             renderGeologicSegments(topGeologicSegments, bottomStartMinutes, bottomEndMinutes);
