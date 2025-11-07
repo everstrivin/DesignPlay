@@ -2123,16 +2123,16 @@
                 element.style.background = 'linear-gradient(90deg, var(--accent), var(--accent-dark))';
             } else {
                 // Range spans the current date
-                // Use the SAME percentage as the background to ensure perfect alignment
-                const viewRange = viewEndMinutes - viewStartMinutes;
-                const currentPercentInView = ((CURRENT_DATE_MINUTES - viewStartMinutes) / viewRange) * 100;
+                // Calculate the percentage based on the SELECTED RANGE (not view range)
+                const selectedRange = rangeEndMinutes - rangeStartMinutes;
+                const currentPercentInSelected = ((CURRENT_DATE_MINUTES - rangeStartMinutes) / selectedRange) * 100;
                 
-                // Apply gradient using the view percentage directly
-                // This ensures the transition aligns with the wrapper and track backgrounds
+                // Apply gradient using the selected range percentage
+                // This ensures the transition aligns with the geologic segments in the background
                 element.style.background = `linear-gradient(90deg, 
                     var(--accent) 0%, 
-                    var(--accent-dark) ${currentPercentInView}%, 
-                    var(--future-accent) ${currentPercentInView}%, 
+                    var(--accent-dark) ${currentPercentInSelected}%, 
+                    var(--future-accent) ${currentPercentInSelected}%, 
                     var(--future-accent-dark) 100%)`;
             }
         }
