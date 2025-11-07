@@ -327,7 +327,7 @@
 
         .range-controls {
             position: absolute;
-            top: calc(100% + 8px);
+            top: -91px;
             background: white;
             border-radius: 14px;
             box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
@@ -344,13 +344,13 @@
         
         /* Position start control popup */
         #sliderStartControl .range-controls {
-            left: 0;
+            left: calc(100% + 8px);
             transform-origin: left top;
         }
         
         /* Position end control popup to not overflow right */
         #sliderEndControl .range-controls {
-            right: 0;
+            right: calc(100% + 8px);
             left: auto;
             transform-origin: right top;
         }
@@ -359,11 +359,19 @@
         .range-controls::before {
             content: '';
             position: absolute;
-            bottom: 100%;
-            left: 0;
-            right: 0;
-            height: 16px;
+            top: 0;
+            bottom: 0;
+            width: 16px;
             background: transparent;
+        }
+        
+        /* Position bridge on appropriate side */
+        #sliderStartControl .range-controls::before {
+            right: 100%;
+        }
+        
+        #sliderEndControl .range-controls::before {
+            left: 100%;
         }
 
         /* Keep popup visible with delay when hovering either icon or popup */
@@ -379,43 +387,6 @@
             visibility: visible;
             pointer-events: auto;
             transition: opacity 0.2s ease, visibility 0s linear;
-        }
-
-        .range-controls-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.75rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-        }
-
-        .range-controls-header span {
-            font-weight: 600;
-            font-size: 0.95rem;
-            color: #0f172a;
-        }
-
-        .apply-btn {
-            padding: 0.4rem 0.9rem;
-            font-size: 0.85rem;
-            border-radius: 8px;
-            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
-            transition: transform 0.2s ease;
-        }
-
-        .apply-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(14, 165, 233, 0.4);
-        }
-
-        .apply-btn:active {
-            transform: translateY(0);
         }
 
         .range-slider-info {
@@ -716,10 +687,6 @@
                                 <span>⚙</span>
                             </div>
                             <div class="range-controls" id="startControls">
-                                <div class="range-controls-header">
-                                    <span>View Start</span>
-                                    <button class="apply-btn" id="applyStartBtn">Apply</button>
-                                </div>
                                 <div class="date-inputs">
                                     <div class="date-field">
                                         <label for="startEra" class="field-label">Era</label>
@@ -765,10 +732,6 @@
                                 <span>⚙</span>
                             </div>
                             <div class="range-controls" id="endControls">
-                                <div class="range-controls-header">
-                                    <span>View End</span>
-                                    <button class="apply-btn" id="applyEndBtn">Apply</button>
-                                </div>
                                 <div class="date-inputs">
                                     <div class="date-field">
                                         <label for="endEra" class="field-label">Era</label>
@@ -1407,8 +1370,6 @@
         const bottomSelected = document.getElementById("bottomSelected");
         const bottomStartHandle = document.getElementById("bottomStartHandle");
         const bottomEndHandle = document.getElementById("bottomEndHandle");
-        const applyStartBtn = document.getElementById("applyStartBtn");
-        const applyEndBtn = document.getElementById("applyEndBtn");
 
         // Top timeline elements
         const topSliderWrapper = document.getElementById("topSliderWrapper");
@@ -2419,15 +2380,6 @@
         topStartHandle.addEventListener('mousedown', (e) => startTopDrag('start', e));
         topEndHandle.addEventListener('mousedown', (e) => startTopDrag('end', e));
         topSelected.addEventListener('mousedown', (e) => startTopDrag('range', e));
-
-        // Apply button handlers
-        applyStartBtn.addEventListener("click", () => {
-            updateViewRange();
-        });
-
-        applyEndBtn.addEventListener("click", () => {
-            updateViewRange();
-        });
 
         // Add event listeners to all date component inputs
         const allDateInputs = [
