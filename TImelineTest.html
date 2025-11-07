@@ -2064,7 +2064,7 @@
             if (CURRENT_DATE_MINUTES <= startMinutes) {
                 // Entire range is in the future
                 if (isWrapper) {
-                    element.style.background = 'linear-gradient(90deg, rgba(168, 85, 247, 0.15), rgba(126, 34, 206, 0.15))';
+                    element.style.background = 'linear-gradient(90deg, var(--future-accent), var(--future-accent-dark))';
                 } else if (isMainTrack) {
                     element.style.background = 'linear-gradient(90deg, rgba(168, 85, 247, 0.3), rgba(126, 34, 206, 0.6), rgba(168, 85, 247, 0.3))';
                     element.style.boxShadow = 'inset 0 0 12px rgba(168, 85, 247, 0.35)';
@@ -2074,7 +2074,7 @@
             } else if (CURRENT_DATE_MINUTES >= endMinutes) {
                 // Entire range is in the past
                 if (isWrapper) {
-                    element.style.background = 'linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(37, 99, 235, 0.15))';
+                    element.style.background = 'linear-gradient(90deg, var(--accent), var(--accent-dark))';
                 } else if (isMainTrack) {
                     element.style.background = 'linear-gradient(90deg, rgba(14, 165, 233, 0.3), rgba(2, 132, 199, 0.6), rgba(14, 165, 233, 0.3))';
                     element.style.boxShadow = 'inset 0 0 12px rgba(14, 165, 233, 0.35)';
@@ -2087,10 +2087,10 @@
                 
                 if (isWrapper) {
                     element.style.background = `linear-gradient(90deg, 
-                        rgba(14, 165, 233, 0.15) 0%, 
-                        rgba(37, 99, 235, 0.15) ${currentPercent}%, 
-                        rgba(168, 85, 247, 0.15) ${currentPercent}%, 
-                        rgba(126, 34, 206, 0.15) 100%)`;
+                        var(--accent) 0%, 
+                        var(--accent-dark) ${currentPercent}%, 
+                        var(--future-accent) ${currentPercent}%, 
+                        var(--future-accent-dark) 100%)`;
                 } else if (isMainTrack) {
                     element.style.background = `linear-gradient(90deg, 
                         rgba(14, 165, 233, 0.3) 0%,
