@@ -1699,15 +1699,27 @@
             const tooltipRect = geologicTooltip.getBoundingClientRect();
             const offset = 15;
             
+            // Get the bounds of the dual-timeline-container
+            const timelineContainer = document.querySelector('.dual-timeline-container');
+            const containerRect = timelineContainer.getBoundingClientRect();
+            
             let left = event.clientX + offset;
             let top = event.clientY + offset;
             
-            // Prevent tooltip from going off-screen
-            if (left + tooltipRect.width > window.innerWidth) {
+            // Constrain horizontally within the timeline container
+            if (left + tooltipRect.width > containerRect.right) {
                 left = event.clientX - tooltipRect.width - offset;
             }
-            if (top + tooltipRect.height > window.innerHeight) {
+            if (left < containerRect.left) {
+                left = containerRect.left + offset;
+            }
+            
+            // Constrain vertically within the timeline container
+            if (top + tooltipRect.height > containerRect.bottom) {
                 top = event.clientY - tooltipRect.height - offset;
+            }
+            if (top < containerRect.top) {
+                top = containerRect.top + offset;
             }
             
             geologicTooltip.style.left = `${left}px`;
