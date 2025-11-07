@@ -2122,24 +2122,17 @@
                 // Entire range is in the past
                 element.style.background = 'linear-gradient(90deg, var(--accent), var(--accent-dark))';
             } else {
-                // Range spans the current date - calculate gradient position to match background
-                // The background transitions at a certain percentage within the view range
+                // Range spans the current date
+                // Use the SAME percentage as the background to ensure perfect alignment
                 const viewRange = viewEndMinutes - viewStartMinutes;
                 const currentPercentInView = ((CURRENT_DATE_MINUTES - viewStartMinutes) / viewRange) * 100;
                 
-                // The selected bar is positioned within the view
-                const selectedStartPercent = ((rangeStartMinutes - viewStartMinutes) / viewRange) * 100;
-                const selectedEndPercent = ((rangeEndMinutes - viewStartMinutes) / viewRange) * 100;
-                const selectedWidth = selectedEndPercent - selectedStartPercent;
-                
-                // Calculate where the transition should appear within the selected bar
-                // to align with the background transition
-                const transitionPercentWithinBar = ((currentPercentInView - selectedStartPercent) / selectedWidth) * 100;
-                
+                // Apply gradient using the view percentage directly
+                // This ensures the transition aligns with the wrapper and track backgrounds
                 element.style.background = `linear-gradient(90deg, 
                     var(--accent) 0%, 
-                    var(--accent-dark) ${transitionPercentWithinBar}%, 
-                    var(--future-accent) ${transitionPercentWithinBar}%, 
+                    var(--accent-dark) ${currentPercentInView}%, 
+                    var(--future-accent) ${currentPercentInView}%, 
                     var(--future-accent-dark) 100%)`;
             }
         }
