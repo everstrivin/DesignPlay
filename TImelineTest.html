@@ -2136,20 +2136,13 @@
                 element.style.background = 'linear-gradient(90deg, var(--accent), var(--accent-dark))';
             } else {
                 // Range spans the current date
-                // Calculate where "today" falls in the wrapper's coordinate system
-                const wrapperRange = viewEndMinutes - viewStartMinutes;
-                const currentPercentInWrapper = ((CURRENT_DATE_MINUTES - viewStartMinutes) / wrapperRange) * 100;
+                // Calculate where "today" falls within the selected range itself
+                // The selected bar is positioned in track coordinates, so we don't need wrapper padding adjustment
+                const selectedRange = rangeEndMinutes - rangeStartMinutes;
+                const currentPercentInSelected = ((CURRENT_DATE_MINUTES - rangeStartMinutes) / selectedRange) * 100;
                 
-                // Calculate where the selected range is positioned in the wrapper
-                const rangeStartPercentInWrapper = ((rangeStartMinutes - viewStartMinutes) / wrapperRange) * 100;
-                const rangeEndPercentInWrapper = ((rangeEndMinutes - viewStartMinutes) / wrapperRange) * 100;
-                const rangeWidthInWrapper = rangeEndPercentInWrapper - rangeStartPercentInWrapper;
-                
-                // Convert wrapper transition position to selected range coordinate system
-                const currentPercentInSelected = ((currentPercentInWrapper - rangeStartPercentInWrapper) / rangeWidthInWrapper) * 100;
-                
-                // Apply gradient using the converted percentage
-                // This ensures the transition aligns with the wrapper background gradient
+                // Apply gradient using the selected range percentage
+                // This ensures the transition aligns with where "today" actually falls in the bar
                 element.style.background = `linear-gradient(90deg, 
                     var(--accent) 0%, 
                     var(--accent-dark) ${currentPercentInSelected}%, 
