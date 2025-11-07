@@ -2087,23 +2087,11 @@
                 const currentPercent = ((CURRENT_DATE_MINUTES - startMinutes) / totalRange) * 100;
                 
                 if (isWrapper) {
-                    // Wrapper has 12px padding on each side, so we need to adjust the percentage
-                    // to account for the padding. The gradient transition should align with the track area.
-                    // If wrapper width is W, track width is W-24, so we need to map track percentage to wrapper percentage:
-                    // wrapperPercent = 12/W + trackPercent * (W-24)/W = 12/W + trackPercent * (1 - 24/W)
-                    // We can approximate using: wrapperPercent ≈ padding% + trackPercent * (1 - 2*padding%)
-                    // For 12px padding in a typical ~1000px wrapper, padding% ≈ 1.2%, so adjustment is small
-                    // But we need exact alignment, so we calculate: wrapperPercent = (12 + trackPercent * trackWidth) / wrapperWidth
-                    // Simplifying: wrapperPercent = paddingPercent + currentPercent * (1 - 2*paddingPercent)
-                    const paddingPx = 12;
-                    const wrapperWidth = element.offsetWidth;
-                    const paddingPercent = (paddingPx / wrapperWidth) * 100;
-                    const adjustedPercent = paddingPercent + currentPercent * (1 - 2 * paddingPercent / 100);
-                    
+                    // Use the same percentage as track/selected elements for alignment
                     element.style.background = `linear-gradient(90deg, 
                         rgba(14, 165, 233, 0.15) 0%, 
-                        rgba(37, 99, 235, 0.15) ${adjustedPercent}%, 
-                        rgba(168, 85, 247, 0.15) ${adjustedPercent}%, 
+                        rgba(37, 99, 235, 0.15) ${currentPercent}%, 
+                        rgba(168, 85, 247, 0.15) ${currentPercent}%, 
                         rgba(126, 34, 206, 0.15) 100%)`;
                 } else if (isMainTrack) {
                     element.style.background = `linear-gradient(90deg, 
