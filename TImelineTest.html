@@ -204,10 +204,20 @@
         }
 
         .dual-timeline-container {
+            margin-top: 1rem;
+        }
+        
+        .timeline-with-vertical-controls {
+            display: flex;
+            align-items: stretch;
+            gap: 12px;
+        }
+        
+        .horizontal-sliders-container {
             display: flex;
             flex-direction: column;
             gap: 2rem;
-            margin-top: 1rem;
+            flex: 1;
         }
 
         .range-slider-container {
@@ -281,106 +291,89 @@
             transform: translate(-50%, -50%) scale(1.05);
         }
 
-        /* Wrapper for slider and boundary controls */
-        .range-slider-with-controls {
-            position: relative;
+        /* Vertical slider controls container */
+        .vertical-slider-control {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
+            min-width: 100px;
         }
 
-        /* Slider boundary control wrappers outside of slider track */
-        .slider-boundary-control {
+        .vertical-slider-control.start {
+            align-items: flex-start;
+        }
+
+        .vertical-slider-control.end {
+            align-items: flex-end;
+        }
+
+        /* Vertical sliders wrapper - should stretch to match horizontal sliders height */
+        .vertical-sliders-wrapper {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+            flex: 1;
+        }
+
+        /* Individual vertical slider */
+        .vertical-slider {
+            width: 40px;
+            background: linear-gradient(180deg, rgba(14, 165, 233, 0.15), rgba(37, 99, 235, 0.15));
+            border-radius: 12px;
             position: relative;
-            z-index: 100;
-            flex-shrink: 0;
+            cursor: pointer;
         }
 
-        .slider-boundary-icon {
-            width: 32px;
-            height: 32px;
+        .vertical-slider-track {
+            position: absolute;
+            left: 50%;
+            top: 12px;
+            bottom: 12px;
+            width: 8px;
+            transform: translateX(-50%);
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.3);
+        }
+
+        .vertical-slider-handle {
+            position: absolute;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-            display: flex;
-            align-items: center;
-            justify-content: center;
             cursor: pointer;
-            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
             border: 3px solid white;
-            transition: transform 0.2s ease;
-        }
-
-        .slider-boundary-icon:hover {
-            transform: scale(1.1);
-        }
-
-        .slider-boundary-icon span {
-            font-size: 16px;
-            color: white;
-        }
-
-        .range-controls {
-            position: absolute;
-            top: -91px;
-            background: white;
-            border-radius: 14px;
-            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
-            padding: 1rem;
-            min-width: 420px;
-            max-width: calc(100vw - 40px);
-            opacity: 0;
-            visibility: hidden;
+            z-index: 10;
             pointer-events: none;
-            transition: opacity 0.2s ease 0.15s, visibility 0s linear 0.35s;
-            border: 1px solid rgba(148, 163, 184, 0.25);
-            z-index: 100;
-        }
-        
-        /* Position start control popup */
-        #sliderStartControl .range-controls {
-            left: calc(100% + 8px);
-            transform-origin: left top;
-        }
-        
-        /* Position end control popup to not overflow right */
-        #sliderEndControl .range-controls {
-            right: calc(100% + 8px);
-            left: auto;
-            transform-origin: right top;
-        }
-        
-        /* Add invisible bridge to maintain hover state */
-        .range-controls::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 16px;
-            background: transparent;
-        }
-        
-        /* Position bridge on appropriate side */
-        #sliderStartControl .range-controls::before {
-            right: 100%;
-        }
-        
-        #sliderEndControl .range-controls::before {
-            left: 100%;
         }
 
-        /* Keep popup visible with delay when hovering either icon or popup */
-        .slider-boundary-control:hover .range-controls {
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
-            transition: opacity 0.2s ease, visibility 0s linear;
+        .vertical-slider-handle:hover {
+            transform: translate(-50%, -50%) scale(1.15);
         }
 
-        .range-controls:hover {
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
-            transition: opacity 0.2s ease, visibility 0s linear;
+        /* Date display below sliders */
+        .slider-date-display {
+            font-size: 0.85rem;
+            color: #0f172a;
+            font-weight: 600;
+            padding: 0.5rem 0.75rem;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            white-space: nowrap;
+            max-width: 200px;
+        }
+
+        .slider-date-display.start {
+            text-align: left;
+        }
+
+        .slider-date-display.end {
+            text-align: right;
         }
 
         .range-slider-info {
@@ -658,105 +651,62 @@
         <section class="timeline-card">
             <div class="range-display" id="rangeDisplay"></div>
             <div class="dual-timeline-container">
-                <!-- Top Timeline: Fine Range Selector -->
-                <div class="range-slider-container">
-                    <div class="range-slider-with-controls">
-                        <div class="range-slider-wrapper" id="topSliderWrapper">
-                            <div class="range-slider-track" id="topSliderTrack">
-                                <div class="geologic-segments-container" id="topGeologicSegments"></div>
+                <div class="timeline-with-vertical-controls">
+                    <!-- Start Date Vertical Sliders (left side) -->
+                    <div class="vertical-slider-control start">
+                        <div class="vertical-sliders-wrapper">
+                            <div class="vertical-slider" id="startGranularitySlider">
+                                <div class="vertical-slider-track"></div>
+                                <div class="vertical-slider-handle" id="startGranularityHandle"></div>
                             </div>
-                            <div class="range-slider-selected" id="topSelected"></div>
-                            <div class="range-handle" id="topStartHandle"></div>
-                            <div class="range-handle" id="topEndHandle"></div>
+                            <div class="vertical-slider" id="startDateSlider">
+                                <div class="vertical-slider-track"></div>
+                                <div class="vertical-slider-handle" id="startDateHandle"></div>
+                            </div>
+                        </div>
+                        <div class="slider-date-display start" id="startDateDisplay"></div>
+                    </div>
+                    
+                    <!-- Timeline sliders container -->
+                    <div class="horizontal-sliders-container">
+                        <!-- Top Timeline: Fine Range Selector -->
+                        <div class="range-slider-container">
+                            <div class="range-slider-wrapper" id="topSliderWrapper">
+                                <div class="range-slider-track" id="topSliderTrack">
+                                    <div class="geologic-segments-container" id="topGeologicSegments"></div>
+                                </div>
+                                <div class="range-slider-selected" id="topSelected"></div>
+                                <div class="range-handle" id="topStartHandle"></div>
+                                <div class="range-handle" id="topEndHandle"></div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Timeline: Coarse Range Selector -->
+                        <div class="range-slider-container">
+                            <div class="range-slider-wrapper" id="bottomSliderWrapper">
+                                <div class="range-slider-track" id="bottomSliderTrack">
+                                    <div class="geologic-segments-container" id="bottomGeologicSegments"></div>
+                                </div>
+                                <div class="range-slider-selected" id="bottomSelected"></div>
+                                <div class="range-handle" id="bottomStartHandle"></div>
+                                <div class="range-handle" id="bottomEndHandle"></div>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Bottom Timeline: Coarse Range Selector -->
-                <div class="range-slider-container">
-                    <div class="range-slider-with-controls">
-                        <!-- View Start Control at left side -->
-                        <div class="slider-boundary-control" id="sliderStartControl">
-                            <div class="slider-boundary-icon">
-                                <span>⚙</span>
+                    
+                    <!-- End Date Vertical Sliders (right side) -->
+                    <div class="vertical-slider-control end">
+                        <div class="vertical-sliders-wrapper">
+                            <div class="vertical-slider" id="endDateSlider">
+                                <div class="vertical-slider-track"></div>
+                                <div class="vertical-slider-handle" id="endDateHandle"></div>
                             </div>
-                            <div class="range-controls" id="startControls">
-                                <div class="date-inputs">
-                                    <div class="date-field">
-                                        <label for="startEra" class="field-label">Era</label>
-                                        <select id="startEra">
-                                            <option value="-1">BCE</option>
-                                            <option value="1">CE</option>
-                                        </select>
-                                    </div>
-                                    <div class="date-field">
-                                        <label for="startYearComp" class="field-label">Year</label>
-                                        <input type="number" id="startYearComp" value="1000001" min="1" max="4540000000" />
-                                    </div>
-                                    <div class="date-field">
-                                        <label for="startMonth" class="field-label">Month</label>
-                                        <input type="number" id="startMonth" value="1" min="1" max="12" />
-                                    </div>
-                                    <div class="date-field">
-                                        <label for="startDay" class="field-label">Day</label>
-                                        <input type="number" id="startDay" value="1" min="1" max="31" />
-                                    </div>
-                                    <div class="date-field">
-                                        <label for="startHour" class="field-label">Hour</label>
-                                        <input type="number" id="startHour" value="0" min="0" max="23" />
-                                    </div>
-                                    <div class="date-field">
-                                        <label for="startMinute" class="field-label">Minute</label>
-                                        <input type="number" id="startMinute" value="0" min="0" max="59" />
-                                    </div>
-                                </div>
+                            <div class="vertical-slider" id="endGranularitySlider">
+                                <div class="vertical-slider-track"></div>
+                                <div class="vertical-slider-handle" id="endGranularityHandle"></div>
                             </div>
                         </div>
-                        <div class="range-slider-wrapper" id="bottomSliderWrapper">
-                            <div class="range-slider-track" id="bottomSliderTrack">
-                                <div class="geologic-segments-container" id="bottomGeologicSegments"></div>
-                            </div>
-                            <div class="range-slider-selected" id="bottomSelected"></div>
-                            <div class="range-handle" id="bottomStartHandle"></div>
-                            <div class="range-handle" id="bottomEndHandle"></div>
-                        </div>
-                        <!-- View End Control at right side -->
-                        <div class="slider-boundary-control" id="sliderEndControl">
-                            <div class="slider-boundary-icon">
-                                <span>⚙</span>
-                            </div>
-                            <div class="range-controls" id="endControls">
-                                <div class="date-inputs">
-                                    <div class="date-field">
-                                        <label for="endEra" class="field-label">Era</label>
-                                        <select id="endEra">
-                                            <option value="-1">BCE</option>
-                                            <option value="1" selected>CE</option>
-                                        </select>
-                                    </div>
-                                    <div class="date-field">
-                                        <label for="endYearComp" class="field-label">Year</label>
-                                        <input type="number" id="endYearComp" value="1000001" min="1" max="4540000000" />
-                                    </div>
-                                    <div class="date-field">
-                                        <label for="endMonth" class="field-label">Month</label>
-                                        <input type="number" id="endMonth" value="1" min="1" max="12" />
-                                    </div>
-                                    <div class="date-field">
-                                        <label for="endDay" class="field-label">Day</label>
-                                        <input type="number" id="endDay" value="1" min="1" max="31" />
-                                    </div>
-                                    <div class="date-field">
-                                        <label for="endHour" class="field-label">Hour</label>
-                                        <input type="number" id="endHour" value="0" min="0" max="23" />
-                                    </div>
-                                    <div class="date-field">
-                                        <label for="endMinute" class="field-label">Minute</label>
-                                        <input type="number" id="endMinute" value="0" min="0" max="59" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <div class="slider-date-display end" id="endDateDisplay"></div>
                     </div>
                 </div>
             </div>
@@ -1340,23 +1290,20 @@
         
         const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         
-        // Start date components
-        const startEra = document.getElementById("startEra");
-        const startYearComp = document.getElementById("startYearComp");
-        const startMonth = document.getElementById("startMonth");
-        const startDay = document.getElementById("startDay");
-        const startHour = document.getElementById("startHour");
-        const startMinute = document.getElementById("startMinute");
-        
-        // End date components
-        const endEra = document.getElementById("endEra");
-        const endYearComp = document.getElementById("endYearComp");
-        const endMonth = document.getElementById("endMonth");
-        const endDay = document.getElementById("endDay");
-        const endHour = document.getElementById("endHour");
-        const endMinute = document.getElementById("endMinute");
-
         const rangeDisplay = document.getElementById("rangeDisplay");
+        
+        // Vertical slider elements
+        const startGranularitySlider = document.getElementById("startGranularitySlider");
+        const startGranularityHandle = document.getElementById("startGranularityHandle");
+        const startDateSlider = document.getElementById("startDateSlider");
+        const startDateHandle = document.getElementById("startDateHandle");
+        const startDateDisplay = document.getElementById("startDateDisplay");
+        
+        const endGranularitySlider = document.getElementById("endGranularitySlider");
+        const endGranularityHandle = document.getElementById("endGranularityHandle");
+        const endDateSlider = document.getElementById("endDateSlider");
+        const endDateHandle = document.getElementById("endDateHandle");
+        const endDateDisplay = document.getElementById("endDateDisplay");
 
         // Bottom timeline elements
         const bottomSliderWrapper = document.getElementById("bottomSliderWrapper");
@@ -1387,6 +1334,15 @@
         
         // Track manual fine granularity override (null means auto-calculate)
         let manualFineGranularity = null;
+        
+        // Vertical slider state
+        const GRANULARITY_LEVELS = Object.keys(GRANULARITY_TO_MINUTES); // Ordered from coarsest to finest
+        let startGranularityIndex = 6; // Default to Year (index 6)
+        let endGranularityIndex = 6;
+        
+        // Date adjustment animation state
+        let startDateAdjustmentInterval = null;
+        let endDateAdjustmentInterval = null;
 
         function getGranularityIndex(granularity) {
             const granularities = Object.keys(GRANULARITY_TO_MINUTES);
@@ -1547,23 +1503,36 @@
             }
         }
 
-        // Update the date component inputs based on current viewStartMinutes and viewEndMinutes
-        function updateDateInputs() {
-            const startComponents = minutesToDateComponents(viewStartMinutes);
-            startEra.value = startComponents.era;
-            startYearComp.value = startComponents.year;
-            startMonth.value = startComponents.month;
-            startDay.value = startComponents.day;
-            startHour.value = startComponents.hour;
-            startMinute.value = startComponents.minute;
+        // Update the date displays below vertical sliders
+        function updateDateDisplays() {
+            const startComponents = minutesToDateComponents(bottomStartMinutes);
+            const endComponents = minutesToDateComponents(bottomEndMinutes);
             
-            const endComponents = minutesToDateComponents(viewEndMinutes);
-            endEra.value = endComponents.era;
-            endYearComp.value = endComponents.year;
-            endMonth.value = endComponents.month;
-            endDay.value = endComponents.day;
-            endHour.value = endComponents.hour;
-            endMinute.value = endComponents.minute;
+            const startEra = startComponents.era === 1 ? "CE" : "BCE";
+            const endEra = endComponents.era === 1 ? "CE" : "BCE";
+            
+            const startMonthIndex = Math.min(Math.max(startComponents.month - 1, 0), 11);
+            const endMonthIndex = Math.min(Math.max(endComponents.month - 1, 0), 11);
+            
+            startDateDisplay.textContent = `${MONTH_NAMES[startMonthIndex]} ${startComponents.day}, ${formatYear(startComponents.year)} ${pad(startComponents.hour)}:${pad(startComponents.minute)} ${startEra}`;
+            endDateDisplay.textContent = `${MONTH_NAMES[endMonthIndex]} ${endComponents.day}, ${formatYear(endComponents.year)} ${pad(endComponents.hour)}:${pad(endComponents.minute)} ${endEra}`;
+        }
+        
+        // Update granularity slider handle positions
+        function updateGranularitySliders() {
+            // Start granularity slider (top = finest, bottom = coarsest)
+            const startPercent = (1 - (startGranularityIndex / (GRANULARITY_LEVELS.length - 1))) * 100;
+            startGranularityHandle.style.top = `${startPercent}%`;
+            
+            // End granularity slider (top = finest, bottom = coarsest)
+            const endPercent = (1 - (endGranularityIndex / (GRANULARITY_LEVELS.length - 1))) * 100;
+            endGranularityHandle.style.top = `${endPercent}%`;
+        }
+        
+        // Initialize date adjustment sliders to center
+        function resetDateSliders() {
+            startDateHandle.style.top = '50%';
+            endDateHandle.style.top = '50%';
         }
 
         // Geologic period visualization functions
@@ -1737,106 +1706,13 @@
         }
 
         function updateViewRange() {
-            // Get start date components
-            let startMinutes = dateComponentsToMinutes(
-                startEra.value,
-                startYearComp.value,
-                startMonth.value,
-                startDay.value,
-                startHour.value,
-                startMinute.value
-            );
-            
-            // Get end date components
-            let endMinutes = dateComponentsToMinutes(
-                endEra.value,
-                endYearComp.value,
-                endMonth.value,
-                endDay.value,
-                endHour.value,
-                endMinute.value
-            );
-            
-            startMinutes = clampMinutes(startMinutes);
-            endMinutes = clampMinutes(endMinutes);
-
-            if (startMinutes === endMinutes) {
-                // Use a reasonable default minimum span (1 day)
-                const minimumSpan = 1440; // 1 day in minutes
-                if (endMinutes >= TIMELINE_MAX) {
-                    startMinutes = Math.max(TIMELINE_MIN, endMinutes - minimumSpan);
-                }
-                endMinutes = Math.min(startMinutes + minimumSpan, TIMELINE_MAX);
-            }
-
-            if (startMinutes > endMinutes) {
-                [startMinutes, endMinutes] = [endMinutes, startMinutes];
-            }
-
-            viewStartMinutes = startMinutes;
-            viewEndMinutes = endMinutes;
-
-            updateDateInputs();
-
-            // Date inputs define the boundaries for the bottom slider
-            // Initialize bottom slider to a reasonable position within these boundaries
-            const viewSpan = viewEndMinutes - viewStartMinutes;
-            const midpoint = (viewStartMinutes + viewEndMinutes) / 2;
-            
-            // Set bottom slider range to middle portion of view boundaries
-            // Try to keep existing bottom range if it fits, otherwise reinitialize
-            if (bottomStartMinutes < viewStartMinutes || bottomEndMinutes > viewEndMinutes) {
-                // Bottom range is outside new boundaries, reinitialize
-                const quarterSpan = viewSpan / 4;
-                bottomStartMinutes = midpoint - quarterSpan;
-                bottomEndMinutes = midpoint + quarterSpan;
-            }
-            
-            // Ensure bottom timeline has minimum span to allow grabbing the range bar
-            // Use pixel-based minimum: the time span equivalent to 50 pixels on the slider track
-            const wrapperWidth = bottomSliderWrapper.getBoundingClientRect().width;
-            const minPixelSpan = calculateMinPixelSpan(wrapperWidth, viewSpan);
-            if (bottomEndMinutes - bottomStartMinutes < minPixelSpan) {
-                bottomEndMinutes = Math.min(viewEndMinutes, bottomStartMinutes + minPixelSpan);
-                if (bottomEndMinutes - bottomStartMinutes < minPixelSpan) {
-                    bottomStartMinutes = Math.max(viewStartMinutes, bottomEndMinutes - minPixelSpan);
-                }
-            }
-            
-            // Update top timeline to be centered within bottom range
-            const bottomSpan = bottomEndMinutes - bottomStartMinutes;
-            const fineGranularity = getCurrentFineGranularity();
-            const minTopSpan = GRANULARITY_TO_MINUTES[fineGranularity];
-            
-            // Try to keep existing top range if it fits
-            if (topStartMinutes < bottomStartMinutes || topEndMinutes > bottomEndMinutes) {
-                // Top range is outside new bottom boundaries, reinitialize
-                const bottomMidpoint = (bottomStartMinutes + bottomEndMinutes) / 2;
-                // Target: 1/4 of bottom span, but at least 10 units of the fine granularity
-                const targetTopSpan = Math.max(bottomSpan / 4, minTopSpan * 10);
-                const topHalfSpan = targetTopSpan / 2;
-                topStartMinutes = bottomMidpoint - topHalfSpan;
-                topEndMinutes = bottomMidpoint + topHalfSpan;
-            }
-            
-            // Ensure top timeline has minimum span (at least 10 granularity units)
-            const minAllowedTopSpan = minTopSpan * 10;
-            if (topEndMinutes - topStartMinutes < minAllowedTopSpan) {
-                const currentMidpoint = (topStartMinutes + topEndMinutes) / 2;
-                const halfSpan = minAllowedTopSpan / 2;
-                topStartMinutes = Math.max(bottomStartMinutes, currentMidpoint - halfSpan);
-                topEndMinutes = Math.min(bottomEndMinutes, currentMidpoint + halfSpan);
-                // Adjust if we hit boundaries
-                if (topEndMinutes - topStartMinutes < minAllowedTopSpan) {
-                    topEndMinutes = Math.min(bottomEndMinutes, topStartMinutes + minAllowedTopSpan);
-                    if (topEndMinutes - topStartMinutes < minAllowedTopSpan) {
-                        topStartMinutes = Math.max(bottomStartMinutes, topEndMinutes - minAllowedTopSpan);
-                    }
-                }
-            }
+            // View range is now defined by the bottom slider boundaries
+            // This function sets up initial boundaries for the bottom slider
+            viewStartMinutes = TIMELINE_MIN;
+            viewEndMinutes = TIMELINE_MAX;
             
             updateRangeSliders();
-            // Update the main view display to show the top timeline's range
+            updateDateDisplays();
             refreshRangeDisplay();
             rebuildTicks();
             updatePointerAndDetails();
@@ -2484,26 +2360,174 @@
         topEndHandle.addEventListener('mousedown', (e) => startTopDrag('end', e));
         topSelected.addEventListener('mousedown', (e) => startTopDrag('range', e));
 
-        // Add event listeners to all date component inputs
-        const allDateInputs = [
-            startEra, startYearComp, startMonth, startDay, startHour, startMinute,
-            endEra, endYearComp, endMonth, endDay, endHour, endMinute
-        ];
+        // Vertical slider event handlers
         
-        allDateInputs.forEach(input => {
-            input.addEventListener("change", () => {
-                updateViewRange();
-            });
-            input.addEventListener("keydown", event => {
-                if (event.key === "Enter") {
-                    updateViewRange();
+        // Granularity slider drag handling
+        let granularityDragState = null;
+        
+        function startGranularityDrag(isStart, event) {
+            event.preventDefault();
+            const slider = isStart ? startGranularitySlider : endGranularitySlider;
+            const rect = slider.getBoundingClientRect();
+            
+            granularityDragState = {
+                isStart: isStart,
+                rect: rect
+            };
+            
+            document.addEventListener('mousemove', handleGranularityDrag);
+            document.addEventListener('mouseup', endGranularityDrag);
+            
+            // Immediately update position
+            handleGranularityDrag(event);
+        }
+        
+        function handleGranularityDrag(event) {
+            if (!granularityDragState) return;
+            
+            const rect = granularityDragState.rect;
+            const y = event.clientY - rect.top;
+            const percent = Math.max(0, Math.min(1, y / rect.height));
+            
+            // Top = finest (0), Bottom = coarsest (length-1)
+            const index = Math.round((1 - percent) * (GRANULARITY_LEVELS.length - 1));
+            
+            if (granularityDragState.isStart) {
+                startGranularityIndex = index;
+            } else {
+                endGranularityIndex = index;
+            }
+            
+            updateGranularitySliders();
+        }
+        
+        function endGranularityDrag() {
+            granularityDragState = null;
+            document.removeEventListener('mousemove', handleGranularityDrag);
+            document.removeEventListener('mouseup', endGranularityDrag);
+        }
+        
+        // Date adjustment slider handling
+        let dateAdjustmentDragState = null;
+        
+        function startDateAdjustmentDrag(isStart, event) {
+            event.preventDefault();
+            const slider = isStart ? startDateSlider : endDateSlider;
+            const rect = slider.getBoundingClientRect();
+            
+            dateAdjustmentDragState = {
+                isStart: isStart,
+                rect: rect
+            };
+            
+            document.addEventListener('mousemove', handleDateAdjustmentDrag);
+            document.addEventListener('mouseup', endDateAdjustmentDrag);
+            
+            // Start animation
+            if (isStart) {
+                if (startDateAdjustmentInterval) clearInterval(startDateAdjustmentInterval);
+                startDateAdjustmentInterval = setInterval(() => updateDateFromSlider(true), 50);
+            } else {
+                if (endDateAdjustmentInterval) clearInterval(endDateAdjustmentInterval);
+                endDateAdjustmentInterval = setInterval(() => updateDateFromSlider(false), 50);
+            }
+        }
+        
+        function handleDateAdjustmentDrag(event) {
+            if (!dateAdjustmentDragState) return;
+            
+            const rect = dateAdjustmentDragState.rect;
+            const y = event.clientY - rect.top;
+            const percent = Math.max(0, Math.min(1, y / rect.height));
+            
+            const handle = dateAdjustmentDragState.isStart ? startDateHandle : endDateHandle;
+            handle.style.top = `${percent * 100}%`;
+        }
+        
+        function endDateAdjustmentDrag() {
+            if (!dateAdjustmentDragState) return;
+            
+            const isStart = dateAdjustmentDragState.isStart;
+            dateAdjustmentDragState = null;
+            
+            document.removeEventListener('mousemove', handleDateAdjustmentDrag);
+            document.removeEventListener('mouseup', endDateAdjustmentDrag);
+            
+            // Stop animation and reset slider to center
+            if (isStart) {
+                if (startDateAdjustmentInterval) {
+                    clearInterval(startDateAdjustmentInterval);
+                    startDateAdjustmentInterval = null;
                 }
-            });
-        });
+                startDateHandle.style.top = '50%';
+            } else {
+                if (endDateAdjustmentInterval) {
+                    clearInterval(endDateAdjustmentInterval);
+                    endDateAdjustmentInterval = null;
+                }
+                endDateHandle.style.top = '50%';
+            }
+        }
+        
+        function updateDateFromSlider(isStart) {
+            const handle = isStart ? startDateHandle : endDateHandle;
+            const topPercent = parseFloat(handle.style.top) / 100;
+            
+            // Center is at 50%, calculate offset from center
+            const offset = 0.5 - topPercent; // Positive = moving forward, negative = moving backward
+            
+            // Calculate rate based on distance from center (exponential)
+            // At center: 0, At edges: max speed
+            const absOffset = Math.abs(offset);
+            const rate = Math.pow(absOffset * 2, 2); // Quadratic scaling for smooth acceleration
+            
+            if (Math.abs(rate) < 0.01) return; // Dead zone at center
+            
+            // Get granularity
+            const granularityIndex = isStart ? startGranularityIndex : endGranularityIndex;
+            const granularity = GRANULARITY_LEVELS[granularityIndex];
+            const minutesPerUnit = GRANULARITY_TO_MINUTES[granularity];
+            
+            // Calculate change in minutes (rate determines speed)
+            const direction = offset > 0 ? 1 : -1;
+            const deltaMinutes = direction * rate * minutesPerUnit * 0.1; // Scale factor for reasonable speed
+            
+            // Update the appropriate boundary
+            if (isStart) {
+                bottomStartMinutes = clampMinutes(bottomStartMinutes + deltaMinutes);
+                // Ensure minimum span
+                if (bottomEndMinutes - bottomStartMinutes < minutesPerUnit) {
+                    bottomStartMinutes = bottomEndMinutes - minutesPerUnit;
+                }
+            } else {
+                bottomEndMinutes = clampMinutes(bottomEndMinutes + deltaMinutes);
+                // Ensure minimum span
+                if (bottomEndMinutes - bottomStartMinutes < minutesPerUnit) {
+                    bottomEndMinutes = bottomStartMinutes + minutesPerUnit;
+                }
+            }
+            
+            // Update top slider to stay within bounds
+            topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes));
+            topEndMinutes = Math.max(bottomStartMinutes, Math.min(topEndMinutes, bottomEndMinutes));
+            
+            updateRangeSliders();
+            updateDateDisplays();
+            refreshRangeDisplay();
+        }
+        
+        // Add event listeners for vertical sliders
+        startGranularitySlider.addEventListener('mousedown', (e) => startGranularityDrag(true, e));
+        endGranularitySlider.addEventListener('mousedown', (e) => startGranularityDrag(false, e));
+        
+        startDateSlider.addEventListener('mousedown', (e) => startDateAdjustmentDrag(true, e));
+        endDateSlider.addEventListener('mousedown', (e) => startDateAdjustmentDrag(false, e));
 
         // Initialize
         initializeTimelines();
-        updateDateInputs();
+        updateGranularitySliders();
+        resetDateSliders();
+        updateDateDisplays();
         updateRangeSliders();
         refreshRangeDisplay();
         rebuildTicks();
