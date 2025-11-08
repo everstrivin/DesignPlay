@@ -1554,8 +1554,9 @@
 
         // Update the date displays below vertical sliders
         function updateDateDisplays() {
-            const startComponents = minutesToDateComponents(bottomStartMinutes);
-            const endComponents = minutesToDateComponents(bottomEndMinutes);
+            // Date displays show the coarse track boundaries (controlled by vertical sliders)
+            const startComponents = minutesToDateComponents(viewStartMinutes);
+            const endComponents = minutesToDateComponents(viewEndMinutes);
             
             const startEra = startComponents.era === 1 ? "CE" : "BCE";
             const endEra = endComponents.era === 1 ? "CE" : "BCE";
@@ -2553,39 +2554,28 @@
             const direction = offset > 0 ? 1 : -1;
             const deltaMinutes = direction * rate * minutesPerUnit * 0.1; // Scale factor for reasonable speed
             
-            // Update the appropriate boundary
+            // Vertical sliders adjust the coarse track boundaries (viewStartMinutes/viewEndMinutes)
             if (isStart) {
-                bottomStartMinutes = clampMinutes(bottomStartMinutes + deltaMinutes);
+                viewStartMinutes = clampMinutes(viewStartMinutes + deltaMinutes);
                 // Ensure minimum span
-                if (bottomEndMinutes - bottomStartMinutes < minutesPerUnit) {
-                    bottomStartMinutes = bottomEndMinutes - minutesPerUnit;
+                if (viewEndMinutes - viewStartMinutes < minutesPerUnit) {
+                    viewStartMinutes = viewEndMinutes - minutesPerUnit;
                 }
             } else {
-                bottomEndMinutes = clampMinutes(bottomEndMinutes + deltaMinutes);
+                viewEndMinutes = clampMinutes(viewEndMinutes + deltaMinutes);
                 // Ensure minimum span
-                if (bottomEndMinutes - bottomStartMinutes < minutesPerUnit) {
-                    bottomEndMinutes = bottomStartMinutes + minutesPerUnit;
+                if (viewEndMinutes - viewStartMinutes < minutesPerUnit) {
+                    viewEndMinutes = viewStartMinutes + minutesPerUnit;
                 }
             }
             
-            // Update top slider to stay within bounds
+            // Keep bottom handles within new view boundaries
+            bottomStartMinutes = Math.max(viewStartMinutes, Math.min(bottomStartMinutes, viewEndMinutes));
+            bottomEndMinutes = Math.max(viewStartMinutes, Math.min(bottomEndMinutes, viewEndMinutes));
+            
+            // Update top slider to stay within bottom handle bounds
             topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes));
             topEndMinutes = Math.max(bottomStartMinutes, Math.min(topEndMinutes, bottomEndMinutes));
-            
-            // Dynamically adjust view boundaries to keep bottom slider visible
-            // Expand the view to be 4x the current bottom range
-            const bottomRange = bottomEndMinutes - bottomStartMinutes;
-            const viewPadding = bottomRange * 1.5; // 1.5x padding on each side
-            viewStartMinutes = clampMinutes(bottomStartMinutes - viewPadding);
-            viewEndMinutes = clampMinutes(bottomEndMinutes + viewPadding);
-            
-            // Ensure minimum view range
-            const minViewRange = bottomRange * 4;
-            if (viewEndMinutes - viewStartMinutes < minViewRange) {
-                const midpoint = (viewStartMinutes + viewEndMinutes) / 2;
-                viewStartMinutes = clampMinutes(midpoint - minViewRange / 2);
-                viewEndMinutes = clampMinutes(midpoint + minViewRange / 2);
-            }
             
             updateRangeSliders();
             updateDateDisplays();
