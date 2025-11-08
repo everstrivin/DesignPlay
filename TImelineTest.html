@@ -2736,8 +2736,26 @@
                         const currentWithoutLastFive = currentComponents.year - (currentComponents.year >= 0 ? lastFiveDigits : -lastFiveDigits);
                         const tempWithoutLastFive = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 100000 : -Math.abs(tempComponents.year) % 100000);
                         newYear = tempWithoutLastFive + (currentComponents.year >= 0 ? lastFiveDigits : -lastFiveDigits);
+                    } else if (granularity === "Age") {
+                        // Change millions digit and higher (with carry), preserve last six digits
+                        const lastSixDigits = Math.abs(currentComponents.year) % 1000000;
+                        const currentWithoutLastSix = currentComponents.year - (currentComponents.year >= 0 ? lastSixDigits : -lastSixDigits);
+                        const tempWithoutLastSix = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 1000000 : -Math.abs(tempComponents.year) % 1000000);
+                        newYear = tempWithoutLastSix + (currentComponents.year >= 0 ? lastSixDigits : -lastSixDigits);
+                    } else if (granularity === "Epoch") {
+                        // Change ten-millions digit and higher (with carry), preserve last seven digits
+                        const lastSevenDigits = Math.abs(currentComponents.year) % 10000000;
+                        const currentWithoutLastSeven = currentComponents.year - (currentComponents.year >= 0 ? lastSevenDigits : -lastSevenDigits);
+                        const tempWithoutLastSeven = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 10000000 : -Math.abs(tempComponents.year) % 10000000);
+                        newYear = tempWithoutLastSeven + (currentComponents.year >= 0 ? lastSevenDigits : -lastSevenDigits);
+                    } else if (granularity === "Eon") {
+                        // Change hundred-millions digit and higher (with carry), preserve last eight digits
+                        const lastEightDigits = Math.abs(currentComponents.year) % 100000000;
+                        const currentWithoutLastEight = currentComponents.year - (currentComponents.year >= 0 ? lastEightDigits : -lastEightDigits);
+                        const tempWithoutLastEight = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 100000000 : -Math.abs(tempComponents.year) % 100000000);
+                        newYear = tempWithoutLastEight + (currentComponents.year >= 0 ? lastEightDigits : -lastEightDigits);
                     } else {
-                        // For Age, Epoch, Eon: use full year change (too large for digit isolation)
+                        // For any other granularities: use full year change
                         newYear = tempComponents.year;
                     }
                 }
