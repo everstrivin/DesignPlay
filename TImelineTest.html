@@ -409,6 +409,77 @@
             text-align: right;
         }
 
+        /* Speed slider at bottom center */
+        .speed-slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+        }
+
+        .speed-slider-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .speed-slider-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .speed-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 10px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(14, 165, 233, 0.25), rgba(37, 99, 235, 0.25));
+            outline: none;
+            cursor: pointer;
+        }
+
+        .speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
+            border: 3px solid white;
+        }
+
+        .speed-slider::-moz-range-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
+            border: 3px solid white;
+            border: none;
+        }
+
+        .speed-value-display {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent);
+            min-width: 50px;
+            text-align: center;
+            padding: 0.25rem 0.5rem;
+            background: rgba(14, 165, 233, 0.1);
+            border-radius: 6px;
+        }
+
         .range-slider-info {
             font-size: 0.85rem;
             color: var(--text-muted);
@@ -756,6 +827,17 @@
                         <div class="slider-date-display end" id="endDateDisplay"></div>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Speed slider at bottom center -->
+            <div class="speed-slider-container">
+                <div class="speed-slider-label">Animation Speed</div>
+                <div class="speed-slider-wrapper">
+                    <span class="speed-value-display" style="text-align: right;">Slow</span>
+                    <input type="range" class="speed-slider" id="speedSlider" min="1" max="100" value="50" step="1">
+                    <span class="speed-value-display" style="text-align: left;">Fast</span>
+                </div>
+                <div class="speed-value-display" id="speedValueDisplay">50%</div>
             </div>
         </section>
     </div>
@@ -1338,6 +1420,11 @@
         const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         
         const rangeDisplay = document.getElementById("rangeDisplay");
+        
+        // Speed slider elements
+        const speedSlider = document.getElementById("speedSlider");
+        const speedValueDisplay = document.getElementById("speedValueDisplay");
+        let speedMultiplier = 0.5; // Default to 50% (middle position)
         
         // Vertical slider elements
         const startGranularitySlider = document.getElementById("startGranularitySlider");
@@ -2551,8 +2638,9 @@
             const minutesPerUnit = GRANULARITY_TO_MINUTES[granularity];
             
             // Calculate change in minutes (rate determines speed)
+            // Use speedMultiplier to control animation speed (0.01 to 1.0)
             const direction = offset > 0 ? 1 : -1;
-            const deltaMinutes = direction * rate * minutesPerUnit * 0.1; // Scale factor for reasonable speed
+            const deltaMinutes = direction * rate * minutesPerUnit * 0.1 * speedMultiplier; // Scale factor for reasonable speed, multiplied by speed slider value
             
             // Vertical sliders adjust the coarse track boundaries (viewStartMinutes/viewEndMinutes)
             if (isStart) {
@@ -2588,6 +2676,13 @@
         
         startDateSlider.addEventListener('mousedown', (e) => startDateAdjustmentDrag(true, e));
         endDateSlider.addEventListener('mousedown', (e) => startDateAdjustmentDrag(false, e));
+
+        // Speed slider event listener
+        speedSlider.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            speedMultiplier = value / 100; // Convert 1-100 to 0.01-1.0
+            speedValueDisplay.textContent = `${value}%`;
+        });
 
         // Initialize
         initializeTimelines();
