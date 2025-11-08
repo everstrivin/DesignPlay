@@ -3118,7 +3118,17 @@
             // Calculate minimum span for bottom slider based on pixel separation
             const viewRange = viewEndMinutes - viewStartMinutes;
             const bottomSliderWrapperWidth = bottomSliderWrapper.getBoundingClientRect().width;
-            const minBottomSpan = calculateMinPixelSpan(bottomSliderWrapperWidth, viewRange);
+            const minBottomSpanPixel = calculateMinPixelSpan(bottomSliderWrapperWidth, viewRange);
+            
+            // Also enforce an absolute minimum time-based distance
+            // Use 5% of the view range as minimum, with a floor based on granularity
+            const currentGranularityIndex = isStart ? startGranularityIndex : endGranularityIndex;
+            const currentGranularity = GRANULARITY_LEVELS[currentGranularityIndex];
+            const minBottomSpanTime = GRANULARITY_TO_MINUTES[currentGranularity] * 2; // At least 2 units of current granularity
+            const minBottomSpanPercent = viewRange * 0.05; // 5% of view range
+            
+            // Use the largest of the three minimums to ensure visible separation
+            const minBottomSpan = Math.max(minBottomSpanPixel, minBottomSpanTime, minBottomSpanPercent);
             
             // Keep bottom handles within new view boundaries and enforce minimum distance
             bottomStartMinutes = Math.max(viewStartMinutes, Math.min(bottomStartMinutes, viewEndMinutes - minBottomSpan));
@@ -3139,9 +3149,12 @@
             const bottomRange = bottomEndMinutes - bottomStartMinutes;
             const topSliderWrapperWidth = topSliderWrapper.getBoundingClientRect().width;
             const fineGranularity = getCurrentFineGranularity();
-            const minTopSpanTime = GRANULARITY_TO_MINUTES[fineGranularity];
+            const minTopSpanTime = GRANULARITY_TO_MINUTES[fineGranularity] * 2; // At least 2 units
             const minTopSpanPixel = calculateMinPixelSpan(topSliderWrapperWidth, bottomRange);
-            const minTopSpan = Math.max(minTopSpanTime, minTopSpanPixel);
+            const minTopSpanPercent = bottomRange * 0.05; // 5% of bottom range
+            
+            // Use the largest of the three minimums to ensure visible separation
+            const minTopSpan = Math.max(minTopSpanTime, minTopSpanPixel, minTopSpanPercent);
             
             // Update top slider to stay within bottom handle bounds and enforce minimum distance
             topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - minTopSpan));
