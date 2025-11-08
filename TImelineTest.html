@@ -2341,8 +2341,8 @@
             
             if (dragState.type === 'start') {
                 let newStart = dragState.startMinutesStart + deltaMinutes;
-                // Constrain within date input boundaries
-                newStart = Math.max(boundaryMin, Math.min(newStart, bottomEndMinutes - effectiveMinSpan));
+                // Constrain within date input boundaries and ensure start doesn't go past end
+                newStart = Math.max(boundaryMin, Math.min(newStart, dragState.startMinutesEnd - effectiveMinSpan));
                 newStart = Math.max(boundaryMin, newStart); // Ensure it doesn't go below min
                 bottomStartMinutes = newStart;
                 
@@ -2362,8 +2362,8 @@
                 topEndMinutes = Math.min(bottomEndMinutes, Math.max(topEndMinutes, topStartMinutes + minTopSpan));
             } else if (dragState.type === 'end') {
                 let newEnd = dragState.startMinutesEnd + deltaMinutes;
-                // Constrain within date input boundaries
-                newEnd = Math.min(boundaryMax, Math.max(newEnd, bottomStartMinutes + effectiveMinSpan));
+                // Constrain within date input boundaries and ensure end doesn't go past start
+                newEnd = Math.min(boundaryMax, Math.max(newEnd, dragState.startMinutesStart + effectiveMinSpan));
                 newEnd = Math.min(boundaryMax, newEnd); // Ensure it doesn't go above max
                 bottomEndMinutes = newEnd;
                 
@@ -2445,12 +2445,14 @@
             if (dragState.type === 'start') {
                 let newStart = dragState.startMinutesStart + deltaMinutes;
                 newStart = Math.max(bottomStartMinutes, newStart);
-                newStart = Math.min(newStart, topEndMinutes - effectiveMinSpan);
+                // Ensure start doesn't go past end
+                newStart = Math.min(newStart, dragState.startMinutesEnd - effectiveMinSpan);
                 topStartMinutes = newStart;
             } else if (dragState.type === 'end') {
                 let newEnd = dragState.startMinutesEnd + deltaMinutes;
                 newEnd = Math.min(bottomEndMinutes, newEnd);
-                newEnd = Math.max(newEnd, topStartMinutes + effectiveMinSpan);
+                // Ensure end doesn't go past start
+                newEnd = Math.max(newEnd, dragState.startMinutesStart + effectiveMinSpan);
                 topEndMinutes = newEnd;
             } else if (dragState.type === 'range') {
                 const span = dragState.startMinutesEnd - dragState.startMinutesStart;
