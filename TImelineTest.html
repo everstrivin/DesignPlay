@@ -1660,18 +1660,19 @@
         }
         
         // Parse a date string back to minutes
-        // Expected format: "MMM D, YYYY HH:MM ERA" (e.g., "Nov 1, 2025 18:21 CE")
+        // Expected format: "MMM D, YYYY HH:MM ERA" (e.g., "Nov 1, 2025 18:21 CE" or "Nov 1, 4,540,000,000 18:21 BCE")
+        // Years can be entered with or without commas
         function parseDateString(dateStr) {
             try {
-                // Extract components using regex
-                const pattern = /^(\w+)\s+(\d+),\s+(\d{1,})\s+(\d{1,2}):(\d{2})\s+(CE|BCE)$/;
+                // Extract components using regex that allows commas in the year
+                const pattern = /^(\w+)\s+(\d+),\s+([\d,]+)\s+(\d{1,2}):(\d{2})\s+(CE|BCE)$/;
                 const match = dateStr.trim().match(pattern);
                 
                 if (!match) {
                     return null;
                 }
                 
-                const [, monthName, day, year, hour, minute, era] = match;
+                const [, monthName, day, yearWithCommas, hour, minute, era] = match;
                 
                 // Convert month name to index
                 const monthIndex = MONTH_NAMES.findIndex(m => m === monthName);
@@ -1679,8 +1680,11 @@
                     return null;
                 }
                 
+                // Remove all commas from year before parsing
+                const yearStr = yearWithCommas.replace(/,/g, '');
+                
                 // Parse numeric values
-                const yearNum = parseInt(year);
+                const yearNum = parseInt(yearStr);
                 const monthNum = monthIndex + 1;
                 const dayNum = parseInt(day);
                 const hourNum = parseInt(hour);
@@ -1694,6 +1698,11 @@
                 if (dayNum < 1 || dayNum > 31) return null;
                 if (hourNum < 0 || hourNum > 23) return null;
                 if (minuteNum < 0 || minuteNum > 59) return null;
+                
+                // Validate year is within allowed range (0 to 4.54 billion)
+                if (yearNum < 0 || yearNum > EARTH_AGE_YEARS) {
+                    return null;
+                }
                 
                 // Convert to era sign
                 const eraSign = era === "CE" ? 1 : -1;
