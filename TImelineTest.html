@@ -2641,9 +2641,25 @@
                 // Constrain top timeline within new bottom bounds
                 const bottomSpan = bottomEndMinutes - bottomStartMinutes;
                 const fineGranularity = getCurrentFineGranularity();
-                const minTopSpan = GRANULARITY_TO_MINUTES[fineGranularity];
+                const minTopSpanTime = GRANULARITY_TO_MINUTES[fineGranularity];
+                const topSliderWrapperWidth = topSliderWrapper.getBoundingClientRect().width;
+                const minTopSpanPixel = calculateMinPixelSpan(topSliderWrapperWidth, bottomSpan);
+                const minTopSpan = Math.max(minTopSpanTime, minTopSpanPixel);
+                
                 topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - minTopSpan));
                 topEndMinutes = Math.min(bottomEndMinutes, Math.max(topEndMinutes, topStartMinutes + minTopSpan));
+                
+                // Ensure minimum distance is maintained after clamping
+                if (topEndMinutes - topStartMinutes < minTopSpan) {
+                    const topMidpoint = (topStartMinutes + topEndMinutes) / 2;
+                    topStartMinutes = Math.max(bottomStartMinutes, topMidpoint - minTopSpan / 2);
+                    topEndMinutes = Math.min(bottomEndMinutes, topStartMinutes + minTopSpan);
+                    
+                    if (topEndMinutes - topStartMinutes < minTopSpan) {
+                        topStartMinutes = bottomStartMinutes;
+                        topEndMinutes = Math.min(bottomEndMinutes, bottomStartMinutes + minTopSpan);
+                    }
+                }
             } else if (dragState.type === 'end') {
                 let newEnd = dragState.startMinutesEnd + deltaMinutes;
                 // Constrain within date input boundaries and ensure end doesn't go past start
@@ -2660,11 +2676,27 @@
                 }
                 
                 // Constrain top timeline within new bottom bounds
-                const bottomSpan = bottomEndMinutes - bottomStartMinutes;
-                const fineGranularity = getCurrentFineGranularity();
-                const minTopSpan = GRANULARITY_TO_MINUTES[fineGranularity];
-                topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - minTopSpan));
-                topEndMinutes = Math.min(bottomEndMinutes, Math.max(topEndMinutes, topStartMinutes + minTopSpan));
+                const bottomSpan2 = bottomEndMinutes - bottomStartMinutes;
+                const fineGranularity2 = getCurrentFineGranularity();
+                const minTopSpanTime2 = GRANULARITY_TO_MINUTES[fineGranularity2];
+                const topSliderWrapperWidth2 = topSliderWrapper.getBoundingClientRect().width;
+                const minTopSpanPixel2 = calculateMinPixelSpan(topSliderWrapperWidth2, bottomSpan2);
+                const minTopSpan2 = Math.max(minTopSpanTime2, minTopSpanPixel2);
+                
+                topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - minTopSpan2));
+                topEndMinutes = Math.min(bottomEndMinutes, Math.max(topEndMinutes, topStartMinutes + minTopSpan2));
+                
+                // Ensure minimum distance is maintained after clamping
+                if (topEndMinutes - topStartMinutes < minTopSpan2) {
+                    const topMidpoint = (topStartMinutes + topEndMinutes) / 2;
+                    topStartMinutes = Math.max(bottomStartMinutes, topMidpoint - minTopSpan2 / 2);
+                    topEndMinutes = Math.min(bottomEndMinutes, topStartMinutes + minTopSpan2);
+                    
+                    if (topEndMinutes - topStartMinutes < minTopSpan2) {
+                        topStartMinutes = bottomStartMinutes;
+                        topEndMinutes = Math.min(bottomEndMinutes, bottomStartMinutes + minTopSpan2);
+                    }
+                }
             } else if (dragState.type === 'range') {
                 const span = dragState.startMinutesEnd - dragState.startMinutesStart;
                 
@@ -2704,9 +2736,23 @@
                     topEndMinutes = topStartMinutes + topSpan;
                 }
                 
-                // Ensure top stays within bottom bounds
-                topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - topSpan));
-                topEndMinutes = topStartMinutes + topSpan;
+                // Calculate minimum span for top slider
+                const bottomSpan3 = bottomEndMinutes - bottomStartMinutes;
+                const fineGranularity3 = getCurrentFineGranularity();
+                const minTopSpanTime3 = GRANULARITY_TO_MINUTES[fineGranularity3];
+                const topSliderWrapperWidth3 = topSliderWrapper.getBoundingClientRect().width;
+                const minTopSpanPixel3 = calculateMinPixelSpan(topSliderWrapperWidth3, bottomSpan3);
+                const minTopSpan3 = Math.max(minTopSpanTime3, minTopSpanPixel3);
+                
+                // Ensure top stays within bottom bounds and maintains minimum distance
+                topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - Math.max(topSpan, minTopSpan3)));
+                topEndMinutes = topStartMinutes + Math.max(topSpan, minTopSpan3);
+                
+                // Final check to ensure we don't exceed bottom end
+                if (topEndMinutes > bottomEndMinutes) {
+                    topEndMinutes = bottomEndMinutes;
+                    topStartMinutes = Math.max(bottomStartMinutes, bottomEndMinutes - Math.max(topSpan, minTopSpan3));
+                }
             }
             
             updateRangeSliders();
@@ -3069,13 +3115,51 @@
                 }
             }
             
-            // Keep bottom handles within new view boundaries
-            bottomStartMinutes = Math.max(viewStartMinutes, Math.min(bottomStartMinutes, viewEndMinutes));
-            bottomEndMinutes = Math.max(viewStartMinutes, Math.min(bottomEndMinutes, viewEndMinutes));
+            // Calculate minimum span for bottom slider based on pixel separation
+            const viewRange = viewEndMinutes - viewStartMinutes;
+            const bottomSliderWrapperWidth = bottomSliderWrapper.getBoundingClientRect().width;
+            const minBottomSpan = calculateMinPixelSpan(bottomSliderWrapperWidth, viewRange);
             
-            // Update top slider to stay within bottom handle bounds
-            topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes));
-            topEndMinutes = Math.max(bottomStartMinutes, Math.min(topEndMinutes, bottomEndMinutes));
+            // Keep bottom handles within new view boundaries and enforce minimum distance
+            bottomStartMinutes = Math.max(viewStartMinutes, Math.min(bottomStartMinutes, viewEndMinutes - minBottomSpan));
+            bottomEndMinutes = Math.max(viewStartMinutes + minBottomSpan, Math.min(bottomEndMinutes, viewEndMinutes));
+            
+            // Ensure bottom handles maintain minimum distance after clamping
+            if (bottomEndMinutes - bottomStartMinutes < minBottomSpan) {
+                if (isStart) {
+                    // If we're adjusting the start boundary, push the end handle out
+                    bottomEndMinutes = Math.min(viewEndMinutes, bottomStartMinutes + minBottomSpan);
+                } else {
+                    // If we're adjusting the end boundary, push the start handle back
+                    bottomStartMinutes = Math.max(viewStartMinutes, bottomEndMinutes - minBottomSpan);
+                }
+            }
+            
+            // Calculate minimum span for top slider
+            const bottomRange = bottomEndMinutes - bottomStartMinutes;
+            const topSliderWrapperWidth = topSliderWrapper.getBoundingClientRect().width;
+            const fineGranularity = getCurrentFineGranularity();
+            const minTopSpanTime = GRANULARITY_TO_MINUTES[fineGranularity];
+            const minTopSpanPixel = calculateMinPixelSpan(topSliderWrapperWidth, bottomRange);
+            const minTopSpan = Math.max(minTopSpanTime, minTopSpanPixel);
+            
+            // Update top slider to stay within bottom handle bounds and enforce minimum distance
+            topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - minTopSpan));
+            topEndMinutes = Math.max(bottomStartMinutes + minTopSpan, Math.min(topEndMinutes, bottomEndMinutes));
+            
+            // Ensure top handles maintain minimum distance after clamping
+            if (topEndMinutes - topStartMinutes < minTopSpan) {
+                // Try to maintain the span by adjusting both handles proportionally
+                const topMidpoint = (topStartMinutes + topEndMinutes) / 2;
+                topStartMinutes = Math.max(bottomStartMinutes, topMidpoint - minTopSpan / 2);
+                topEndMinutes = Math.min(bottomEndMinutes, topStartMinutes + minTopSpan);
+                
+                // If still too small, clamp to boundaries
+                if (topEndMinutes - topStartMinutes < minTopSpan) {
+                    topStartMinutes = bottomStartMinutes;
+                    topEndMinutes = Math.min(bottomEndMinutes, bottomStartMinutes + minTopSpan);
+                }
+            }
             
             updateRangeSliders();
             updateDateDisplays();
