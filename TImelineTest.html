@@ -2637,18 +2637,128 @@
             const direction = offset > 0 ? 1 : -1;
             const deltaMinutes = direction * rate * minutesPerUnit * 0.1 * speedMultiplier; // Scale factor for reasonable speed, multiplied by speed slider value
             
-            // Vertical sliders adjust the coarse track boundaries (viewStartMinutes/viewEndMinutes)
-            if (isStart) {
-                viewStartMinutes = clampMinutes(viewStartMinutes + deltaMinutes);
-                // Ensure minimum span
-                if (viewEndMinutes - viewStartMinutes < minutesPerUnit) {
-                    viewStartMinutes = viewEndMinutes - minutesPerUnit;
+            // Get the current value to adjust
+            const currentMinutes = isStart ? viewStartMinutes : viewEndMinutes;
+            
+            // For granularities Month and coarser, preserve finer time components
+            let newMinutes;
+            if (granularityIndex <= 9) { // Month (index 9) and coarser
+                // Decompose current time to get components to preserve
+                const currentComponents = minutesToDateComponents(currentMinutes);
+                
+                // Calculate the number of units to change (rounded to nearest unit)
+                const unitsToChange = Math.round(deltaMinutes / minutesPerUnit);
+                
+                // Determine which component to adjust based on granularity
+                if (granularity === "Month") {
+                    // Adjust month, preserve day, hour, minute
+                    const newMonth = currentComponents.month + unitsToChange;
+                    const totalMonths = (currentComponents.year - 1) * 12 + (newMonth - 1);
+                    const newYear = Math.floor(totalMonths / 12) + 1;
+                    const adjustedMonth = (totalMonths % 12) + 1;
+                    
+                    newMinutes = dateComponentsToMinutes(
+                        currentComponents.era,
+                        newYear,
+                        adjustedMonth < 1 ? adjustedMonth + 12 : adjustedMonth,
+                        currentComponents.day,
+                        currentComponents.hour,
+                        currentComponents.minute
+                    );
+                } else if (granularity === "Year") {
+                    // Adjust year, preserve month, day, hour, minute
+                    newMinutes = dateComponentsToMinutes(
+                        currentComponents.era,
+                        currentComponents.year + unitsToChange,
+                        currentComponents.month,
+                        currentComponents.day,
+                        currentComponents.hour,
+                        currentComponents.minute
+                    );
+                } else {
+                    // For coarser granularities (Decade, Century, Millennium, etc.),
+                    // adjust the years while preserving month, day, hour, minute
+                    const yearsToChange = unitsToChange * (minutesPerUnit / MINUTES_PER_YEAR);
+                    newMinutes = dateComponentsToMinutes(
+                        currentComponents.era,
+                        currentComponents.year + yearsToChange,
+                        currentComponents.month,
+                        currentComponents.day,
+                        currentComponents.hour,
+                        currentComponents.minute
+                    );
                 }
             } else {
-                viewEndMinutes = clampMinutes(viewEndMinutes + deltaMinutes);
+                // For Week, Day, Hour, Minute: use direct addition (existing behavior)
+                newMinutes = currentMinutes + deltaMinutes;
+            }
+            
+            // Vertical sliders adjust the coarse track boundaries (viewStartMinutes/viewEndMinutes)
+            if (isStart) {
+                viewStartMinutes = clampMinutes(newMinutes);
                 // Ensure minimum span
                 if (viewEndMinutes - viewStartMinutes < minutesPerUnit) {
-                    viewEndMinutes = viewStartMinutes + minutesPerUnit;
+                    // When enforcing minimum span for Month and coarser granularities, preserve finer components
+                    if (granularityIndex <= 9) {
+                        const preservedComponents = minutesToDateComponents(newMinutes);
+                        const spanDelta = minutesPerUnit - (viewEndMinutes - viewStartMinutes);
+                        const adjustedMinutes = newMinutes - spanDelta;
+                        const adjustedComponents = minutesToDateComponents(adjustedMinutes);
+                        // Preserve the finer components from newMinutes
+                        if (granularity === "Month") {
+                            adjustedComponents.day = preservedComponents.day;
+                            adjustedComponents.hour = preservedComponents.hour;
+                            adjustedComponents.minute = preservedComponents.minute;
+                        } else if (granularity === "Year" || granularityIndex < 9) {
+                            adjustedComponents.month = preservedComponents.month;
+                            adjustedComponents.day = preservedComponents.day;
+                            adjustedComponents.hour = preservedComponents.hour;
+                            adjustedComponents.minute = preservedComponents.minute;
+                        }
+                        viewStartMinutes = dateComponentsToMinutes(
+                            adjustedComponents.era,
+                            adjustedComponents.year,
+                            adjustedComponents.month,
+                            adjustedComponents.day,
+                            adjustedComponents.hour,
+                            adjustedComponents.minute
+                        );
+                    } else {
+                        viewStartMinutes = viewEndMinutes - minutesPerUnit;
+                    }
+                }
+            } else {
+                viewEndMinutes = clampMinutes(newMinutes);
+                // Ensure minimum span
+                if (viewEndMinutes - viewStartMinutes < minutesPerUnit) {
+                    // When enforcing minimum span for Month and coarser granularities, preserve finer components
+                    if (granularityIndex <= 9) {
+                        const preservedComponents = minutesToDateComponents(newMinutes);
+                        const spanDelta = minutesPerUnit - (viewEndMinutes - viewStartMinutes);
+                        const adjustedMinutes = newMinutes + spanDelta;
+                        const adjustedComponents = minutesToDateComponents(adjustedMinutes);
+                        // Preserve the finer components from newMinutes
+                        if (granularity === "Month") {
+                            adjustedComponents.day = preservedComponents.day;
+                            adjustedComponents.hour = preservedComponents.hour;
+                            adjustedComponents.minute = preservedComponents.minute;
+                        } else if (granularity === "Year" || granularityIndex < 9) {
+                            adjustedComponents.month = preservedComponents.month;
+                            adjustedComponents.day = preservedComponents.day;
+                            adjustedComponents.hour = preservedComponents.hour;
+                            adjustedComponents.minute = preservedComponents.minute;
+                        }
+                        viewEndMinutes = dateComponentsToMinutes(
+                            adjustedComponents.era,
+                            adjustedComponents.year,
+                            adjustedComponents.month,
+                            adjustedComponents.day,
+                            adjustedComponents.hour,
+                            adjustedComponents.minute
+                        );
+                    } else {
+                        viewEndMinutes = viewStartMinutes + minutesPerUnit;
+                    }
                 }
             }
             
