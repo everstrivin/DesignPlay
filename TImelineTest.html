@@ -2572,19 +2572,31 @@
             topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes));
             topEndMinutes = Math.max(bottomStartMinutes, Math.min(topEndMinutes, bottomEndMinutes));
             
-            // Dynamically adjust view boundaries to keep bottom slider visible
-            // Expand the view to be 4x the current bottom range
+            // Adjust view boundaries only if bottom slider is approaching edges
+            // This allows handles to move visibly within the track
             const bottomRange = bottomEndMinutes - bottomStartMinutes;
-            const viewPadding = bottomRange * 1.5; // 1.5x padding on each side
-            viewStartMinutes = clampMinutes(bottomStartMinutes - viewPadding);
-            viewEndMinutes = clampMinutes(bottomEndMinutes + viewPadding);
+            const currentViewRange = viewEndMinutes - viewStartMinutes;
             
-            // Ensure minimum view range
-            const minViewRange = bottomRange * 4;
-            if (viewEndMinutes - viewStartMinutes < minViewRange) {
-                const midpoint = (viewStartMinutes + viewEndMinutes) / 2;
-                viewStartMinutes = clampMinutes(midpoint - minViewRange / 2);
-                viewEndMinutes = clampMinutes(midpoint + minViewRange / 2);
+            // Calculate how far the slider is from the view boundaries (as percentage)
+            const startMargin = bottomStartMinutes - viewStartMinutes;
+            const endMargin = viewEndMinutes - bottomEndMinutes;
+            const startMarginPercent = (startMargin / currentViewRange) * 100;
+            const endMarginPercent = (endMargin / currentViewRange) * 100;
+            
+            // Only expand view if slider is too close to edges (< 15% margin)
+            if (startMarginPercent < 15 || endMarginPercent < 15) {
+                // Expand view to provide more room
+                const targetMargin = bottomRange * 2; // 2x margin on each side
+                viewStartMinutes = clampMinutes(bottomStartMinutes - targetMargin);
+                viewEndMinutes = clampMinutes(bottomEndMinutes + targetMargin);
+                
+                // Ensure minimum view range
+                const minViewRange = bottomRange * 5;
+                if (viewEndMinutes - viewStartMinutes < minViewRange) {
+                    const midpoint = (bottomStartMinutes + bottomEndMinutes) / 2;
+                    viewStartMinutes = clampMinutes(midpoint - minViewRange / 2);
+                    viewEndMinutes = clampMinutes(midpoint + minViewRange / 2);
+                }
             }
             
             updateRangeSliders();
