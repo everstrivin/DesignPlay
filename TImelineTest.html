@@ -2562,6 +2562,21 @@
             topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes));
             topEndMinutes = Math.max(bottomStartMinutes, Math.min(topEndMinutes, bottomEndMinutes));
             
+            // Dynamically adjust view boundaries to keep bottom slider visible
+            // Expand the view to be 4x the current bottom range
+            const bottomRange = bottomEndMinutes - bottomStartMinutes;
+            const viewPadding = bottomRange * 1.5; // 1.5x padding on each side
+            viewStartMinutes = clampMinutes(bottomStartMinutes - viewPadding);
+            viewEndMinutes = clampMinutes(bottomEndMinutes + viewPadding);
+            
+            // Ensure minimum view range
+            const minViewRange = bottomRange * 4;
+            if (viewEndMinutes - viewStartMinutes < minViewRange) {
+                const midpoint = (viewStartMinutes + viewEndMinutes) / 2;
+                viewStartMinutes = clampMinutes(midpoint - minViewRange / 2);
+                viewEndMinutes = clampMinutes(midpoint + minViewRange / 2);
+            }
+            
             updateRangeSliders();
             updateDateDisplays();
             refreshRangeDisplay();
