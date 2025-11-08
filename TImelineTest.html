@@ -399,6 +399,25 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             white-space: nowrap;
             max-width: 200px;
+            cursor: text;
+            border: 2px solid transparent;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .slider-date-display:hover {
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .slider-date-display:focus {
+            outline: none;
+            border-color: rgba(14, 165, 233, 0.7);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+        }
+
+        .slider-date-display.error {
+            border-color: rgba(239, 68, 68, 0.7);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
         }
 
         .slider-date-display.start {
@@ -761,7 +780,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="slider-date-display start" id="startDateDisplay"></div>
+                        <div class="slider-date-display start" id="startDateDisplay" contenteditable="true" spellcheck="false"></div>
                     </div>
                     
                     <!-- Timeline sliders container -->
@@ -810,7 +829,7 @@
                                 <div class="granularity-display" id="endGranularityDisplay">Year</div>
                             </div>
                         </div>
-                        <div class="slider-date-display end" id="endDateDisplay"></div>
+                        <div class="slider-date-display end" id="endDateDisplay" contenteditable="true" spellcheck="false"></div>
                     </div>
                 </div>
             </div>
@@ -1639,6 +1658,143 @@
             startDateDisplay.textContent = `${MONTH_NAMES[startMonthIndex]} ${startComponents.day}, ${formatYear(startComponents.year)} ${pad(startComponents.hour)}:${pad(startComponents.minute)} ${startEra}`;
             endDateDisplay.textContent = `${MONTH_NAMES[endMonthIndex]} ${endComponents.day}, ${formatYear(endComponents.year)} ${pad(endComponents.hour)}:${pad(endComponents.minute)} ${endEra}`;
         }
+        
+        // Parse a date string back to minutes
+        // Expected format: "MMM D, YYYY HH:MM ERA" (e.g., "Nov 1, 2025 18:21 CE")
+        function parseDateString(dateStr) {
+            try {
+                // Extract components using regex
+                const pattern = /^(\w+)\s+(\d+),\s+(\d{1,})\s+(\d{1,2}):(\d{2})\s+(CE|BCE)$/;
+                const match = dateStr.trim().match(pattern);
+                
+                if (!match) {
+                    return null;
+                }
+                
+                const [, monthName, day, year, hour, minute, era] = match;
+                
+                // Convert month name to index
+                const monthIndex = MONTH_NAMES.findIndex(m => m === monthName);
+                if (monthIndex === -1) {
+                    return null;
+                }
+                
+                // Parse numeric values
+                const yearNum = parseInt(year);
+                const monthNum = monthIndex + 1;
+                const dayNum = parseInt(day);
+                const hourNum = parseInt(hour);
+                const minuteNum = parseInt(minute);
+                
+                // Basic validation
+                if (isNaN(yearNum) || isNaN(dayNum) || isNaN(hourNum) || isNaN(minuteNum)) {
+                    return null;
+                }
+                if (monthNum < 1 || monthNum > 12) return null;
+                if (dayNum < 1 || dayNum > 31) return null;
+                if (hourNum < 0 || hourNum > 23) return null;
+                if (minuteNum < 0 || minuteNum > 59) return null;
+                
+                // Convert to era sign
+                const eraSign = era === "CE" ? 1 : -1;
+                
+                // Convert to minutes
+                return dateComponentsToMinutes(eraSign, yearNum, monthNum, dayNum, hourNum, minuteNum);
+            } catch (e) {
+                console.error("Error parsing date:", e);
+                return null;
+            }
+        }
+        
+        // Handle date input changes
+        function handleDateInput(isStart) {
+            const display = isStart ? startDateDisplay : endDateDisplay;
+            const currentText = display.textContent.trim();
+            
+            // Parse the new date
+            const newMinutes = parseDateString(currentText);
+            
+            if (newMinutes === null) {
+                // Invalid format - mark as error
+                display.classList.add('error');
+                return false;
+            }
+            
+            // Clamp to valid range
+            const clampedMinutes = clampMinutes(newMinutes);
+            
+            if (isStart) {
+                // Ensure start doesn't go past end
+                if (clampedMinutes > viewEndMinutes) {
+                    display.classList.add('error');
+                    return false;
+                }
+                viewStartMinutes = clampedMinutes;
+            } else {
+                // Ensure end doesn't go before start
+                if (clampedMinutes < viewStartMinutes) {
+                    display.classList.add('error');
+                    return false;
+                }
+                viewEndMinutes = clampedMinutes;
+            }
+            
+            // Remove error state
+            display.classList.remove('error');
+            
+            // Update bottom slider to stay within new boundaries
+            bottomStartMinutes = Math.max(viewStartMinutes, Math.min(bottomStartMinutes, viewEndMinutes));
+            bottomEndMinutes = Math.max(viewStartMinutes, Math.min(bottomEndMinutes, viewEndMinutes));
+            
+            // Update top slider to stay within bottom bounds
+            topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes));
+            topEndMinutes = Math.max(bottomStartMinutes, Math.min(topEndMinutes, bottomEndMinutes));
+            
+            // Update all UI elements
+            updateRangeSliders();
+            updateDateDisplays();
+            refreshRangeDisplay();
+            
+            return true;
+        }
+        
+        // Event listeners for date displays
+        startDateDisplay.addEventListener('blur', () => handleDateInput(true));
+        endDateDisplay.addEventListener('blur', () => handleDateInput(false));
+        
+        // Handle Enter key to commit changes
+        startDateDisplay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                startDateDisplay.blur();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                // Restore original value
+                updateDateDisplays();
+                startDateDisplay.blur();
+            }
+        });
+        
+        endDateDisplay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                endDateDisplay.blur();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                // Restore original value
+                updateDateDisplays();
+                endDateDisplay.blur();
+            }
+        });
+        
+        // Clear error state when user starts typing
+        startDateDisplay.addEventListener('input', () => {
+            startDateDisplay.classList.remove('error');
+        });
+        
+        endDateDisplay.addEventListener('input', () => {
+            endDateDisplay.classList.remove('error');
+        });
         
         // Update granularity slider handle positions
         function updateGranularitySliders() {
