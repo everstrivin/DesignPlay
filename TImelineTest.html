@@ -1757,10 +1757,20 @@
         }
 
         function updateViewRange() {
-            // View range is now defined by the bottom slider boundaries
-            // This function sets up initial boundaries for the bottom slider
-            viewStartMinutes = TIMELINE_MIN;
-            viewEndMinutes = TIMELINE_MAX;
+            // View range should provide reasonable boundaries around the bottom slider
+            // Expand to 4x the current bottom range for comfortable viewing
+            const bottomRange = bottomEndMinutes - bottomStartMinutes;
+            const viewPadding = bottomRange * 1.5;
+            viewStartMinutes = clampMinutes(bottomStartMinutes - viewPadding);
+            viewEndMinutes = clampMinutes(bottomEndMinutes + viewPadding);
+            
+            // Ensure minimum view range
+            const minViewRange = bottomRange * 4;
+            if (viewEndMinutes - viewStartMinutes < minViewRange) {
+                const midpoint = (viewStartMinutes + viewEndMinutes) / 2;
+                viewStartMinutes = clampMinutes(midpoint - minViewRange / 2);
+                viewEndMinutes = clampMinutes(midpoint + minViewRange / 2);
+            }
             
             updateRangeSliders();
             updateDateDisplays();
