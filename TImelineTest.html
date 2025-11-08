@@ -354,7 +354,8 @@
             border-radius: 12px;
             position: relative;
             cursor: pointer;
-            flex: 1 1 auto; /* Allow to grow and shrink */
+            flex: 1 1 100px; /* Grow and shrink with 100px base */
+            min-height: 100px; /* Ensure minimum visible height */
         }
 
         .vertical-slider-track {
