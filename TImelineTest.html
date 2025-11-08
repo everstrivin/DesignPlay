@@ -2341,8 +2341,8 @@
             
             if (dragState.type === 'start') {
                 let newStart = dragState.startMinutesStart + deltaMinutes;
-                // Constrain within date input boundaries
-                newStart = Math.max(boundaryMin, Math.min(newStart, bottomEndMinutes - effectiveMinSpan));
+                // Constrain within date input boundaries and ensure start doesn't go past end
+                newStart = Math.max(boundaryMin, Math.min(newStart, dragState.startMinutesEnd - effectiveMinSpan));
                 newStart = Math.max(boundaryMin, newStart); // Ensure it doesn't go below min
                 bottomStartMinutes = newStart;
                 
@@ -2362,8 +2362,8 @@
                 topEndMinutes = Math.min(bottomEndMinutes, Math.max(topEndMinutes, topStartMinutes + minTopSpan));
             } else if (dragState.type === 'end') {
                 let newEnd = dragState.startMinutesEnd + deltaMinutes;
-                // Constrain within date input boundaries
-                newEnd = Math.min(boundaryMax, Math.max(newEnd, bottomStartMinutes + effectiveMinSpan));
+                // Constrain within date input boundaries and ensure end doesn't go past start
+                newEnd = Math.min(boundaryMax, Math.max(newEnd, dragState.startMinutesStart + effectiveMinSpan));
                 newEnd = Math.min(boundaryMax, newEnd); // Ensure it doesn't go above max
                 bottomEndMinutes = newEnd;
                 
@@ -2445,12 +2445,14 @@
             if (dragState.type === 'start') {
                 let newStart = dragState.startMinutesStart + deltaMinutes;
                 newStart = Math.max(bottomStartMinutes, newStart);
-                newStart = Math.min(newStart, topEndMinutes - effectiveMinSpan);
+                // Ensure start doesn't go past end
+                newStart = Math.min(newStart, dragState.startMinutesEnd - effectiveMinSpan);
                 topStartMinutes = newStart;
             } else if (dragState.type === 'end') {
                 let newEnd = dragState.startMinutesEnd + deltaMinutes;
                 newEnd = Math.min(bottomEndMinutes, newEnd);
-                newEnd = Math.max(newEnd, topStartMinutes + effectiveMinSpan);
+                // Ensure end doesn't go past start
+                newEnd = Math.max(newEnd, dragState.startMinutesStart + effectiveMinSpan);
                 topEndMinutes = newEnd;
             } else if (dragState.type === 'range') {
                 const span = dragState.startMinutesEnd - dragState.startMinutesStart;
@@ -2633,23 +2635,146 @@
             const minutesPerUnit = GRANULARITY_TO_MINUTES[granularity];
             
             // Calculate change in minutes (rate determines speed)
-            // Use speedMultiplier to control animation speed (0.01 to 1.0)
+            // Use speedMultiplier to control animation speed
+            // Increased scale factor to 10.0 for responsiveness with component-preserving behavior
             const direction = offset > 0 ? 1 : -1;
-            const deltaMinutes = direction * rate * minutesPerUnit * 0.1 * speedMultiplier; // Scale factor for reasonable speed, multiplied by speed slider value
+            const deltaMinutes = direction * rate * minutesPerUnit * 10.0 * speedMultiplier; // Scale factor for reasonable speed, multiplied by speed slider value
+            
+            // Get the current value to adjust
+            const currentMinutes = isStart ? viewStartMinutes : viewEndMinutes;
+            
+            // For each granularity, add deltaMinutes but then "snap" to preserve unrelated components
+            // This allows natural minute accumulation while maintaining component independence
+            const tempMinutes = currentMinutes + deltaMinutes;
+            const tempComponents = minutesToDateComponents(tempMinutes);
+            const currentComponents = minutesToDateComponents(currentMinutes);
+            
+            let newMinutes;
+            
+            if (granularity === "Minute") {
+                // For Minute: use temp directly (no snapping)
+                newMinutes = tempMinutes;
+            } else if (granularity === "Hour") {
+                // For Hour: snap to preserve original minutes
+                newMinutes = dateComponentsToMinutes(
+                    tempComponents.era,
+                    tempComponents.year,
+                    tempComponents.month,
+                    tempComponents.day,
+                    tempComponents.hour,
+                    currentComponents.minute  // Snap: preserve minutes
+                );
+            } else if (granularity === "Day") {
+                // For Day: snap to preserve original hour and minutes
+                newMinutes = dateComponentsToMinutes(
+                    tempComponents.era,
+                    tempComponents.year,
+                    tempComponents.month,
+                    tempComponents.day,
+                    currentComponents.hour,  // Snap: preserve hour
+                    currentComponents.minute  // Snap: preserve minutes
+                );
+            } else if (granularity === "Week") {
+                // For Week: same as Day (uses week-sized deltas)
+                newMinutes = dateComponentsToMinutes(
+                    tempComponents.era,
+                    tempComponents.year,
+                    tempComponents.month,
+                    tempComponents.day,
+                    currentComponents.hour,  // Snap: preserve hour
+                    currentComponents.minute  // Snap: preserve minutes
+                );
+            } else if (granularity === "Month") {
+                // For Month: snap to preserve original day, hour, minute
+                newMinutes = dateComponentsToMinutes(
+                    tempComponents.era,
+                    tempComponents.year,
+                    tempComponents.month,
+                    currentComponents.day,  // Snap: preserve day
+                    currentComponents.hour,  // Snap: preserve hour
+                    currentComponents.minute  // Snap: preserve minutes
+                );
+            } else {
+                // Year and coarser: change only the specific digit(s) of the year
+                let newYear = currentComponents.year;
+                
+                if (granularity === "Year") {
+                    // For Year: use the temp year (change all digits)
+                    newYear = tempComponents.year;
+                } else {
+                    // For coarser granularities: change the digit with carry-over to higher digits
+                    // But preserve all lower digits
+                    const yearDelta = tempComponents.year - currentComponents.year;
+                    
+                    if (granularity === "Decade") {
+                        // Change tens digit and higher (with carry), preserve ones digit
+                        const onesDigit = Math.abs(currentComponents.year) % 10;
+                        const currentWithoutOnes = currentComponents.year - (currentComponents.year >= 0 ? onesDigit : -onesDigit);
+                        const tempWithoutOnes = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 10 : -Math.abs(tempComponents.year) % 10);
+                        newYear = tempWithoutOnes + (currentComponents.year >= 0 ? onesDigit : -onesDigit);
+                    } else if (granularity === "Century") {
+                        // Change hundreds digit and higher (with carry), preserve last two digits
+                        const lastTwoDigits = Math.abs(currentComponents.year) % 100;
+                        const currentWithoutLastTwo = currentComponents.year - (currentComponents.year >= 0 ? lastTwoDigits : -lastTwoDigits);
+                        const tempWithoutLastTwo = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 100 : -Math.abs(tempComponents.year) % 100);
+                        newYear = tempWithoutLastTwo + (currentComponents.year >= 0 ? lastTwoDigits : -lastTwoDigits);
+                    } else if (granularity === "Millennium") {
+                        // Change thousands digit and higher (with carry), preserve last three digits
+                        const lastThreeDigits = Math.abs(currentComponents.year) % 1000;
+                        const currentWithoutLastThree = currentComponents.year - (currentComponents.year >= 0 ? lastThreeDigits : -lastThreeDigits);
+                        const tempWithoutLastThree = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 1000 : -Math.abs(tempComponents.year) % 1000);
+                        newYear = tempWithoutLastThree + (currentComponents.year >= 0 ? lastThreeDigits : -lastThreeDigits);
+                    } else if (granularity === "Decamillennium") {
+                        // Change ten-thousands digit and higher (with carry), preserve last four digits
+                        const lastFourDigits = Math.abs(currentComponents.year) % 10000;
+                        const currentWithoutLastFour = currentComponents.year - (currentComponents.year >= 0 ? lastFourDigits : -lastFourDigits);
+                        const tempWithoutLastFour = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 10000 : -Math.abs(tempComponents.year) % 10000);
+                        newYear = tempWithoutLastFour + (currentComponents.year >= 0 ? lastFourDigits : -lastFourDigits);
+                    } else if (granularity === "Centimillennium") {
+                        // Change hundred-thousands digit and higher (with carry), preserve last five digits
+                        const lastFiveDigits = Math.abs(currentComponents.year) % 100000;
+                        const currentWithoutLastFive = currentComponents.year - (currentComponents.year >= 0 ? lastFiveDigits : -lastFiveDigits);
+                        const tempWithoutLastFive = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 100000 : -Math.abs(tempComponents.year) % 100000);
+                        newYear = tempWithoutLastFive + (currentComponents.year >= 0 ? lastFiveDigits : -lastFiveDigits);
+                    } else if (granularity === "Age") {
+                        // Change millions digit and higher (with carry), preserve last six digits
+                        const lastSixDigits = Math.abs(currentComponents.year) % 1000000;
+                        const currentWithoutLastSix = currentComponents.year - (currentComponents.year >= 0 ? lastSixDigits : -lastSixDigits);
+                        const tempWithoutLastSix = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 1000000 : -Math.abs(tempComponents.year) % 1000000);
+                        newYear = tempWithoutLastSix + (currentComponents.year >= 0 ? lastSixDigits : -lastSixDigits);
+                    } else if (granularity === "Epoch") {
+                        // Change ten-millions digit and higher (with carry), preserve last seven digits
+                        const lastSevenDigits = Math.abs(currentComponents.year) % 10000000;
+                        const currentWithoutLastSeven = currentComponents.year - (currentComponents.year >= 0 ? lastSevenDigits : -lastSevenDigits);
+                        const tempWithoutLastSeven = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 10000000 : -Math.abs(tempComponents.year) % 10000000);
+                        newYear = tempWithoutLastSeven + (currentComponents.year >= 0 ? lastSevenDigits : -lastSevenDigits);
+                    } else if (granularity === "Eon") {
+                        // Change hundred-millions digit and higher (with carry), preserve last eight digits
+                        const lastEightDigits = Math.abs(currentComponents.year) % 100000000;
+                        const currentWithoutLastEight = currentComponents.year - (currentComponents.year >= 0 ? lastEightDigits : -lastEightDigits);
+                        const tempWithoutLastEight = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 100000000 : -Math.abs(tempComponents.year) % 100000000);
+                        newYear = tempWithoutLastEight + (currentComponents.year >= 0 ? lastEightDigits : -lastEightDigits);
+                    } else {
+                        // For any other granularities: use full year change
+                        newYear = tempComponents.year;
+                    }
+                }
+                
+                newMinutes = dateComponentsToMinutes(
+                    tempComponents.era,
+                    newYear,
+                    currentComponents.month,  // Snap: preserve month
+                    currentComponents.day,  // Snap: preserve day
+                    currentComponents.hour,  // Snap: preserve hour
+                    currentComponents.minute  // Snap: preserve minutes
+                );
+            }
             
             // Vertical sliders adjust the coarse track boundaries (viewStartMinutes/viewEndMinutes)
             if (isStart) {
-                viewStartMinutes = clampMinutes(viewStartMinutes + deltaMinutes);
-                // Ensure minimum span
-                if (viewEndMinutes - viewStartMinutes < minutesPerUnit) {
-                    viewStartMinutes = viewEndMinutes - minutesPerUnit;
-                }
+                viewStartMinutes = clampMinutes(newMinutes);
             } else {
-                viewEndMinutes = clampMinutes(viewEndMinutes + deltaMinutes);
-                // Ensure minimum span
-                if (viewEndMinutes - viewStartMinutes < minutesPerUnit) {
-                    viewEndMinutes = viewStartMinutes + minutesPerUnit;
-                }
+                viewEndMinutes = clampMinutes(newMinutes);
             }
             
             // Keep bottom handles within new view boundaries
