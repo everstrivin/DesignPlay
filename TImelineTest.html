@@ -267,9 +267,8 @@
             width: 24px;
             height: 24px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
             cursor: pointer;
-            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
             border: 3px solid white;
             z-index: 10;
         }
@@ -280,11 +279,6 @@
 
         .range-handle:active {
             transform: translate(-50%, -50%) scale(1.05);
-        }
-
-        .range-handle.future {
-            background: linear-gradient(135deg, var(--future-accent), var(--future-accent-dark));
-            box-shadow: 0 8px 16px rgba(168, 85, 247, 0.3);
         }
 
         /* Wrapper for slider and boundary controls */
@@ -2056,6 +2050,35 @@
             return (minPixels / effectiveWidth) * totalRange;
         }
 
+        // Get the geologic period and color for a given time position
+        function getGeologicColorForPosition(minutes) {
+            // Check if position is in the future
+            if (minutes > CURRENT_DATE_MINUTES) {
+                return 'rgba(168, 85, 247, 0.8)'; // Purple for future
+            }
+            
+            // Find the geologic period that contains this position
+            for (let i = 0; i < GEOLOGIC_PERIODS.length; i++) {
+                const period = GEOLOGIC_PERIODS[i];
+                const periodEnd = (period.endMya === 0) ? CURRENT_DATE_MINUTES : period.endMinutes;
+                
+                if (minutes >= period.startMinutes && minutes <= periodEnd) {
+                    return period.color;
+                }
+            }
+            
+            // Default to blue for times before oldest period
+            return 'rgba(14, 165, 233, 0.8)';
+        }
+        
+        // Apply color to a handle based on its position
+        function applyHandleColor(handle, minutes) {
+            const color = getGeologicColorForPosition(minutes);
+            handle.style.background = color;
+            // Keep the white border
+            handle.style.border = '3px solid white';
+        }
+
         // Apply two-tone gradient to track based on current date position
         function applyTwoToneGradient(element, startMinutes, endMinutes, isWrapper = false, isMainTrack = false, selectedRangeIncludesToday = false) {
             const totalRange = endMinutes - startMinutes;
@@ -2178,14 +2201,9 @@
             // Apply gradient to selected range based on whether it spans the current date
             applySelectedRangeGradient(bottomSelected, bottomStartMinutes, bottomEndMinutes, viewStartMinutes, viewEndMinutes);
             
-            // Apply future styling to handles if the range end is in the future
-            if (bottomEndMinutes > CURRENT_DATE_MINUTES) {
-                bottomStartHandle.classList.add('future');
-                bottomEndHandle.classList.add('future');
-            } else {
-                bottomStartHandle.classList.remove('future');
-                bottomEndHandle.classList.remove('future');
-            }
+            // Apply colors to handles based on their position in the timeline
+            applyHandleColor(bottomStartHandle, bottomStartMinutes);
+            applyHandleColor(bottomEndHandle, bottomEndMinutes);
             
             // Apply two-tone gradient to wrapper only (track gradient is provided by geologic segments)
             // Pass whether the selected range (bottom range) includes today
@@ -2219,14 +2237,9 @@
             // Apply gradient to selected range based on whether it spans the current date
             applySelectedRangeGradient(topSelected, topStartMinutes, topEndMinutes, bottomStartMinutes, bottomEndMinutes);
             
-            // Apply future styling to handles if the range end is in the future
-            if (topEndMinutes > CURRENT_DATE_MINUTES) {
-                topStartHandle.classList.add('future');
-                topEndHandle.classList.add('future');
-            } else {
-                topStartHandle.classList.remove('future');
-                topEndHandle.classList.remove('future');
-            }
+            // Apply colors to handles based on their position in the timeline
+            applyHandleColor(topStartHandle, topStartMinutes);
+            applyHandleColor(topEndHandle, topEndMinutes);
             
             // Apply two-tone gradient to wrapper only (track gradient is provided by geologic segments)
             // Pass whether the selected range (top range) includes today
