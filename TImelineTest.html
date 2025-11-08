@@ -409,6 +409,63 @@
             text-align: right;
         }
 
+        /* Speed slider at bottom center */
+        .speed-slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .speed-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 10px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(14, 165, 233, 0.25), rgba(37, 99, 235, 0.25));
+            outline: none;
+            cursor: pointer;
+            max-width: 300px;
+        }
+
+        .speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
+            border: 3px solid white;
+        }
+
+        .speed-slider::-moz-range-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
+            border: 3px solid white;
+            border: none;
+        }
+
+        .speed-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            min-width: 50px;
+            text-align: center;
+        }
+
         .range-slider-info {
             font-size: 0.85rem;
             color: var(--text-muted);
@@ -756,6 +813,13 @@
                         <div class="slider-date-display end" id="endDateDisplay"></div>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Speed slider at bottom center -->
+            <div class="speed-slider-container">
+                <span class="speed-label">Slow</span>
+                <input type="range" class="speed-slider" id="speedSlider" min="1" max="100" value="50" step="1">
+                <span class="speed-label">Fast</span>
             </div>
         </section>
     </div>
@@ -1338,6 +1402,10 @@
         const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         
         const rangeDisplay = document.getElementById("rangeDisplay");
+        
+        // Speed slider elements
+        const speedSlider = document.getElementById("speedSlider");
+        let speedMultiplier = 1.0; // Default to 50% (value=50, which gives speedMultiplier=1.0)
         
         // Vertical slider elements
         const startGranularitySlider = document.getElementById("startGranularitySlider");
@@ -2551,8 +2619,9 @@
             const minutesPerUnit = GRANULARITY_TO_MINUTES[granularity];
             
             // Calculate change in minutes (rate determines speed)
+            // Use speedMultiplier to control animation speed (0.01 to 1.0)
             const direction = offset > 0 ? 1 : -1;
-            const deltaMinutes = direction * rate * minutesPerUnit * 0.1; // Scale factor for reasonable speed
+            const deltaMinutes = direction * rate * minutesPerUnit * 0.1 * speedMultiplier; // Scale factor for reasonable speed, multiplied by speed slider value
             
             // Vertical sliders adjust the coarse track boundaries (viewStartMinutes/viewEndMinutes)
             if (isStart) {
@@ -2588,6 +2657,13 @@
         
         startDateSlider.addEventListener('mousedown', (e) => startDateAdjustmentDrag(true, e));
         endDateSlider.addEventListener('mousedown', (e) => startDateAdjustmentDrag(false, e));
+
+        // Speed slider event listener
+        speedSlider.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            // Convert 1-100 to 0.02-2.0, where 50 = 1.0 (current speed), 100 = 2.0 (4x faster than old 50%)
+            speedMultiplier = value / 50;
+        });
 
         // Initialize
         initializeTimelines();
