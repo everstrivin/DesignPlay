@@ -2773,8 +2773,16 @@
             // Vertical sliders adjust the coarse track boundaries (viewStartMinutes/viewEndMinutes)
             if (isStart) {
                 viewStartMinutes = clampMinutes(newMinutes);
+                // Ensure start doesn't go past end
+                if (viewStartMinutes > viewEndMinutes) {
+                    viewStartMinutes = viewEndMinutes;
+                }
             } else {
                 viewEndMinutes = clampMinutes(newMinutes);
+                // Ensure end doesn't go before start
+                if (viewEndMinutes < viewStartMinutes) {
+                    viewEndMinutes = viewStartMinutes;
+                }
             }
             
             // Keep bottom handles within new view boundaries
