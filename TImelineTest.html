@@ -311,9 +311,37 @@
         /* Vertical sliders wrapper - should stretch to match horizontal sliders height */
         .vertical-sliders-wrapper {
             display: flex;
-            gap: 8px;
+            gap: 12px;
             align-items: stretch;
             flex: 1;
+        }
+        
+        .vertical-slider-with-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+        
+        .slider-micro-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+        }
+        
+        .granularity-display {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-align: center;
+            padding: 2px 4px;
+            background: rgba(14, 165, 233, 0.1);
+            border-radius: 4px;
+            min-width: 60px;
         }
 
         /* Individual vertical slider */
@@ -323,6 +351,7 @@
             border-radius: 12px;
             position: relative;
             cursor: pointer;
+            flex: 1;
         }
 
         .vertical-slider-track {
@@ -655,13 +684,20 @@
                     <!-- Start Date Vertical Sliders (left side) -->
                     <div class="vertical-slider-control start">
                         <div class="vertical-sliders-wrapper">
-                            <div class="vertical-slider" id="startGranularitySlider">
-                                <div class="vertical-slider-track"></div>
-                                <div class="vertical-slider-handle" id="startGranularityHandle"></div>
+                            <div class="vertical-slider-with-label">
+                                <div class="slider-micro-label">Granularity</div>
+                                <div class="vertical-slider" id="startGranularitySlider">
+                                    <div class="vertical-slider-track"></div>
+                                    <div class="vertical-slider-handle" id="startGranularityHandle"></div>
+                                </div>
+                                <div class="granularity-display" id="startGranularityDisplay">Year</div>
                             </div>
-                            <div class="vertical-slider" id="startDateSlider">
-                                <div class="vertical-slider-track"></div>
-                                <div class="vertical-slider-handle" id="startDateHandle"></div>
+                            <div class="vertical-slider-with-label">
+                                <div class="slider-micro-label">Adjust Date</div>
+                                <div class="vertical-slider" id="startDateSlider">
+                                    <div class="vertical-slider-track"></div>
+                                    <div class="vertical-slider-handle" id="startDateHandle"></div>
+                                </div>
                             </div>
                         </div>
                         <div class="slider-date-display start" id="startDateDisplay"></div>
@@ -697,13 +733,20 @@
                     <!-- End Date Vertical Sliders (right side) -->
                     <div class="vertical-slider-control end">
                         <div class="vertical-sliders-wrapper">
-                            <div class="vertical-slider" id="endDateSlider">
-                                <div class="vertical-slider-track"></div>
-                                <div class="vertical-slider-handle" id="endDateHandle"></div>
+                            <div class="vertical-slider-with-label">
+                                <div class="slider-micro-label">Adjust Date</div>
+                                <div class="vertical-slider" id="endDateSlider">
+                                    <div class="vertical-slider-track"></div>
+                                    <div class="vertical-slider-handle" id="endDateHandle"></div>
+                                </div>
                             </div>
-                            <div class="vertical-slider" id="endGranularitySlider">
-                                <div class="vertical-slider-track"></div>
-                                <div class="vertical-slider-handle" id="endGranularityHandle"></div>
+                            <div class="vertical-slider-with-label">
+                                <div class="slider-micro-label">Granularity</div>
+                                <div class="vertical-slider" id="endGranularitySlider">
+                                    <div class="vertical-slider-track"></div>
+                                    <div class="vertical-slider-handle" id="endGranularityHandle"></div>
+                                </div>
+                                <div class="granularity-display" id="endGranularityDisplay">Year</div>
                             </div>
                         </div>
                         <div class="slider-date-display end" id="endDateDisplay"></div>
@@ -1295,12 +1338,14 @@
         // Vertical slider elements
         const startGranularitySlider = document.getElementById("startGranularitySlider");
         const startGranularityHandle = document.getElementById("startGranularityHandle");
+        const startGranularityDisplay = document.getElementById("startGranularityDisplay");
         const startDateSlider = document.getElementById("startDateSlider");
         const startDateHandle = document.getElementById("startDateHandle");
         const startDateDisplay = document.getElementById("startDateDisplay");
         
         const endGranularitySlider = document.getElementById("endGranularitySlider");
         const endGranularityHandle = document.getElementById("endGranularityHandle");
+        const endGranularityDisplay = document.getElementById("endGranularityDisplay");
         const endDateSlider = document.getElementById("endDateSlider");
         const endDateHandle = document.getElementById("endDateHandle");
         const endDateDisplay = document.getElementById("endDateDisplay");
@@ -1523,10 +1568,12 @@
             // Start granularity slider (top = finest, bottom = coarsest)
             const startPercent = (1 - (startGranularityIndex / (GRANULARITY_LEVELS.length - 1))) * 100;
             startGranularityHandle.style.top = `${startPercent}%`;
+            startGranularityDisplay.textContent = GRANULARITY_LEVELS[startGranularityIndex];
             
             // End granularity slider (top = finest, bottom = coarsest)
             const endPercent = (1 - (endGranularityIndex / (GRANULARITY_LEVELS.length - 1))) * 100;
             endGranularityHandle.style.top = `${endPercent}%`;
+            endGranularityDisplay.textContent = GRANULARITY_LEVELS[endGranularityIndex];
         }
         
         // Initialize date adjustment sliders to center
