@@ -2695,10 +2695,55 @@
                     currentComponents.minute  // Snap: preserve minutes
                 );
             } else {
-                // Year and coarser: snap to preserve original month, day, hour, minute
+                // Year and coarser: change only the specific digit(s) of the year
+                let newYear = currentComponents.year;
+                
+                if (granularity === "Year") {
+                    // For Year: use the temp year (change all digits)
+                    newYear = tempComponents.year;
+                } else {
+                    // For coarser granularities: change only the specific digit
+                    const yearDelta = tempComponents.year - currentComponents.year;
+                    
+                    if (granularity === "Decade") {
+                        // Change only the tens digit (10s place)
+                        const currentTens = Math.floor((Math.abs(currentComponents.year) % 100) / 10);
+                        const newTens = Math.floor((Math.abs(tempComponents.year) % 100) / 10);
+                        const tensChange = newTens - currentTens;
+                        newYear = currentComponents.year + (tensChange * 10);
+                    } else if (granularity === "Century") {
+                        // Change only the hundreds digit (100s place)
+                        const currentHundreds = Math.floor((Math.abs(currentComponents.year) % 1000) / 100);
+                        const newHundreds = Math.floor((Math.abs(tempComponents.year) % 1000) / 100);
+                        const hundredsChange = newHundreds - currentHundreds;
+                        newYear = currentComponents.year + (hundredsChange * 100);
+                    } else if (granularity === "Millennium") {
+                        // Change only the thousands digit (1000s place)
+                        const currentThousands = Math.floor((Math.abs(currentComponents.year) % 10000) / 1000);
+                        const newThousands = Math.floor((Math.abs(tempComponents.year) % 10000) / 1000);
+                        const thousandsChange = newThousands - currentThousands;
+                        newYear = currentComponents.year + (thousandsChange * 1000);
+                    } else if (granularity === "Decamillennium") {
+                        // Change only the ten-thousands digit (10000s place)
+                        const currentTenThousands = Math.floor((Math.abs(currentComponents.year) % 100000) / 10000);
+                        const newTenThousands = Math.floor((Math.abs(tempComponents.year) % 100000) / 10000);
+                        const tenThousandsChange = newTenThousands - currentTenThousands;
+                        newYear = currentComponents.year + (tenThousandsChange * 10000);
+                    } else if (granularity === "Centimillennium") {
+                        // Change only the hundred-thousands digit (100000s place)
+                        const currentHundredThousands = Math.floor((Math.abs(currentComponents.year) % 1000000) / 100000);
+                        const newHundredThousands = Math.floor((Math.abs(tempComponents.year) % 1000000) / 100000);
+                        const hundredThousandsChange = newHundredThousands - currentHundredThousands;
+                        newYear = currentComponents.year + (hundredThousandsChange * 100000);
+                    } else {
+                        // For Age, Epoch, Eon: use full year change (too large for digit isolation)
+                        newYear = tempComponents.year;
+                    }
+                }
+                
                 newMinutes = dateComponentsToMinutes(
                     tempComponents.era,
-                    tempComponents.year,
+                    newYear,
                     currentComponents.month,  // Snap: preserve month
                     currentComponents.day,  // Snap: preserve day
                     currentComponents.hour,  // Snap: preserve hour
