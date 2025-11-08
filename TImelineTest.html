@@ -398,14 +398,10 @@
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             white-space: nowrap;
-            min-width: 280px;
-            max-width: 320px;
             border: 2px solid transparent;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            flex-wrap: wrap;
+            display: inline-block;
+            line-height: 1.4;
         }
 
         .slider-date-display:hover {
@@ -419,85 +415,89 @@
         }
 
         .slider-date-display.start {
-            justify-content: flex-start;
+            text-align: left;
         }
 
         .slider-date-display.end {
-            justify-content: flex-end;
+            text-align: right;
         }
 
-        .date-select {
+        /* Date parts - make them look like inline text */
+        .date-part {
             font-size: 0.85rem;
             color: #0f172a;
             font-weight: 600;
-            border: 1px solid rgba(148, 163, 184, 0.25);
-            border-radius: 4px;
-            padding: 0.15rem 0.25rem;
-            background: white;
+            border: none;
+            background: transparent;
+            padding: 0;
+            margin: 0;
+            display: inline;
+            font-family: inherit;
+        }
+
+        /* Select elements (month and era) styled to look like text */
+        select.date-part {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
             cursor: pointer;
-            transition: border-color 0.2s ease;
+            border-bottom: 1px dotted transparent;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+            padding: 0 2px;
         }
 
-        .date-select:hover {
-            border-color: rgba(14, 165, 233, 0.5);
+        select.date-part:hover {
+            border-bottom-color: rgba(14, 165, 233, 0.5);
+            background-color: rgba(14, 165, 233, 0.05);
         }
 
-        .date-select:focus {
+        select.date-part:focus {
             outline: none;
-            border-color: rgba(14, 165, 233, 0.7);
-            box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15);
+            border-bottom-color: rgba(14, 165, 233, 0.9);
+            background-color: rgba(14, 165, 233, 0.1);
         }
 
-        .month-select {
-            width: 50px;
+        /* Contenteditable spans styled to look like text */
+        .date-part[contenteditable] {
+            cursor: text;
+            border-bottom: 1px dotted transparent;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+            min-width: 1ch;
+            display: inline-block;
         }
 
-        .era-select {
-            width: 50px;
+        .date-part[contenteditable]:hover {
+            border-bottom-color: rgba(14, 165, 233, 0.5);
+            background-color: rgba(14, 165, 233, 0.05);
         }
 
-        .date-input {
-            font-size: 0.85rem;
+        .date-part[contenteditable]:focus {
+            outline: none;
+            border-bottom-color: rgba(14, 165, 233, 0.9);
+            background-color: rgba(14, 165, 233, 0.1);
+        }
+
+        /* Static text parts */
+        .date-text {
             color: #0f172a;
             font-weight: 600;
-            border: 1px solid rgba(148, 163, 184, 0.25);
-            border-radius: 4px;
-            padding: 0.15rem 0.25rem;
-            background: white;
-            transition: border-color 0.2s ease;
-            text-align: center;
         }
 
-        .date-input:hover {
-            border-color: rgba(14, 165, 233, 0.5);
+        /* Specific width hints for contenteditable parts */
+        .day-part {
+            min-width: 2ch;
         }
 
-        .date-input:focus {
-            outline: none;
-            border-color: rgba(14, 165, 233, 0.7);
-            box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15);
+        .year-part {
+            min-width: 4ch;
         }
 
-        .day-input {
-            width: 35px;
+        .hour-part {
+            min-width: 2ch;
         }
 
-        .year-input {
-            width: 100px;
-        }
-
-        .hour-input {
-            width: 35px;
-        }
-
-        .minute-input {
-            width: 35px;
-        }
-
-        .date-separator {
-            color: #64748b;
-            font-weight: 500;
-            padding: 0 0.1rem;
+        .minute-part {
+            min-width: 2ch;
         }
 
         /* Speed slider at bottom center */
@@ -853,14 +853,10 @@
                             </div>
                         </div>
                         <div class="slider-date-display start" id="startDateDisplay">
-                            <select class="date-select month-select" id="startMonthSelect"></select>
-                            <input type="number" class="date-input day-input" id="startDayInput" min="1" max="31" />
-                            <span class="date-separator">,</span>
-                            <input type="text" class="date-input year-input" id="startYearInput" />
-                            <input type="number" class="date-input hour-input" id="startHourInput" min="0" max="23" />
-                            <span class="date-separator">:</span>
-                            <input type="number" class="date-input minute-input" id="startMinuteInput" min="0" max="59" />
-                            <select class="date-select era-select" id="startEraSelect">
+                            <select class="date-part month-part" id="startMonthSelect"></select>
+                            <span class="date-part day-part" contenteditable="true" id="startDayInput"></span><span class="date-text">, </span><span class="date-part year-part" contenteditable="true" id="startYearInput"></span>
+                            <span class="date-part hour-part" contenteditable="true" id="startHourInput"></span><span class="date-text">:</span><span class="date-part minute-part" contenteditable="true" id="startMinuteInput"></span>
+                            <select class="date-part era-part" id="startEraSelect">
                                 <option value="1">CE</option>
                                 <option value="-1">BCE</option>
                             </select>
@@ -914,14 +910,10 @@
                             </div>
                         </div>
                         <div class="slider-date-display end" id="endDateDisplay">
-                            <select class="date-select month-select" id="endMonthSelect"></select>
-                            <input type="number" class="date-input day-input" id="endDayInput" min="1" max="31" />
-                            <span class="date-separator">,</span>
-                            <input type="text" class="date-input year-input" id="endYearInput" />
-                            <input type="number" class="date-input hour-input" id="endHourInput" min="0" max="23" />
-                            <span class="date-separator">:</span>
-                            <input type="number" class="date-input minute-input" id="endMinuteInput" min="0" max="59" />
-                            <select class="date-select era-select" id="endEraSelect">
+                            <select class="date-part month-part" id="endMonthSelect"></select>
+                            <span class="date-part day-part" contenteditable="true" id="endDayInput"></span><span class="date-text">, </span><span class="date-part year-part" contenteditable="true" id="endYearInput"></span>
+                            <span class="date-part hour-part" contenteditable="true" id="endHourInput"></span><span class="date-text">:</span><span class="date-part minute-part" contenteditable="true" id="endMinuteInput"></span>
+                            <select class="date-part era-part" id="endEraSelect">
                                 <option value="1">CE</option>
                                 <option value="-1">BCE</option>
                             </select>
@@ -1775,18 +1767,18 @@
             
             // Update start date inputs
             startMonthSelect.value = startComponents.month;
-            startDayInput.value = startComponents.day;
-            startYearInput.value = formatYear(startComponents.year);
-            startHourInput.value = pad(startComponents.hour);
-            startMinuteInput.value = pad(startComponents.minute);
+            startDayInput.textContent = startComponents.day;
+            startYearInput.textContent = formatYear(startComponents.year);
+            startHourInput.textContent = pad(startComponents.hour);
+            startMinuteInput.textContent = pad(startComponents.minute);
             startEraSelect.value = startComponents.era;
             
             // Update end date inputs
             endMonthSelect.value = endComponents.month;
-            endDayInput.value = endComponents.day;
-            endYearInput.value = formatYear(endComponents.year);
-            endHourInput.value = pad(endComponents.hour);
-            endMinuteInput.value = pad(endComponents.minute);
+            endDayInput.textContent = endComponents.day;
+            endYearInput.textContent = formatYear(endComponents.year);
+            endHourInput.textContent = pad(endComponents.hour);
+            endMinuteInput.textContent = pad(endComponents.minute);
             endEraSelect.value = endComponents.era;
         }
         
@@ -1794,11 +1786,11 @@
         function parseDateInputs(isStart) {
             try {
                 const monthNum = parseInt(isStart ? startMonthSelect.value : endMonthSelect.value);
-                const dayNum = parseInt(isStart ? startDayInput.value : endDayInput.value);
-                const yearStr = (isStart ? startYearInput.value : endYearInput.value).replace(/,/g, '');
+                const dayNum = parseInt((isStart ? startDayInput.textContent : endDayInput.textContent).trim());
+                const yearStr = (isStart ? startYearInput.textContent : endYearInput.textContent).trim().replace(/,/g, '');
                 const yearNum = parseInt(yearStr);
-                const hourNum = parseInt(isStart ? startHourInput.value : endHourInput.value);
-                const minuteNum = parseInt(isStart ? startMinuteInput.value : endMinuteInput.value);
+                const hourNum = parseInt((isStart ? startHourInput.textContent : endHourInput.textContent).trim());
+                const minuteNum = parseInt((isStart ? startMinuteInput.textContent : endMinuteInput.textContent).trim());
                 const eraSign = parseInt(isStart ? startEraSelect.value : endEraSelect.value);
                 
                 // Basic validation
@@ -1876,26 +1868,49 @@
         
         // Event listeners for date input changes
         startMonthSelect.addEventListener('change', () => handleDateInputChange(true));
-        startDayInput.addEventListener('change', () => handleDateInputChange(true));
-        startYearInput.addEventListener('change', () => handleDateInputChange(true));
-        startHourInput.addEventListener('change', () => handleDateInputChange(true));
-        startMinuteInput.addEventListener('change', () => handleDateInputChange(true));
+        startDayInput.addEventListener('blur', () => handleDateInputChange(true));
+        startYearInput.addEventListener('blur', () => handleDateInputChange(true));
+        startHourInput.addEventListener('blur', () => handleDateInputChange(true));
+        startMinuteInput.addEventListener('blur', () => handleDateInputChange(true));
         startEraSelect.addEventListener('change', () => handleDateInputChange(true));
         
         endMonthSelect.addEventListener('change', () => handleDateInputChange(false));
-        endDayInput.addEventListener('change', () => handleDateInputChange(false));
-        endYearInput.addEventListener('change', () => handleDateInputChange(false));
-        endHourInput.addEventListener('change', () => handleDateInputChange(false));
-        endMinuteInput.addEventListener('change', () => handleDateInputChange(false));
+        endDayInput.addEventListener('blur', () => handleDateInputChange(false));
+        endYearInput.addEventListener('blur', () => handleDateInputChange(false));
+        endHourInput.addEventListener('blur', () => handleDateInputChange(false));
+        endMinuteInput.addEventListener('blur', () => handleDateInputChange(false));
         endEraSelect.addEventListener('change', () => handleDateInputChange(false));
         
-        // Clear error state when user starts typing in year input
-        startYearInput.addEventListener('input', () => {
-            startDateDisplay.classList.remove('error');
+        // Handle Enter key to commit changes for contenteditable fields
+        [startDayInput, startYearInput, startHourInput, startMinuteInput].forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    input.blur();
+                }
+            });
         });
         
-        endYearInput.addEventListener('input', () => {
-            endDateDisplay.classList.remove('error');
+        [endDayInput, endYearInput, endHourInput, endMinuteInput].forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    input.blur();
+                }
+            });
+        });
+        
+        // Clear error state when user starts typing
+        [startDayInput, startYearInput, startHourInput, startMinuteInput].forEach(input => {
+            input.addEventListener('input', () => {
+                startDateDisplay.classList.remove('error');
+            });
+        });
+        
+        [endDayInput, endYearInput, endHourInput, endMinuteInput].forEach(input => {
+            input.addEventListener('input', () => {
+                endDateDisplay.classList.remove('error');
+            });
         });
         
         // Update granularity slider handle positions
