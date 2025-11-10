@@ -3116,7 +3116,7 @@
             }
             
             // Calculate minimum span for bottom slider based on pixel separation
-            const viewRange = viewEndMinutes - viewStartMinutes;
+            let viewRange = viewEndMinutes - viewStartMinutes;
             const bottomSliderWrapperWidth = bottomSliderWrapper.getBoundingClientRect().width;
             const minBottomSpanPixel = calculateMinPixelSpan(bottomSliderWrapperWidth, viewRange);
             
@@ -3129,6 +3129,20 @@
             
             // Use the largest of the three minimums to ensure visible separation
             const minBottomSpan = Math.max(minBottomSpanPixel, minBottomSpanTime, minBottomSpanPercent);
+            
+            // Ensure the view range is large enough to accommodate the minimum bottom span
+            // If not, expand the view range accordingly
+            if (viewRange < minBottomSpan) {
+                const expansion = minBottomSpan - viewRange;
+                if (isStart) {
+                    // When adjusting start, expand the end boundary
+                    viewEndMinutes = clampMinutes(viewEndMinutes + expansion);
+                } else {
+                    // When adjusting end, expand the start boundary backward
+                    viewStartMinutes = clampMinutes(viewStartMinutes - expansion);
+                }
+                viewRange = viewEndMinutes - viewStartMinutes;
+            }
             
             // Keep bottom handles within new view boundaries and enforce minimum distance
             bottomStartMinutes = Math.max(viewStartMinutes, Math.min(bottomStartMinutes, viewEndMinutes - minBottomSpan));
