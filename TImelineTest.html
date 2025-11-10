@@ -1527,7 +1527,11 @@
         
         // Speed slider elements
         const speedSlider = document.getElementById("speedSlider");
-        let speedMultiplier = 1.0; // Default to 50% (value=50, which gives speedMultiplier=1.0)
+        // Speed multiplier: controls how fast dates change
+        // At min (1): 1 change per 1.0 seconds = 0.05 units per 50ms update
+        // At mid (50): 1 change per 0.1 seconds = 0.5 units per 50ms update
+        // At max (100): 1 change per 0.01 seconds = 5.0 units per 50ms update
+        let speedMultiplier = 0.5; // Default to middle (value=50)
         
         // Vertical slider elements
         const startGranularitySlider = document.getElementById("startGranularitySlider");
@@ -2966,9 +2970,8 @@
             
             // Calculate change in minutes (rate determines speed)
             // Use speedMultiplier to control animation speed
-            // Increased scale factor to 10.0 for responsiveness with component-preserving behavior
             const direction = offset > 0 ? 1 : -1;
-            const deltaMinutes = direction * rate * minutesPerUnit * 10.0 * speedMultiplier; // Scale factor for reasonable speed, multiplied by speed slider value
+            const deltaMinutes = direction * rate * minutesPerUnit * speedMultiplier;
             
             // Get the current value to adjust
             const currentMinutes = isStart ? viewStartMinutes : viewEndMinutes;
@@ -3203,8 +3206,16 @@
         // Speed slider event listener
         speedSlider.addEventListener('input', (e) => {
             const value = parseInt(e.target.value);
-            // Convert 1-100 to 0.02-2.0, where 50 = 1.0 (current speed), 100 = 2.0 (4x faster than old 50%)
-            speedMultiplier = value / 50;
+            // Exponential scaling from 0.05 to 5.0
+            // At value=1: 1 change per 1.0s (0.05 units per 50ms)
+            // At value=50: 1 change per 0.1s (0.5 units per 50ms)
+            // At value=100: 1 change per 0.01s (5.0 units per 50ms)
+            const minValue = 1;
+            const maxValue = 100;
+            const minMultiplier = 0.05;
+            const maxMultiplier = 5.0;
+            const ratio = (value - minValue) / (maxValue - minValue);
+            speedMultiplier = minMultiplier * Math.pow(maxMultiplier / minMultiplier, ratio);
         });
 
         // Initialize
