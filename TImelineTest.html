@@ -628,6 +628,55 @@
             min-width: 80px;
         }
 
+        /* Earth view switch */
+        .earth-view-switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            width: 100%;
+            padding: 0.5rem 0;
+        }
+
+        .earth-view-switch {
+            display: flex;
+            background: rgba(148, 163, 184, 0.15);
+            border-radius: 999px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .earth-view-option {
+            padding: 0.5rem 1.25rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            white-space: nowrap;
+        }
+
+        .earth-view-option:hover {
+            background: rgba(148, 163, 184, 0.2);
+        }
+
+        .earth-view-option.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: white;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+
+        .earth-view-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
         .range-slider-info {
             font-size: 0.85rem;
             color: var(--text-muted);
@@ -955,6 +1004,21 @@
                         
                         <!-- Granularity and Speed sliders below the timeline -->
                         <div class="bottom-controls-container">
+                            <div class="speed-slider-container">
+                                <span class="speed-label">Slow</span>
+                                <div class="horizontal-slider-wrapper">
+                                    <input type="range" class="speed-slider" id="speedSlider" min="1" max="100" value="50" step="1">
+                                    <div class="horizontal-slider-handle" id="speedHandle"></div>
+                                </div>
+                                <span class="speed-label">Fast</span>
+                            </div>
+                            <div class="earth-view-switch-container">
+                                <span class="earth-view-label">Timeline View:</span>
+                                <div class="earth-view-switch">
+                                    <button class="earth-view-option active" id="oldEarthButton" data-view="old">Old Earth</button>
+                                    <button class="earth-view-option" id="youngEarthButton" data-view="young">Young Earth</button>
+                                </div>
+                            </div>
                             <div class="granularity-slider-container">
                                 <span class="granularity-label">Coarse</span>
                                 <div class="horizontal-slider-wrapper">
@@ -963,14 +1027,6 @@
                                 </div>
                                 <span class="granularity-label">Fine</span>
                                 <div class="granularity-display-horizontal" id="granularityDisplay">Year</div>
-                            </div>
-                            <div class="speed-slider-container">
-                                <span class="speed-label">Slow</span>
-                                <div class="horizontal-slider-wrapper">
-                                    <input type="range" class="speed-slider" id="speedSlider" min="1" max="100" value="50" step="1">
-                                    <div class="horizontal-slider-handle" id="speedHandle"></div>
-                                </div>
-                                <span class="speed-label">Fast</span>
                             </div>
                         </div>
                     </div>
@@ -1031,6 +1087,23 @@
         const MINUTES_PER_HOUR = 60;
 
         const EARTH_AGE_YEARS = 4_540_000_000;
+        const YOUNG_EARTH_AGE_YEARS = 10_000; // Young Earth creationist view: ~10,000 years
+        
+        let isYoungEarthView = false; // Track current view mode
+        
+        // Calculate timeline boundaries based on current view
+        function getTimelineMin() {
+            if (isYoungEarthView) {
+                return -(YOUNG_EARTH_AGE_YEARS * MINUTES_PER_YEAR);
+            }
+            return -(EARTH_AGE_YEARS * MINUTES_PER_YEAR);
+        }
+        
+        function getTimelineMax() {
+            // Future remains the same in both views
+            return EARTH_AGE_YEARS * MINUTES_PER_YEAR;
+        }
+        
         const HALF_SPAN_MINUTES = EARTH_AGE_YEARS * MINUTES_PER_YEAR;
         const TIMELINE_MIN = -HALF_SPAN_MINUTES;
         const TIMELINE_MAX = HALF_SPAN_MINUTES;
@@ -1081,6 +1154,28 @@
             Hour: MINUTES_PER_HOUR,
             Minute: 1
         };
+
+        // Get available granularity levels based on earth view mode
+        function getAvailableGranularityLevels() {
+            const allLevels = Object.keys(GRANULARITY_TO_MINUTES);
+            if (isYoungEarthView) {
+                // Young Earth: max coarseness is Millennium (index 5)
+                // Filter out: Eon, Epoch, Age, Centimillennium, Decamillennium
+                const millenniumIndex = allLevels.indexOf('Millennium');
+                return allLevels.slice(millenniumIndex);
+            }
+            return allLevels;
+        }
+        
+        // Get min and max granularity indices for current view
+        function getGranularityBounds() {
+            const allLevels = Object.keys(GRANULARITY_TO_MINUTES);
+            if (isYoungEarthView) {
+                const millenniumIndex = allLevels.indexOf('Millennium');
+                return { min: millenniumIndex, max: allLevels.length - 1 };
+            }
+            return { min: 0, max: allLevels.length - 1 };
+        }
 
         const UNIT_LABELS = {
             Eon: { singular: "eon", plural: "eons" },
@@ -1565,6 +1660,34 @@
             period.endMinutes = myaToMinutes(period.endMya);
         });
 
+        // Get geological periods adjusted for current earth view
+        function getAdjustedGeologicPeriods() {
+            if (!isYoungEarthView) {
+                return GEOLOGIC_PERIODS;
+            }
+            
+            // In Young Earth view, condense all geological periods into the 10,000 year timeframe
+            // We'll compress the entire 4.54 billion year timeline proportionally
+            const oldEarthSpan = EARTH_AGE_YEARS * MINUTES_PER_YEAR;
+            const youngEarthSpan = YOUNG_EARTH_AGE_YEARS * MINUTES_PER_YEAR;
+            const compressionRatio = youngEarthSpan / oldEarthSpan;
+            
+            return GEOLOGIC_PERIODS.map(period => {
+                // Compress the period times proportionally
+                const compressedStart = period.startMinutes * compressionRatio;
+                const compressedEnd = period.endMinutes * compressionRatio;
+                
+                return {
+                    ...period,
+                    startMinutes: compressedStart,
+                    endMinutes: compressedEnd,
+                    // Keep original mya for tooltip display
+                    originalStartMya: period.startMya,
+                    originalEndMya: period.endMya
+                };
+            });
+        }
+
         const compactFormatter = new Intl.NumberFormat("en-US", {
             notation: "compact",
             maximumFractionDigits: 1
@@ -1746,7 +1869,7 @@
         }
 
         function clampMinutes(value) {
-            return Math.min(Math.max(value, TIMELINE_MIN), TIMELINE_MAX);
+            return Math.min(Math.max(value, getTimelineMin()), getTimelineMax());
         }
 
         // Convert date components to minutes from center
@@ -2033,11 +2156,14 @@
             container.innerHTML = '';
             hideGeologicTooltip();
             
+            // Get adjusted periods based on current earth view
+            const adjustedPeriods = getAdjustedGeologicPeriods();
+            
             // Helper function to get the actual end time for a period (extends Holocene to present)
             const getPeriodEnd = (period) => (period.endMya === 0) ? CURRENT_DATE_MINUTES : period.endMinutes;
             
             // Find all periods that overlap with the visible range
-            const visiblePeriods = GEOLOGIC_PERIODS.filter(period => {
+            const visiblePeriods = adjustedPeriods.filter(period => {
                 const periodEnd = getPeriodEnd(period);
                 return periodEnd >= rangeStartMinutes && period.startMinutes <= rangeEndMinutes;
             });
@@ -2084,9 +2210,9 @@
             });
             
             // Add future segment if range extends into the future
-            if (rangeEndMinutes > CURRENT_DATE_MINUTES && rangeStartMinutes < TIMELINE_MAX) {
+            if (rangeEndMinutes > CURRENT_DATE_MINUTES && rangeStartMinutes < getTimelineMax()) {
                 const futureStart = Math.max(CURRENT_DATE_MINUTES, rangeStartMinutes);
-                const futureEnd = Math.min(TIMELINE_MAX, rangeEndMinutes);
+                const futureEnd = Math.min(getTimelineMax(), rangeEndMinutes);
                 
                 const leftPercent = ((futureStart - rangeStartMinutes) / totalRange) * 100;
                 const widthPercent = ((futureEnd - futureStart) / totalRange) * 100;
@@ -3318,6 +3444,65 @@
             });
         }
 
+        // Earth view switch event listeners
+        const oldEarthButton = document.getElementById('oldEarthButton');
+        const youngEarthButton = document.getElementById('youngEarthButton');
+        
+        function switchEarthView(isYoung) {
+            isYoungEarthView = isYoung;
+            
+            // Update button states
+            if (isYoung) {
+                youngEarthButton.classList.add('active');
+                oldEarthButton.classList.remove('active');
+            } else {
+                oldEarthButton.classList.add('active');
+                youngEarthButton.classList.remove('active');
+            }
+            
+            // Update granularity slider bounds
+            const bounds = getGranularityBounds();
+            granularitySliderElement.min = bounds.min;
+            granularitySliderElement.max = bounds.max;
+            
+            // If current granularity is outside new bounds, adjust it
+            if (granularityIndex < bounds.min) {
+                granularityIndex = bounds.min;
+                granularitySliderElement.value = granularityIndex;
+            }
+            
+            // Clamp timeline range to new bounds
+            const newMin = getTimelineMin();
+            const newMax = getTimelineMax();
+            
+            // Adjust bottom timeline if it's outside new bounds
+            if (bottomStartMinutes < newMin) {
+                bottomStartMinutes = newMin;
+            }
+            if (bottomEndMinutes > newMax) {
+                bottomEndMinutes = newMax;
+            }
+            
+            // Adjust top timeline to fit within bottom timeline
+            if (topStartMinutes < bottomStartMinutes) {
+                topStartMinutes = bottomStartMinutes;
+            }
+            if (topEndMinutes > bottomEndMinutes) {
+                topEndMinutes = bottomEndMinutes;
+            }
+            
+            // Update all UI elements
+            updateGranularitySlider();
+            updateHorizontalSliderHandle(granularitySlider, granularityHandle);
+            updateRangeSliders();
+            refreshRangeDisplay();
+            rebuildTicks();
+            updatePointerAndDetails();
+            updateDateDisplays();
+        }
+        
+        oldEarthButton.addEventListener('click', () => switchEarthView(false));
+        youngEarthButton.addEventListener('click', () => switchEarthView(true));
 
         // Initialize
         initializeTimelines();
