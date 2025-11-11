@@ -3306,27 +3306,7 @@
             });
         }
 
-        // Function to adjust slider container margins based on date display widths
-        function adjustSliderMargins() {
-            const startDateDisplay = document.getElementById('startDateDisplay');
-            const endDateDisplay = document.getElementById('endDateDisplay');
-            const bottomControlsContainer = document.querySelector('.bottom-controls-container');
-            
-            if (startDateDisplay && endDateDisplay && bottomControlsContainer) {
-                const startWidth = startDateDisplay.offsetWidth;
-                const endWidth = endDateDisplay.offsetWidth;
-                
-                // Use the larger of the two widths to ensure alignment
-                const maxWidth = Math.max(startWidth, endWidth);
-                
-                // Apply margins to match the date display widths
-                // Add a small additional offset for visual balance
-                const marginValue = `${maxWidth + 8}px`;
-                bottomControlsContainer.style.marginLeft = marginValue;
-                bottomControlsContainer.style.marginRight = marginValue;
-            }
-        }
-        
+
         // Initialize
         initializeTimelines();
         updateGranularitySlider();
@@ -3340,12 +3320,6 @@
         refreshRangeDisplay();
         rebuildTicks();
         updatePointerAndDetails();
-        
-        // Adjust slider margins after initial render
-        setTimeout(adjustSliderMargins, 100);
-        
-        // Adjust on window resize
-        window.addEventListener('resize', adjustSliderMargins);
     </script>
 </body>
 </html>
