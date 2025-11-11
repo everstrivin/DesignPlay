@@ -1527,7 +1527,11 @@
         
         // Speed slider elements
         const speedSlider = document.getElementById("speedSlider");
-        let speedMultiplier = 1.0; // Default to 50% (value=50, which gives speedMultiplier=1.0)
+        // Speed multiplier: controls how fast dates change
+        // At min (1): 1 change per 1.0 seconds = 0.05 units per 50ms update
+        // At mid (50): 1 change per 0.1 seconds = 0.5 units per 50ms update
+        // At max (100): 1 change per 0.01 seconds = 5.0 units per 50ms update
+        let speedMultiplier = 0.5; // Default to middle (value=50)
         
         // Vertical slider elements
         const startGranularitySlider = document.getElementById("startGranularitySlider");
@@ -1610,6 +1614,11 @@
         // Date adjustment animation state
         let startDateAdjustmentInterval = null;
         let endDateAdjustmentInterval = null;
+        
+        // Accumulators for fractional minute changes that haven't been applied yet
+        // These persist during a drag operation but are reset when drag ends
+        let startDateAccumulator = 0;
+        let endDateAccumulator = 0;
 
         function getGranularityIndex(granularity) {
             const granularities = Object.keys(GRANULARITY_TO_MINUTES);
@@ -2936,12 +2945,16 @@
                     startDateAdjustmentInterval = null;
                 }
                 startDateHandle.style.top = '50%';
+                // Reset accumulator when drag ends
+                startDateAccumulator = 0;
             } else {
                 if (endDateAdjustmentInterval) {
                     clearInterval(endDateAdjustmentInterval);
                     endDateAdjustmentInterval = null;
                 }
                 endDateHandle.style.top = '50%';
+                // Reset accumulator when drag ends
+                endDateAccumulator = 0;
             }
         }
         
@@ -2966,16 +2979,60 @@
             
             // Calculate change in minutes (rate determines speed)
             // Use speedMultiplier to control animation speed
-            // Increased scale factor to 10.0 for responsiveness with component-preserving behavior
             const direction = offset > 0 ? 1 : -1;
-            const deltaMinutes = direction * rate * minutesPerUnit * 10.0 * speedMultiplier; // Scale factor for reasonable speed, multiplied by speed slider value
+            const deltaMinutes = direction * rate * minutesPerUnit * speedMultiplier;
             
             // Get the current value to adjust
             const currentMinutes = isStart ? viewStartMinutes : viewEndMinutes;
             
-            // For each granularity, add deltaMinutes but then "snap" to preserve unrelated components
+            // Accumulate fractional changes to prevent loss at slow speeds
+            // This allows sub-minute changes to accumulate until they reach a threshold
+            if (isStart) {
+                startDateAccumulator += deltaMinutes;
+            } else {
+                endDateAccumulator += deltaMinutes;
+            }
+            
+            const accumulator = isStart ? startDateAccumulator : endDateAccumulator;
+            
+            // Determine the minimum change threshold based on granularity
+            // For fine granularities (Minute, Hour), use 1 minute threshold
+            // For coarser granularities, use the granularity's minute value
+            let threshold;
+            if (granularity === "Minute") {
+                threshold = 1;
+            } else if (granularity === "Hour") {
+                threshold = MINUTES_PER_HOUR;
+            } else if (granularity === "Day") {
+                threshold = MINUTES_PER_DAY;
+            } else if (granularity === "Week") {
+                threshold = MINUTES_PER_WEEK;
+            } else if (granularity === "Month") {
+                threshold = MINUTES_PER_MONTH;
+            } else {
+                // For Year and coarser, use the granularity unit
+                threshold = minutesPerUnit;
+            }
+            
+            // Only apply change if accumulator exceeds threshold
+            if (Math.abs(accumulator) < threshold) {
+                return; // Not enough accumulated change yet
+            }
+            
+            // Calculate how many complete units to apply
+            const unitsToApply = Math.floor(Math.abs(accumulator) / threshold) * Math.sign(accumulator);
+            const minutesToApply = unitsToApply * threshold;
+            
+            // Subtract the applied amount from accumulator
+            if (isStart) {
+                startDateAccumulator -= minutesToApply;
+            } else {
+                endDateAccumulator -= minutesToApply;
+            }
+            
+            // For each granularity, add minutesToApply but then "snap" to preserve unrelated components
             // This allows natural minute accumulation while maintaining component independence
-            const tempMinutes = currentMinutes + deltaMinutes;
+            const tempMinutes = currentMinutes + minutesToApply;
             const tempComponents = minutesToDateComponents(tempMinutes);
             const currentComponents = minutesToDateComponents(currentMinutes);
             
@@ -3203,8 +3260,16 @@
         // Speed slider event listener
         speedSlider.addEventListener('input', (e) => {
             const value = parseInt(e.target.value);
-            // Convert 1-100 to 0.02-2.0, where 50 = 1.0 (current speed), 100 = 2.0 (4x faster than old 50%)
-            speedMultiplier = value / 50;
+            // Exponential scaling from 0.05 to 5.0
+            // At value=1: 1 change per 1.0s (0.05 units per 50ms)
+            // At value=50: 1 change per 0.1s (0.5 units per 50ms)
+            // At value=100: 1 change per 0.01s (5.0 units per 50ms)
+            const minValue = 1;
+            const maxValue = 100;
+            const minMultiplier = 0.05;
+            const maxMultiplier = 5.0;
+            const ratio = (value - minValue) / (maxValue - minValue);
+            speedMultiplier = minMultiplier * Math.pow(maxMultiplier / minMultiplier, ratio);
         });
 
         // Initialize
