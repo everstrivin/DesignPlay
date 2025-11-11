@@ -532,9 +532,9 @@
             gap: 1rem;
             max-width: 400px;
             flex: 0 1 auto;
-            /* background: linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(37, 99, 235, 0.15)); */
-            /* border-radius: 12px; */
-            /* padding: 1rem 1.5rem; */
+            background: linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(37, 99, 235, 0.15));
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
         }
         
         /* Granularity slider */
@@ -546,9 +546,34 @@
             max-width: 400px;
             flex: 0 1 auto;
             position: relative;
-            /* background: linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(37, 99, 235, 0.15));
+            background: linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(37, 99, 235, 0.15));
             border-radius: 12px;
-            padding: 1rem 1.5rem; */
+            padding: 1rem 1.5rem;
+        }
+
+        .horizontal-slider-wrapper {
+            position: relative;
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .horizontal-slider-handle {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            border: 3px solid white;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .horizontal-slider-handle:hover {
+            transform: translate(-50%, -50%) scale(1.15);
         }
 
         .speed-slider,
@@ -571,10 +596,9 @@
             height: 24px;
             width: 24px;
             border-radius: 50%;
-            /* background: linear-gradient(135deg, var(--accent), var(--accent-dark)); */
+            background: transparent;
             cursor: pointer;
-            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
-            border: 3px solid white;
+            border: none;
         }
 
         .speed-slider::-moz-range-thumb,
@@ -582,10 +606,8 @@
             height: 24px;
             width: 24px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            background: transparent;
             cursor: pointer;
-            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
-            border: 3px solid white;
             border: none;
         }
 
@@ -967,13 +989,19 @@
             <div class="bottom-controls-container">
                 <div class="granularity-slider-container">
                     <span class="granularity-label">Coarse</span>
-                    <input type="range" class="granularity-slider" id="granularitySlider" min="0" max="13" value="9" step="1">
+                    <div class="horizontal-slider-wrapper">
+                        <input type="range" class="granularity-slider" id="granularitySlider" min="0" max="13" value="9" step="1">
+                        <div class="horizontal-slider-handle" id="granularityHandle"></div>
+                    </div>
                     <span class="granularity-label">Fine</span>
                     <div class="granularity-display-horizontal" id="granularityDisplay">Year</div>
                 </div>
                 <div class="speed-slider-container">
                     <span class="speed-label">Slow</span>
-                    <input type="range" class="speed-slider" id="speedSlider" min="1" max="100" value="50" step="1">
+                    <div class="horizontal-slider-wrapper">
+                        <input type="range" class="speed-slider" id="speedSlider" min="1" max="100" value="50" step="1">
+                        <div class="horizontal-slider-handle" id="speedHandle"></div>
+                    </div>
                     <span class="speed-label">Fast</span>
                 </div>
             </div>
@@ -1565,11 +1593,16 @@
         
         // Speed slider elements
         const speedSlider = document.getElementById("speedSlider");
+        const speedHandle = document.getElementById("speedHandle");
         // Speed multiplier: controls how fast dates change
         // At min (1): 1 change per 1.0 seconds = 0.05 units per 50ms update
         // At mid (50): 1 change per 0.1 seconds = 0.5 units per 50ms update
         // At max (100): 1 change per 0.01 seconds = 5.0 units per 50ms update
         let speedMultiplier = 0.5; // Default to middle (value=50)
+        
+        // Granularity slider elements
+        const granularitySlider = document.getElementById("granularitySlider");
+        const granularityHandle = document.getElementById("granularityHandle");
         
         // Vertical slider elements
         const startGranularitySlider = document.getElementById("startGranularitySlider");
@@ -3246,6 +3279,16 @@
         startDateSlider.addEventListener('mousedown', (e) => startDateAdjustmentDrag(true, e));
         endDateSlider.addEventListener('mousedown', (e) => startDateAdjustmentDrag(false, e));
 
+        // Function to update horizontal slider handle position
+        function updateHorizontalSliderHandle(slider, handle) {
+            if (!slider || !handle) return;
+            const value = parseInt(slider.value);
+            const min = parseInt(slider.min);
+            const max = parseInt(slider.max);
+            const percentage = ((value - min) / (max - min)) * 100;
+            handle.style.left = `${percentage}%`;
+        }
+
         // Speed slider event listener
         speedSlider.addEventListener('input', (e) => {
             const value = parseInt(e.target.value);
@@ -3259,14 +3302,16 @@
             const maxMultiplier = 5.0;
             const ratio = (value - minValue) / (maxValue - minValue);
             speedMultiplier = minMultiplier * Math.pow(maxMultiplier / minMultiplier, ratio);
+            updateHorizontalSliderHandle(speedSlider, speedHandle);
         });
 
         // Granularity slider event listener
-        const granularitySlider = document.getElementById('granularitySlider');
-        if (granularitySlider) {
-            granularitySlider.addEventListener('input', (e) => {
+        const granularitySliderElement = document.getElementById('granularitySlider');
+        if (granularitySliderElement) {
+            granularitySliderElement.addEventListener('input', (e) => {
                 granularityIndex = parseInt(e.target.value);
                 updateGranularitySlider();
+                updateHorizontalSliderHandle(granularitySlider, granularityHandle);
             });
         }
 
@@ -3275,6 +3320,10 @@
         updateGranularitySlider();
         resetDateSliders();
         updateDateDisplays();
+        
+        // Initialize horizontal slider handles
+        updateHorizontalSliderHandle(speedSlider, speedHandle);
+        updateHorizontalSliderHandle(granularitySlider, granularityHandle);
         updateRangeSliders();
         refreshRangeDisplay();
         rebuildTicks();
