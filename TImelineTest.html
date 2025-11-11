@@ -350,7 +350,7 @@
         /* Individual vertical slider */
         .vertical-slider {
             width: 40px;
-            background: linear-gradient(180deg, rgba(14, 165, 233, 0.25), rgba(6, 182, 212, 0.25));
+            background: transparent;
             border-radius: 12px;
             position: relative;
             cursor: pointer;
@@ -532,9 +532,6 @@
             gap: 1rem;
             max-width: 400px;
             flex: 0 1 auto;
-            background: linear-gradient(90deg, rgba(14, 165, 233, 0.25), rgba(6, 182, 212, 0.25));
-            border-radius: 12px;
-            padding: 1rem 1.5rem;
         }
         
         /* Granularity slider */
@@ -546,9 +543,6 @@
             max-width: 400px;
             flex: 0 1 auto;
             position: relative;
-            background: linear-gradient(90deg, rgba(14, 165, 233, 0.25), rgba(6, 182, 212, 0.25));
-            border-radius: 12px;
-            padding: 1rem 1.5rem;
         }
 
         .speed-slider,
@@ -2438,7 +2432,19 @@
             if (CURRENT_DATE_MINUTES <= startMinutes) {
                 // Entire range is in the future
                 if (isWrapper) {
-                    element.style.background = 'linear-gradient(90deg, rgba(168, 85, 247, 0.25), rgba(147, 51, 234, 0.25))';
+                    // Calculate padding percentages
+                    const paddingPx = 12;
+                    const wrapperWidth = element.offsetWidth;
+                    const paddingPercent = (paddingPx / wrapperWidth) * 100;
+                    
+                    // Blue padding on ends, purple in middle
+                    element.style.background = `linear-gradient(90deg, 
+                        rgba(14, 165, 233, 0.25) 0%, 
+                        rgba(14, 165, 233, 0.25) ${paddingPercent}%, 
+                        rgba(168, 85, 247, 0.25) ${paddingPercent}%, 
+                        rgba(147, 51, 234, 0.25) ${100 - paddingPercent}%,
+                        rgba(14, 165, 233, 0.25) ${100 - paddingPercent}%,
+                        rgba(14, 165, 233, 0.25) 100%)`;
                 } else if (isMainTrack) {
                     element.style.background = 'linear-gradient(90deg, rgba(168, 85, 247, 0.3), rgba(126, 34, 206, 0.6), rgba(168, 85, 247, 0.3))';
                     element.style.boxShadow = 'inset 0 0 12px rgba(168, 85, 247, 0.35)';
@@ -2448,7 +2454,19 @@
             } else if (CURRENT_DATE_MINUTES >= endMinutes) {
                 // Entire range is in the past
                 if (isWrapper) {
-                    element.style.background = 'linear-gradient(90deg, rgba(14, 165, 233, 0.25), rgba(6, 182, 212, 0.25))';
+                    // Calculate padding percentages
+                    const paddingPx = 12;
+                    const wrapperWidth = element.offsetWidth;
+                    const paddingPercent = (paddingPx / wrapperWidth) * 100;
+                    
+                    // Blue padding on ends, blue-cyan in middle
+                    element.style.background = `linear-gradient(90deg, 
+                        rgba(14, 165, 233, 0.25) 0%, 
+                        rgba(14, 165, 233, 0.25) ${paddingPercent}%, 
+                        rgba(14, 165, 233, 0.25) ${paddingPercent}%, 
+                        rgba(6, 182, 212, 0.25) ${100 - paddingPercent}%,
+                        rgba(14, 165, 233, 0.25) ${100 - paddingPercent}%,
+                        rgba(14, 165, 233, 0.25) 100%)`;
                 } else if (isMainTrack) {
                     element.style.background = 'linear-gradient(90deg, rgba(14, 165, 233, 0.3), rgba(2, 132, 199, 0.6), rgba(14, 165, 233, 0.3))';
                     element.style.boxShadow = 'inset 0 0 12px rgba(14, 165, 233, 0.35)';
@@ -2461,22 +2479,28 @@
                 const currentPercent = ((CURRENT_DATE_MINUTES - startMinutes) / totalRange) * 100;
                 
                 if (isWrapper) {
-                    // Apply padding adjustment when selected range INCLUDES today
-                    // This ensures the background transition aligns with the track transition between handles
+                    // Calculate padding percentages
+                    const paddingPx = 12;
+                    const wrapperWidth = element.offsetWidth;
+                    const paddingPercent = (paddingPx / wrapperWidth) * 100;
+                    
+                    // Adjust the transition point to account for padding when range includes today
                     let adjustedPercent = currentPercent;
                     if (selectedRangeIncludesToday) {
-                        // Wrapper has 12px padding on each side, adjust percentage to align with track area
-                        const paddingPx = 12;
-                        const wrapperWidth = element.offsetWidth;
-                        const paddingPercent = (paddingPx / wrapperWidth) * 100;
+                        // Map the currentPercent (0-100 in range) to the track area (paddingPercent to 100-paddingPercent)
                         adjustedPercent = paddingPercent + currentPercent * (1 - 2 * paddingPercent / 100);
                     }
                     
+                    // Blue padding, transition from blue to purple in track area, blue padding
                     element.style.background = `linear-gradient(90deg, 
                         rgba(14, 165, 233, 0.25) 0%, 
+                        rgba(14, 165, 233, 0.25) ${paddingPercent}%, 
+                        rgba(14, 165, 233, 0.25) ${paddingPercent}%, 
                         rgba(6, 182, 212, 0.25) ${adjustedPercent}%, 
                         rgba(168, 85, 247, 0.25) ${adjustedPercent}%, 
-                        rgba(147, 51, 234, 0.25) 100%)`;
+                        rgba(147, 51, 234, 0.25) ${100 - paddingPercent}%,
+                        rgba(14, 165, 233, 0.25) ${100 - paddingPercent}%,
+                        rgba(14, 165, 233, 0.25) 100%)`;
                 } else if (isMainTrack) {
                     element.style.background = `linear-gradient(90deg, 
                         rgba(14, 165, 233, 0.3) 0%,
