@@ -1614,6 +1614,11 @@
         // Date adjustment animation state
         let startDateAdjustmentInterval = null;
         let endDateAdjustmentInterval = null;
+        
+        // Accumulators for fractional minute changes that haven't been applied yet
+        // These persist during a drag operation but are reset when drag ends
+        let startDateAccumulator = 0;
+        let endDateAccumulator = 0;
 
         function getGranularityIndex(granularity) {
             const granularities = Object.keys(GRANULARITY_TO_MINUTES);
@@ -2940,12 +2945,16 @@
                     startDateAdjustmentInterval = null;
                 }
                 startDateHandle.style.top = '50%';
+                // Reset accumulator when drag ends
+                startDateAccumulator = 0;
             } else {
                 if (endDateAdjustmentInterval) {
                     clearInterval(endDateAdjustmentInterval);
                     endDateAdjustmentInterval = null;
                 }
                 endDateHandle.style.top = '50%';
+                // Reset accumulator when drag ends
+                endDateAccumulator = 0;
             }
         }
         
@@ -2976,9 +2985,54 @@
             // Get the current value to adjust
             const currentMinutes = isStart ? viewStartMinutes : viewEndMinutes;
             
-            // For each granularity, add deltaMinutes but then "snap" to preserve unrelated components
+            // Accumulate fractional changes to prevent loss at slow speeds
+            // This allows sub-minute changes to accumulate until they reach a threshold
+            if (isStart) {
+                startDateAccumulator += deltaMinutes;
+            } else {
+                endDateAccumulator += deltaMinutes;
+            }
+            
+            const accumulator = isStart ? startDateAccumulator : endDateAccumulator;
+            
+            // Determine the minimum change threshold based on granularity
+            // For fine granularities (Minute, Hour), use 1 minute threshold
+            // For coarser granularities, use the granularity's minute value
+            let threshold;
+            if (granularity === "Minute") {
+                threshold = 1;
+            } else if (granularity === "Hour") {
+                threshold = MINUTES_PER_HOUR;
+            } else if (granularity === "Day") {
+                threshold = MINUTES_PER_DAY;
+            } else if (granularity === "Week") {
+                threshold = MINUTES_PER_WEEK;
+            } else if (granularity === "Month") {
+                threshold = MINUTES_PER_MONTH;
+            } else {
+                // For Year and coarser, use the granularity unit
+                threshold = minutesPerUnit;
+            }
+            
+            // Only apply change if accumulator exceeds threshold
+            if (Math.abs(accumulator) < threshold) {
+                return; // Not enough accumulated change yet
+            }
+            
+            // Calculate how many complete units to apply
+            const unitsToApply = Math.floor(Math.abs(accumulator) / threshold) * Math.sign(accumulator);
+            const minutesToApply = unitsToApply * threshold;
+            
+            // Subtract the applied amount from accumulator
+            if (isStart) {
+                startDateAccumulator -= minutesToApply;
+            } else {
+                endDateAccumulator -= minutesToApply;
+            }
+            
+            // For each granularity, add minutesToApply but then "snap" to preserve unrelated components
             // This allows natural minute accumulation while maintaining component independence
-            const tempMinutes = currentMinutes + deltaMinutes;
+            const tempMinutes = currentMinutes + minutesToApply;
             const tempComponents = minutesToDateComponents(tempMinutes);
             const currentComponents = minutesToDateComponents(currentMinutes);
             
