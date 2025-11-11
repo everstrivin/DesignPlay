@@ -216,8 +216,9 @@
         .horizontal-sliders-container {
             display: flex;
             flex-direction: column;
-            gap: 2rem;
+            gap: 1rem;
             flex: 1;
+            min-width: 0;
         }
 
         .range-slider-container {
@@ -297,7 +298,6 @@
             flex-direction: column;
             align-items: center;
             gap: 8px;
-            min-width: 100px;
             align-self: stretch; /* Match parent height */
         }
 
@@ -514,41 +514,36 @@
         /* Bottom controls container */
         .bottom-controls-container {
             display: flex;
-            flex-direction: row;
-            align-items: center;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.75rem;
+            flex: 1;
+            min-width: 0;
             justify-content: center;
-            gap: 2rem;
-            margin-top: 1.5rem;
-            padding: 1rem;
-            width: 100%;
-            flex-wrap: wrap;
+            padding: 0 0.5rem;
         }
 
         /* Speed slider */
         .speed-slider-container {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            max-width: 400px;
-            flex: 0 1 auto;
+            gap: 0.75rem;
+            width: 100%;
         }
         
         /* Granularity slider */
         .granularity-slider-container {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            max-width: 400px;
-            flex: 0 1 auto;
+            gap: 0.75rem;
+            width: 100%;
             position: relative;
         }
 
         .horizontal-slider-wrapper {
             position: relative;
             flex: 1;
-            max-width: 300px;
+            min-width: 0;
         }
 
         .horizontal-slider-handle {
@@ -572,7 +567,7 @@
 
         .speed-slider,
         .granularity-slider {
-            flex: 1;
+            width: 100%;
             -webkit-appearance: none;
             appearance: none;
             height: 10px;
@@ -580,7 +575,6 @@
             /* background: linear-gradient(90deg, rgba(14, 165, 233, 0.25), rgba(37, 99, 235, 0.25)); */
             outline: none;
             cursor: pointer;
-            max-width: 300px;
         }
 
         .speed-slider::-webkit-slider-thumb,
@@ -604,16 +598,16 @@
 
         .speed-label,
         .granularity-label {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             font-weight: 600;
             color: var(--text-muted);
-            min-width: 50px;
-            text-align: center;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
         
         .granularity-display-horizontal {
             position: absolute;
-            bottom: -24px;
+            top: -20px;
             left: 50%;
             transform: translateX(-50%);
             font-size: 0.75rem;
@@ -950,6 +944,27 @@
                                 <div class="range-handle" id="bottomEndHandle"></div>
                             </div>
                         </div>
+                        
+                        <!-- Granularity and Speed sliders below the timeline -->
+                        <div class="bottom-controls-container">
+                            <div class="granularity-slider-container">
+                                <span class="granularity-label">Coarse</span>
+                                <div class="horizontal-slider-wrapper">
+                                    <input type="range" class="granularity-slider" id="granularitySlider" min="0" max="13" value="9" step="1">
+                                    <div class="horizontal-slider-handle" id="granularityHandle"></div>
+                                </div>
+                                <span class="granularity-label">Fine</span>
+                                <div class="granularity-display-horizontal" id="granularityDisplay">Year</div>
+                            </div>
+                            <div class="speed-slider-container">
+                                <span class="speed-label">Slow</span>
+                                <div class="horizontal-slider-wrapper">
+                                    <input type="range" class="speed-slider" id="speedSlider" min="1" max="100" value="50" step="1">
+                                    <div class="horizontal-slider-handle" id="speedHandle"></div>
+                                </div>
+                                <span class="speed-label">Fast</span>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- End Date Vertical Sliders (right side) -->
@@ -973,27 +988,6 @@
                             </select>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Granularity and Speed sliders at bottom center -->
-            <div class="bottom-controls-container">
-                <div class="granularity-slider-container">
-                    <span class="granularity-label">Coarse</span>
-                    <div class="horizontal-slider-wrapper">
-                        <input type="range" class="granularity-slider" id="granularitySlider" min="0" max="13" value="9" step="1">
-                        <div class="horizontal-slider-handle" id="granularityHandle"></div>
-                    </div>
-                    <span class="granularity-label">Fine</span>
-                    <div class="granularity-display-horizontal" id="granularityDisplay">Year</div>
-                </div>
-                <div class="speed-slider-container">
-                    <span class="speed-label">Slow</span>
-                    <div class="horizontal-slider-wrapper">
-                        <input type="range" class="speed-slider" id="speedSlider" min="1" max="100" value="50" step="1">
-                        <div class="horizontal-slider-handle" id="speedHandle"></div>
-                    </div>
-                    <span class="speed-label">Fast</span>
                 </div>
             </div>
         </section>
@@ -3306,6 +3300,27 @@
             });
         }
 
+        // Function to adjust slider container margins based on date display widths
+        function adjustSliderMargins() {
+            const startDateDisplay = document.getElementById('startDateDisplay');
+            const endDateDisplay = document.getElementById('endDateDisplay');
+            const bottomControlsContainer = document.querySelector('.bottom-controls-container');
+            
+            if (startDateDisplay && endDateDisplay && bottomControlsContainer) {
+                const startWidth = startDateDisplay.offsetWidth;
+                const endWidth = endDateDisplay.offsetWidth;
+                
+                // Use the larger of the two widths to ensure alignment
+                const maxWidth = Math.max(startWidth, endWidth);
+                
+                // Apply margins to match the date display widths
+                // Add a small additional offset for visual balance
+                const marginValue = `${maxWidth + 8}px`;
+                bottomControlsContainer.style.marginLeft = marginValue;
+                bottomControlsContainer.style.marginRight = marginValue;
+            }
+        }
+        
         // Initialize
         initializeTimelines();
         updateGranularitySlider();
@@ -3319,6 +3334,12 @@
         refreshRangeDisplay();
         rebuildTicks();
         updatePointerAndDetails();
+        
+        // Adjust slider margins after initial render
+        setTimeout(adjustSliderMargins, 100);
+        
+        // Adjust on window resize
+        window.addEventListener('resize', adjustSliderMargins);
     </script>
 </body>
 </html>
