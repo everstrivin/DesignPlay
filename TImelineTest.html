@@ -511,21 +511,42 @@
             min-width: 2ch;
         }
 
-        /* Speed slider at bottom center */
+        /* Bottom controls container */
+        .bottom-controls-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        /* Speed slider */
         .speed-slider-container {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 1rem;
-            margin-top: 1.5rem;
-            padding: 1rem;
-            width: 100%;
             max-width: 400px;
-            margin-left: auto;
-            margin-right: auto;
+            flex: 0 1 auto;
+        }
+        
+        /* Granularity slider */
+        .granularity-slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            max-width: 400px;
+            flex: 0 1 auto;
+            position: relative;
         }
 
-        .speed-slider {
+        .speed-slider,
+        .granularity-slider {
             flex: 1;
             -webkit-appearance: none;
             appearance: none;
@@ -537,7 +558,8 @@
             max-width: 300px;
         }
 
-        .speed-slider::-webkit-slider-thumb {
+        .speed-slider::-webkit-slider-thumb,
+        .granularity-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
             height: 24px;
@@ -549,7 +571,8 @@
             border: 3px solid white;
         }
 
-        .speed-slider::-moz-range-thumb {
+        .speed-slider::-moz-range-thumb,
+        .granularity-slider::-moz-range-thumb {
             height: 24px;
             width: 24px;
             border-radius: 50%;
@@ -560,12 +583,28 @@
             border: none;
         }
 
-        .speed-label {
+        .speed-label,
+        .granularity-label {
             font-size: 0.85rem;
             font-weight: 600;
             color: var(--text-muted);
             min-width: 50px;
             text-align: center;
+        }
+        
+        .granularity-display-horizontal {
+            position: absolute;
+            bottom: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-align: center;
+            padding: 2px 8px;
+            background: rgba(14, 165, 233, 0.1);
+            border-radius: 4px;
+            min-width: 80px;
         }
 
         .range-slider-info {
@@ -848,14 +887,6 @@
                     <div class="vertical-slider-control start">
                         <div class="vertical-sliders-wrapper">
                             <div class="vertical-slider-with-label">
-                                <div class="slider-micro-label">Granularity</div>
-                                <div class="vertical-slider" id="startGranularitySlider">
-                                    <div class="vertical-slider-track"></div>
-                                    <div class="vertical-slider-handle" id="startGranularityHandle"></div>
-                                </div>
-                                <div class="granularity-display" id="startGranularityDisplay">Year</div>
-                            </div>
-                            <div class="vertical-slider-with-label">
                                 <div class="slider-micro-label">Adjust Date</div>
                                 <div class="vertical-slider" id="startDateSlider">
                                     <div class="vertical-slider-track"></div>
@@ -911,14 +942,6 @@
                                     <div class="vertical-slider-handle" id="endDateHandle"></div>
                                 </div>
                             </div>
-                            <div class="vertical-slider-with-label">
-                                <div class="slider-micro-label">Granularity</div>
-                                <div class="vertical-slider" id="endGranularitySlider">
-                                    <div class="vertical-slider-track"></div>
-                                    <div class="vertical-slider-handle" id="endGranularityHandle"></div>
-                                </div>
-                                <div class="granularity-display" id="endGranularityDisplay">Year</div>
-                            </div>
                         </div>
                         <div class="slider-date-display end" id="endDateDisplay">
                             <select class="date-part month-part" id="endMonthSelect"></select>
@@ -933,11 +956,19 @@
                 </div>
             </div>
             
-            <!-- Speed slider at bottom center -->
-            <div class="speed-slider-container">
-                <span class="speed-label">Slow</span>
-                <input type="range" class="speed-slider" id="speedSlider" min="1" max="100" value="50" step="1">
-                <span class="speed-label">Fast</span>
+            <!-- Granularity and Speed sliders at bottom center -->
+            <div class="bottom-controls-container">
+                <div class="granularity-slider-container">
+                    <span class="granularity-label">Coarse</span>
+                    <input type="range" class="granularity-slider" id="granularitySlider" min="0" max="13" value="9" step="1">
+                    <span class="granularity-label">Fine</span>
+                    <div class="granularity-display-horizontal" id="granularityDisplay">Year</div>
+                </div>
+                <div class="speed-slider-container">
+                    <span class="speed-label">Slow</span>
+                    <input type="range" class="speed-slider" id="speedSlider" min="1" max="100" value="50" step="1">
+                    <span class="speed-label">Fast</span>
+                </div>
             </div>
         </section>
     </div>
@@ -1608,8 +1639,7 @@
         
         // Vertical slider state
         const GRANULARITY_LEVELS = Object.keys(GRANULARITY_TO_MINUTES); // Ordered from coarsest to finest
-        let startGranularityIndex = 9; // Default to Day (index 9)
-        let endGranularityIndex = 9;
+        let granularityIndex = 9; // Default to Year (index 9)
         
         // Date adjustment animation state
         let startDateAdjustmentInterval = null;
@@ -1934,16 +1964,18 @@
         });
         
         // Update granularity slider handle positions
-        function updateGranularitySliders() {
-            // Start granularity slider (top = finest, bottom = coarsest)
-            const startPercent = (1 - (startGranularityIndex / (GRANULARITY_LEVELS.length - 1))) * 100;
-            startGranularityHandle.style.top = `${startPercent}%`;
-            startGranularityDisplay.textContent = GRANULARITY_LEVELS[startGranularityIndex];
+        function updateGranularitySlider() {
+            // Update horizontal granularity slider display
+            const granularitySlider = document.getElementById('granularitySlider');
+            const granularityDisplay = document.getElementById('granularityDisplay');
             
-            // End granularity slider (top = finest, bottom = coarsest)
-            const endPercent = (1 - (endGranularityIndex / (GRANULARITY_LEVELS.length - 1))) * 100;
-            endGranularityHandle.style.top = `${endPercent}%`;
-            endGranularityDisplay.textContent = GRANULARITY_LEVELS[endGranularityIndex];
+            if (granularitySlider) {
+                granularitySlider.value = granularityIndex;
+            }
+            
+            if (granularityDisplay) {
+                granularityDisplay.textContent = GRANULARITY_LEVELS[granularityIndex];
+            }
         }
         
         // Initialize date adjustment sliders to center
@@ -2847,51 +2879,6 @@
 
         // Vertical slider event handlers
         
-        // Granularity slider drag handling
-        let granularityDragState = null;
-        
-        function startGranularityDrag(isStart, event) {
-            event.preventDefault();
-            const slider = isStart ? startGranularitySlider : endGranularitySlider;
-            const rect = slider.getBoundingClientRect();
-            
-            granularityDragState = {
-                isStart: isStart,
-                rect: rect
-            };
-            
-            document.addEventListener('mousemove', handleGranularityDrag);
-            document.addEventListener('mouseup', endGranularityDrag);
-            
-            // Immediately update position
-            handleGranularityDrag(event);
-        }
-        
-        function handleGranularityDrag(event) {
-            if (!granularityDragState) return;
-            
-            const rect = granularityDragState.rect;
-            const y = event.clientY - rect.top;
-            const percent = Math.max(0, Math.min(1, y / rect.height));
-            
-            // Top = finest (0), Bottom = coarsest (length-1)
-            const index = Math.round((1 - percent) * (GRANULARITY_LEVELS.length - 1));
-            
-            if (granularityDragState.isStart) {
-                startGranularityIndex = index;
-            } else {
-                endGranularityIndex = index;
-            }
-            
-            updateGranularitySliders();
-        }
-        
-        function endGranularityDrag() {
-            granularityDragState = null;
-            document.removeEventListener('mousemove', handleGranularityDrag);
-            document.removeEventListener('mouseup', endGranularityDrag);
-        }
-        
         // Date adjustment slider handling
         let dateAdjustmentDragState = null;
         
@@ -2973,7 +2960,6 @@
             if (Math.abs(rate) < 0.01) return; // Dead zone at center
             
             // Get granularity
-            const granularityIndex = isStart ? startGranularityIndex : endGranularityIndex;
             const granularity = GRANULARITY_LEVELS[granularityIndex];
             const minutesPerUnit = GRANULARITY_TO_MINUTES[granularity];
             
@@ -3179,8 +3165,7 @@
             
             // Also enforce an absolute minimum time-based distance
             // Use 5% of the view range as minimum, with a floor based on granularity
-            const currentGranularityIndex = isStart ? startGranularityIndex : endGranularityIndex;
-            const currentGranularity = GRANULARITY_LEVELS[currentGranularityIndex];
+            const currentGranularity = GRANULARITY_LEVELS[granularityIndex];
             const minBottomSpanTime = GRANULARITY_TO_MINUTES[currentGranularity] * 2; // At least 2 units of current granularity
             const minBottomSpanPercent = viewRange * 0.05; // 5% of view range
             
@@ -3250,10 +3235,7 @@
             refreshRangeDisplay();
         }
         
-        // Add event listeners for vertical sliders
-        startGranularitySlider.addEventListener('mousedown', (e) => startGranularityDrag(true, e));
-        endGranularitySlider.addEventListener('mousedown', (e) => startGranularityDrag(false, e));
-        
+        // Add event listeners for vertical date adjustment sliders
         startDateSlider.addEventListener('mousedown', (e) => startDateAdjustmentDrag(true, e));
         endDateSlider.addEventListener('mousedown', (e) => startDateAdjustmentDrag(false, e));
 
@@ -3272,9 +3254,18 @@
             speedMultiplier = minMultiplier * Math.pow(maxMultiplier / minMultiplier, ratio);
         });
 
+        // Granularity slider event listener
+        const granularitySlider = document.getElementById('granularitySlider');
+        if (granularitySlider) {
+            granularitySlider.addEventListener('input', (e) => {
+                granularityIndex = parseInt(e.target.value);
+                updateGranularitySlider();
+            });
+        }
+
         // Initialize
         initializeTimelines();
-        updateGranularitySliders();
+        updateGranularitySlider();
         resetDateSliders();
         updateDateDisplays();
         updateRangeSliders();
