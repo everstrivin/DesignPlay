@@ -514,9 +514,9 @@
         /* Bottom controls container */
         .bottom-controls-container {
             display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            gap: 0.75rem;
+            flex-direction: row;
+            align-items: center;
+            gap: 1rem;
             flex: 1;
             min-width: 0;
             justify-content: center;
@@ -544,6 +544,12 @@
             position: relative;
             flex: 1;
             min-width: 0;
+            height: 50px;
+            background: linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(37, 99, 235, 0.15));
+            border-radius: 12px;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
         }
 
         .horizontal-slider-handle {
