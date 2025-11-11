@@ -2027,8 +2027,9 @@
         const tooltipDates = document.getElementById('tooltipDates');
 
         function renderGeologicSegments(container, rangeStartMinutes, rangeEndMinutes) {
-            // Clear existing segments
+            // Clear existing segments and hide tooltip to prevent it from pointing to removed elements
             container.innerHTML = '';
+            hideGeologicTooltip();
             
             // Helper function to get the actual end time for a period (extends Holocene to present)
             const getPeriodEnd = (period) => (period.endMya === 0) ? CURRENT_DATE_MINUTES : period.endMinutes;
@@ -2631,6 +2632,9 @@
 
         function startBottomDrag(type, event) {
             event.preventDefault();
+            // Hide tooltip when drag starts to prevent it from getting stuck
+            hideGeologicTooltip();
+            
             const rect = bottomSliderWrapper.getBoundingClientRect();
             // Bottom slider boundaries are set by the date inputs
             const totalRange = viewEndMinutes - viewStartMinutes;
@@ -2653,6 +2657,9 @@
 
         function startTopDrag(type, event) {
             event.preventDefault();
+            // Hide tooltip when drag starts to prevent it from getting stuck
+            hideGeologicTooltip();
+            
             const rect = topSliderWrapper.getBoundingClientRect();
             const totalRange = bottomEndMinutes - bottomStartMinutes;
             
@@ -2915,6 +2922,9 @@
         
         function startDateAdjustmentDrag(isStart, event) {
             event.preventDefault();
+            // Hide tooltip when drag starts to prevent it from getting stuck
+            hideGeologicTooltip();
+            
             const slider = isStart ? startDateSlider : endDateSlider;
             const rect = slider.getBoundingClientRect();
             
