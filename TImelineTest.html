@@ -1710,9 +1710,14 @@
             return numberFormatter.format(absYear);
         }
         
-        // Helper function to get era label (AD for positive years, BCE for negative)
+        // Helper function to get era label based on current view mode
+        // Old Earth: CE/BCE, Young Earth: AD/BC
         function getEraLabel(era) {
-            return era === 1 ? "AD" : "BCE";
+            if (isYoungEarthView) {
+                return era === 1 ? "AD" : "BC";
+            } else {
+                return era === 1 ? "CE" : "BCE";
+            }
         }
         
         const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -2448,7 +2453,8 @@
 
         function formatYearLabel(minutes) {
             if (minutes === 0) {
-                return "Year 1 AD";
+                const era = isYoungEarthView ? "AD" : "CE";
+                return `Year 1 ${era}`;
             }
             
             const components = minutesToDateComponents(minutes);
@@ -2496,7 +2502,8 @@
 
         function formatDetailedTime(minutes, granularity) {
             if (minutes === 0) {
-                return "Center (Year 1 AD · Month 1 · Day 1 · 00:00)";
+                const era = isYoungEarthView ? "AD" : "CE";
+                return `Center (Year 1 ${era} · Month 1 · Day 1 · 00:00)`;
             }
             
             const components = minutesToDateComponents(minutes);
@@ -3465,11 +3472,28 @@
         // Earth view switch event listener
         const earthViewButton = document.getElementById('earthViewButton');
         
+        // Update era dropdown labels based on current view
+        function updateEraDropdowns() {
+            const positiveEraLabel = isYoungEarthView ? "AD" : "CE";
+            const negativeEraLabel = isYoungEarthView ? "BC" : "BCE";
+            
+            // Update start era dropdown
+            startEraSelect.options[0].text = positiveEraLabel;
+            startEraSelect.options[1].text = negativeEraLabel;
+            
+            // Update end era dropdown
+            endEraSelect.options[0].text = positiveEraLabel;
+            endEraSelect.options[1].text = negativeEraLabel;
+        }
+        
         function toggleEarthView() {
             isYoungEarthView = !isYoungEarthView;
             
             // Update button text
             earthViewButton.textContent = isYoungEarthView ? 'Young Earth' : 'Old Earth';
+            
+            // Update era dropdown labels
+            updateEraDropdowns();
             
             // Update granularity slider bounds
             const bounds = getGranularityBounds();
@@ -3515,6 +3539,7 @@
         earthViewButton.addEventListener('click', toggleEarthView);
 
         // Initialize
+        updateEraDropdowns(); // Initialize era labels based on default view
         initializeTimelines();
         updateGranularitySlider();
         resetDateSliders();
