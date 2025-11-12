@@ -196,7 +196,9 @@
         .test-button-container {
             margin-bottom: 1rem;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
         }
 
         .test-button {
@@ -222,59 +224,41 @@
             transform: translateY(0);
         }
 
-        .test-dialog {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: calc(100% - 2rem);
-            max-width: 600px;
-            background: white;
+        .test-panel {
+            width: 100%;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.12));
             border-radius: 18px;
             padding: 1.5rem;
-            box-shadow: 0 25px 60px rgba(15, 23, 42, 0.3);
-            z-index: 1000;
+            border: 2px solid rgba(16, 185, 129, 0.2);
             display: none;
-            animation: slideDown 0.3s ease-out;
         }
 
-        .test-dialog.active {
+        .test-panel.active {
             display: block;
         }
 
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
-        }
-
-        .test-dialog-title {
+        .test-panel-title {
             font-size: 1.1rem;
             font-weight: 700;
             color: #0f172a;
             margin: 0 0 1rem;
         }
 
-        .test-dialog-content {
+        .test-panel-content {
             font-size: 0.95rem;
             line-height: 1.6;
-            color: #475569;
+            color: #1e293b;
             white-space: pre-line;
             margin-bottom: 1.5rem;
         }
 
-        .test-dialog-buttons {
+        .test-panel-buttons {
             display: flex;
             gap: 0.75rem;
             justify-content: flex-end;
         }
 
-        .test-dialog-btn {
+        .test-panel-btn {
             border: none;
             border-radius: 12px;
             padding: 0.7rem 1.5rem;
@@ -284,24 +268,25 @@
             transition: all 0.2s ease;
         }
 
-        .test-dialog-btn-primary {
+        .test-panel-btn-primary {
             background: linear-gradient(135deg, #10b981, #059669);
             color: white;
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
         }
 
-        .test-dialog-btn-primary:hover {
+        .test-panel-btn-primary:hover {
             transform: translateY(-1px);
             box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
         }
 
-        .test-dialog-btn-secondary {
-            background: #f1f5f9;
+        .test-panel-btn-secondary {
+            background: white;
             color: #475569;
+            border: 1px solid #e2e8f0;
         }
 
-        .test-dialog-btn-secondary:hover {
-            background: #e2e8f0;
+        .test-panel-btn-secondary:hover {
+            background: #f8fafc;
         }
 
         .slider-area {
@@ -1047,10 +1032,10 @@
         <section class="timeline-card">
             <div class="test-button-container">
                 <button class="test-button" id="runTestButton">🧪 Run Full Test Suite</button>
-                <div class="test-dialog" id="testDialog">
-                    <div class="test-dialog-title" id="testDialogTitle"></div>
-                    <div class="test-dialog-content" id="testDialogContent"></div>
-                    <div class="test-dialog-buttons" id="testDialogButtons"></div>
+                <div class="test-panel" id="testPanel">
+                    <div class="test-panel-title" id="testPanelTitle"></div>
+                    <div class="test-panel-content" id="testPanelContent"></div>
+                    <div class="test-panel-buttons" id="testPanelButtons"></div>
                 </div>
             </div>
             <div class="range-display" id="rangeDisplay"></div>
@@ -3693,10 +3678,10 @@
         // ===========================
         
         const runTestButton = document.getElementById('runTestButton');
-        const testDialog = document.getElementById('testDialog');
-        const testDialogTitle = document.getElementById('testDialogTitle');
-        const testDialogContent = document.getElementById('testDialogContent');
-        const testDialogButtons = document.getElementById('testDialogButtons');
+        const testPanel = document.getElementById('testPanel');
+        const testPanelTitle = document.getElementById('testPanelTitle');
+        const testPanelContent = document.getElementById('testPanelContent');
+        const testPanelButtons = document.getElementById('testPanelButtons');
         
         // Store original state to restore after tests
         let originalState = null;
@@ -3739,44 +3724,44 @@
             return new Promise(resolve => setTimeout(resolve, ms));
         }
         
-        // Custom dialog functions
-        function showTestDialog(title, content, buttons) {
+        // Custom panel functions
+        function showTestPanel(title, content, buttons) {
             return new Promise((resolve) => {
-                testDialogTitle.textContent = title;
-                testDialogContent.textContent = content;
-                testDialogButtons.innerHTML = '';
+                testPanelTitle.textContent = title;
+                testPanelContent.textContent = content;
+                testPanelButtons.innerHTML = '';
                 
                 buttons.forEach(btn => {
                     const button = document.createElement('button');
-                    button.className = `test-dialog-btn ${btn.primary ? 'test-dialog-btn-primary' : 'test-dialog-btn-secondary'}`;
+                    button.className = `test-panel-btn ${btn.primary ? 'test-panel-btn-primary' : 'test-panel-btn-secondary'}`;
                     button.textContent = btn.text;
                     button.onclick = () => {
-                        hideTestDialog();
+                        hideTestPanel();
                         resolve(btn.value);
                     };
-                    testDialogButtons.appendChild(button);
+                    testPanelButtons.appendChild(button);
                 });
                 
-                testDialog.classList.add('active');
+                testPanel.classList.add('active');
             });
         }
         
-        function hideTestDialog() {
-            testDialog.classList.remove('active');
+        function hideTestPanel() {
+            testPanel.classList.remove('active');
         }
         
         async function testAlert(message) {
             const lines = message.split('\n');
             const title = lines[0];
             const content = lines.slice(1).join('\n');
-            await showTestDialog(title, content, [{ text: 'OK', primary: true, value: true }]);
+            await showTestPanel(title, content, [{ text: 'OK', primary: true, value: true }]);
         }
         
         async function testConfirm(message) {
             const lines = message.split('\n');
             const title = lines[0];
             const content = lines.slice(1).join('\n');
-            return await showTestDialog(title, content, [
+            return await showTestPanel(title, content, [
                 { text: 'Cancel', primary: false, value: false },
                 { text: 'OK', primary: true, value: true }
             ]);
