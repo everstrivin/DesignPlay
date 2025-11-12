@@ -953,7 +953,7 @@
                             <span class="date-part day-part" contenteditable="true" id="startDayInput"></span><span class="date-text">, </span><span class="date-part year-part" contenteditable="true" id="startYearInput"></span>
                             <span class="date-part hour-part" contenteditable="true" id="startHourInput"></span><span class="date-text">:</span><span class="date-part minute-part" contenteditable="true" id="startMinuteInput"></span>
                             <select class="date-part era-part" id="startEraSelect">
-                                <option value="1">CE</option>
+                                <option value="1">AD</option>
                                 <option value="-1">BCE</option>
                             </select>
                         </div>
@@ -1026,7 +1026,7 @@
                             <span class="date-part day-part" contenteditable="true" id="endDayInput"></span><span class="date-text">, </span><span class="date-part year-part" contenteditable="true" id="endYearInput"></span>
                             <span class="date-part hour-part" contenteditable="true" id="endHourInput"></span><span class="date-text">:</span><span class="date-part minute-part" contenteditable="true" id="endMinuteInput"></span>
                             <select class="date-part era-part" id="endEraSelect">
-                                <option value="1">CE</option>
+                                <option value="1">AD</option>
                                 <option value="-1">BCE</option>
                             </select>
                         </div>
@@ -1066,7 +1066,7 @@
         const MINUTES_PER_HOUR = 60;
 
         const EARTH_AGE_YEARS = 4_540_000_000;
-        const YOUNG_EARTH_AGE_YEARS = 10_000; // Young Earth creationist view: ~10,000 years
+        const YOUNG_EARTH_AGE_YEARS = 8_000; // Young Earth creationist view: 8,000 years (8000 BC to present)
         
         let isYoungEarthView = false; // Track current view mode
         
@@ -1645,25 +1645,53 @@
                 return GEOLOGIC_PERIODS;
             }
             
-            // In Young Earth view, condense all geological periods into the 10,000 year timeframe
-            // We'll compress the entire 4.54 billion year timeline proportionally
+            // In Young Earth view:
+            // - Holocene starts at 1805 AD and goes to present
+            // - All other geological periods fit between 8000 BC and 1805 AD
+            // - Each period maintains its proportional size relative to the old earth timeline
+            
+            const holoceneStartYear = 1805; // AD
+            const preHoloceneEndYear = 1805; // AD
+            const timelineStartYear = -8000; // 8000 BC
+            
+            // Calculate minutes for these years (Year 1 AD = 0 minutes)
+            const holoceneStartMinutes = (holoceneStartYear - 1) * MINUTES_PER_YEAR;
+            const preHoloceneEndMinutes = (preHoloceneEndYear - 1) * MINUTES_PER_YEAR;
+            const timelineStartMinutes = (timelineStartYear - 1) * MINUTES_PER_YEAR;
+            
+            // Available span for non-Holocene periods: 8000 BC to 1805 AD
+            const preHoloceneSpanMinutes = preHoloceneEndMinutes - timelineStartMinutes;
+            
+            // Old Earth span for all non-Holocene periods (4.54 billion years)
             const oldEarthSpan = EARTH_AGE_YEARS * MINUTES_PER_YEAR;
-            const youngEarthSpan = YOUNG_EARTH_AGE_YEARS * MINUTES_PER_YEAR;
-            const compressionRatio = youngEarthSpan / oldEarthSpan;
+            
+            // Compression ratio for pre-Holocene periods
+            const compressionRatio = preHoloceneSpanMinutes / oldEarthSpan;
             
             return GEOLOGIC_PERIODS.map(period => {
-                // Compress the period times proportionally
-                const compressedStart = period.startMinutes * compressionRatio;
-                const compressedEnd = period.endMinutes * compressionRatio;
-                
-                return {
-                    ...period,
-                    startMinutes: compressedStart,
-                    endMinutes: compressedEnd,
-                    // Keep original mya for tooltip display
-                    originalStartMya: period.startMya,
-                    originalEndMya: period.endMya
-                };
+                if (period.epoch === "Holocene") {
+                    // Holocene: 1805 AD to present
+                    return {
+                        ...period,
+                        startMinutes: holoceneStartMinutes,
+                        endMinutes: 0, // Will be extended to CURRENT_DATE_MINUTES by getPeriodEnd
+                        originalStartMya: period.startMya,
+                        originalEndMya: period.endMya
+                    };
+                } else {
+                    // All other periods: compressed between 8000 BC and 1805 AD
+                    // Compress proportionally and shift to start at 8000 BC
+                    const compressedStart = period.startMinutes * compressionRatio + timelineStartMinutes;
+                    const compressedEnd = period.endMinutes * compressionRatio + timelineStartMinutes;
+                    
+                    return {
+                        ...period,
+                        startMinutes: compressedStart,
+                        endMinutes: compressedEnd,
+                        originalStartMya: period.startMya,
+                        originalEndMya: period.endMya
+                    };
+                }
             });
         }
 
@@ -1680,6 +1708,11 @@
                 return absYear.toString();
             }
             return numberFormatter.format(absYear);
+        }
+        
+        // Helper function to get era label (AD for positive years, BCE for negative)
+        function getEraLabel(era) {
+            return era === 1 ? "AD" : "BCE";
         }
         
         const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -2141,13 +2174,7 @@
             // Helper function to get the actual end time for a period (extends Holocene to present)
             const getPeriodEnd = (period) => {
                 if (period.endMya === 0) {
-                    // Holocene extends to present - use proportionally adjusted current date if in Young Earth view
-                    if (isYoungEarthView) {
-                        const oldEarthSpan = EARTH_AGE_YEARS * MINUTES_PER_YEAR;
-                        const youngEarthSpan = YOUNG_EARTH_AGE_YEARS * MINUTES_PER_YEAR;
-                        const compressionRatio = youngEarthSpan / oldEarthSpan;
-                        return CURRENT_DATE_MINUTES * compressionRatio;
-                    }
+                    // Holocene extends to present day in both views
                     return CURRENT_DATE_MINUTES;
                 }
                 return period.endMinutes;
@@ -2333,8 +2360,8 @@
             const startComponents = minutesToDateComponents(topStartMinutes);
             const endComponents = minutesToDateComponents(topEndMinutes);
             
-            const startEra = startComponents.era === 1 ? "CE" : "BCE";
-            const endEra = endComponents.era === 1 ? "CE" : "BCE";
+            const startEra = getEraLabel(startComponents.era);
+            const endEra = getEraLabel(endComponents.era);
             
             const startMonthIndex = Math.min(Math.max(startComponents.month - 1, 0), 11);
             const endMonthIndex = Math.min(Math.max(endComponents.month - 1, 0), 11);
@@ -2355,7 +2382,7 @@
             }
             
             const components = minutesToDateComponents(minutes);
-            const era = components.era === 1 ? "CE" : "BCE";
+            const era = getEraLabel(components.era);
             const monthIndex = Math.min(Math.max(components.month - 1, 0), 11);
             
             // Format at the same granularity level as selected
@@ -2421,12 +2448,12 @@
 
         function formatYearLabel(minutes) {
             if (minutes === 0) {
-                return "Year 1 CE";
+                return "Year 1 AD";
             }
             
             const components = minutesToDateComponents(minutes);
             const label = compactFormatter.format(components.year);
-            const era = components.era === 1 ? "CE" : "BCE";
+            const era = getEraLabel(components.era);
             return `Year ${label} ${era}`;
         }
 
@@ -2448,7 +2475,7 @@
             
             // For sub-year granularities, use minutesToDateComponents to get correct date
             const components = minutesToDateComponents(minutes);
-            const era = components.era === 1 ? "CE" : "BCE";
+            const era = getEraLabel(components.era);
             const monthIndex = Math.min(Math.max(components.month - 1, 0), 11);
             
             // Format based on granularity
@@ -2469,11 +2496,11 @@
 
         function formatDetailedTime(minutes, granularity) {
             if (minutes === 0) {
-                return "Center (Year 1 CE · Month 1 · Day 1 · 00:00)";
+                return "Center (Year 1 AD · Month 1 · Day 1 · 00:00)";
             }
             
             const components = minutesToDateComponents(minutes);
-            const era = components.era === 1 ? "CE" : "BCE";
+            const era = getEraLabel(components.era);
             const monthIndex = Math.min(Math.max(components.month - 1, 0), 11);
             
             // Format based on granularity
