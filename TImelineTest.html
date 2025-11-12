@@ -628,6 +628,38 @@
             min-width: 80px;
         }
 
+        /* Earth view switch */
+        .earth-view-switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 0.5rem 0;
+        }
+
+        .earth-view-button {
+            padding: 0.65rem 1.5rem;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border: none;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+
+        .earth-view-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(14, 165, 233, 0.4);
+        }
+
+        .earth-view-button:active {
+            transform: translateY(0);
+        }
+
         .range-slider-info {
             font-size: 0.85rem;
             color: var(--text-muted);
@@ -921,7 +953,7 @@
                             <span class="date-part day-part" contenteditable="true" id="startDayInput"></span><span class="date-text">, </span><span class="date-part year-part" contenteditable="true" id="startYearInput"></span>
                             <span class="date-part hour-part" contenteditable="true" id="startHourInput"></span><span class="date-text">:</span><span class="date-part minute-part" contenteditable="true" id="startMinuteInput"></span>
                             <select class="date-part era-part" id="startEraSelect">
-                                <option value="1">CE</option>
+                                <option value="1">AD</option>
                                 <option value="-1">BCE</option>
                             </select>
                         </div>
@@ -955,6 +987,17 @@
                         
                         <!-- Granularity and Speed sliders below the timeline -->
                         <div class="bottom-controls-container">
+                            <div class="speed-slider-container">
+                                <span class="speed-label">Slow</span>
+                                <div class="horizontal-slider-wrapper">
+                                    <input type="range" class="speed-slider" id="speedSlider" min="1" max="100" value="50" step="1">
+                                    <div class="horizontal-slider-handle" id="speedHandle"></div>
+                                </div>
+                                <span class="speed-label">Fast</span>
+                            </div>
+                            <div class="earth-view-switch-container">
+                                <button class="earth-view-button" id="earthViewButton">Old Earth</button>
+                            </div>
                             <div class="granularity-slider-container">
                                 <span class="granularity-label">Coarse</span>
                                 <div class="horizontal-slider-wrapper">
@@ -963,14 +1006,6 @@
                                 </div>
                                 <span class="granularity-label">Fine</span>
                                 <div class="granularity-display-horizontal" id="granularityDisplay">Year</div>
-                            </div>
-                            <div class="speed-slider-container">
-                                <span class="speed-label">Slow</span>
-                                <div class="horizontal-slider-wrapper">
-                                    <input type="range" class="speed-slider" id="speedSlider" min="1" max="100" value="50" step="1">
-                                    <div class="horizontal-slider-handle" id="speedHandle"></div>
-                                </div>
-                                <span class="speed-label">Fast</span>
                             </div>
                         </div>
                     </div>
@@ -991,7 +1026,7 @@
                             <span class="date-part day-part" contenteditable="true" id="endDayInput"></span><span class="date-text">, </span><span class="date-part year-part" contenteditable="true" id="endYearInput"></span>
                             <span class="date-part hour-part" contenteditable="true" id="endHourInput"></span><span class="date-text">:</span><span class="date-part minute-part" contenteditable="true" id="endMinuteInput"></span>
                             <select class="date-part era-part" id="endEraSelect">
-                                <option value="1">CE</option>
+                                <option value="1">AD</option>
                                 <option value="-1">BCE</option>
                             </select>
                         </div>
@@ -1031,6 +1066,23 @@
         const MINUTES_PER_HOUR = 60;
 
         const EARTH_AGE_YEARS = 4_540_000_000;
+        const YOUNG_EARTH_AGE_YEARS = 8_000; // Young Earth creationist view: 8,000 years (8000 BC to present)
+        
+        let isYoungEarthView = false; // Track current view mode
+        
+        // Calculate timeline boundaries based on current view
+        function getTimelineMin() {
+            if (isYoungEarthView) {
+                return -(YOUNG_EARTH_AGE_YEARS * MINUTES_PER_YEAR);
+            }
+            return -(EARTH_AGE_YEARS * MINUTES_PER_YEAR);
+        }
+        
+        function getTimelineMax() {
+            // Future remains the same in both views
+            return EARTH_AGE_YEARS * MINUTES_PER_YEAR;
+        }
+        
         const HALF_SPAN_MINUTES = EARTH_AGE_YEARS * MINUTES_PER_YEAR;
         const TIMELINE_MIN = -HALF_SPAN_MINUTES;
         const TIMELINE_MAX = HALF_SPAN_MINUTES;
@@ -1081,6 +1133,28 @@
             Hour: MINUTES_PER_HOUR,
             Minute: 1
         };
+
+        // Get available granularity levels based on earth view mode
+        function getAvailableGranularityLevels() {
+            const allLevels = Object.keys(GRANULARITY_TO_MINUTES);
+            if (isYoungEarthView) {
+                // Young Earth: max coarseness is Millennium (index 5)
+                // Filter out: Eon, Epoch, Age, Centimillennium, Decamillennium
+                const millenniumIndex = allLevels.indexOf('Millennium');
+                return allLevels.slice(millenniumIndex);
+            }
+            return allLevels;
+        }
+        
+        // Get min and max granularity indices for current view
+        function getGranularityBounds() {
+            const allLevels = Object.keys(GRANULARITY_TO_MINUTES);
+            if (isYoungEarthView) {
+                const millenniumIndex = allLevels.indexOf('Millennium');
+                return { min: millenniumIndex, max: allLevels.length - 1 };
+            }
+            return { min: 0, max: allLevels.length - 1 };
+        }
 
         const UNIT_LABELS = {
             Eon: { singular: "eon", plural: "eons" },
@@ -1565,6 +1639,76 @@
             period.endMinutes = myaToMinutes(period.endMya);
         });
 
+        // Get geological periods adjusted for current earth view
+        function getAdjustedGeologicPeriods() {
+            if (!isYoungEarthView) {
+                return GEOLOGIC_PERIODS;
+            }
+            
+            // In Young Earth view:
+            // - Holocene starts at 1805 AD and goes to present
+            // - All other geological periods fit between 8000 BC and 1805 AD
+            // - Each period maintains its proportional size relative to the old earth timeline
+            
+            const holoceneStartYear = 1805; // AD
+            const preHoloceneEndYear = 1805; // AD
+            const timelineStartYear = -8000; // 8000 BC
+            
+            // Calculate minutes for these years (Year 1 AD = 0 minutes)
+            const holoceneStartMinutes = (holoceneStartYear - 1) * MINUTES_PER_YEAR;
+            const preHoloceneEndMinutes = (preHoloceneEndYear - 1) * MINUTES_PER_YEAR;
+            const timelineStartMinutes = (timelineStartYear - 1) * MINUTES_PER_YEAR;
+            
+            // Available span for non-Holocene periods: 8000 BC to 1805 AD
+            const preHoloceneSpanMinutes = preHoloceneEndMinutes - timelineStartMinutes;
+            
+            // Old Earth span for all non-Holocene periods (4.54 billion years)
+            const oldEarthSpan = EARTH_AGE_YEARS * MINUTES_PER_YEAR;
+            
+            // Compression ratio for pre-Holocene periods
+            const compressionRatio = preHoloceneSpanMinutes / oldEarthSpan;
+            
+            return GEOLOGIC_PERIODS.map(period => {
+                if (period.epoch === "Holocene") {
+                    // Holocene: 1805 AD to present
+                    return {
+                        ...period,
+                        startMinutes: holoceneStartMinutes,
+                        endMinutes: 0, // Will be extended to CURRENT_DATE_MINUTES by getPeriodEnd
+                        originalStartMya: period.startMya,
+                        originalEndMya: period.endMya
+                    };
+                } else {
+                    // All other periods: compressed between 8000 BC and 1805 AD
+                    // Map from old timeline to new timeline:
+                    // Old timeline spans from -oldEarthSpan (oldest) to 0 (present)
+                    // New timeline spans from timelineStartMinutes (8000 BC) to preHoloceneEndMinutes (1805 AD)
+                    
+                    // In old timeline: more negative = older/further back
+                    // The oldest point is at -oldEarthSpan, newest (pre-Holocene) is near 0
+                    // Calculate how far each point is from the oldest point
+                    const startOffset = period.startMinutes - (-oldEarthSpan);
+                    const endOffset = period.endMinutes - (-oldEarthSpan);
+                    
+                    // Calculate position as fraction of old span (0 = oldest, 1 = newest/1805AD)
+                    const startFraction = startOffset / oldEarthSpan;
+                    const endFraction = endOffset / oldEarthSpan;
+                    
+                    // Map to new timeline range
+                    const compressedStart = timelineStartMinutes + startFraction * preHoloceneSpanMinutes;
+                    const compressedEnd = timelineStartMinutes + endFraction * preHoloceneSpanMinutes;
+                    
+                    return {
+                        ...period,
+                        startMinutes: compressedStart,
+                        endMinutes: compressedEnd,
+                        originalStartMya: period.startMya,
+                        originalEndMya: period.endMya
+                    };
+                }
+            });
+        }
+
         const compactFormatter = new Intl.NumberFormat("en-US", {
             notation: "compact",
             maximumFractionDigits: 1
@@ -1578,6 +1722,16 @@
                 return absYear.toString();
             }
             return numberFormatter.format(absYear);
+        }
+        
+        // Helper function to get era label based on current view mode
+        // Old Earth: CE/BCE, Young Earth: AD/BC
+        function getEraLabel(era) {
+            if (isYoungEarthView) {
+                return era === 1 ? "AD" : "BC";
+            } else {
+                return era === 1 ? "CE" : "BCE";
+            }
         }
         
         const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -1746,7 +1900,7 @@
         }
 
         function clampMinutes(value) {
-            return Math.min(Math.max(value, TIMELINE_MIN), TIMELINE_MAX);
+            return Math.min(Math.max(value, getTimelineMin()), getTimelineMax());
         }
 
         // Convert date components to minutes from center
@@ -2033,11 +2187,20 @@
             container.innerHTML = '';
             hideGeologicTooltip();
             
+            // Get adjusted periods based on current earth view
+            const adjustedPeriods = getAdjustedGeologicPeriods();
+            
             // Helper function to get the actual end time for a period (extends Holocene to present)
-            const getPeriodEnd = (period) => (period.endMya === 0) ? CURRENT_DATE_MINUTES : period.endMinutes;
+            const getPeriodEnd = (period) => {
+                if (period.endMya === 0) {
+                    // Holocene extends to present day in both views
+                    return CURRENT_DATE_MINUTES;
+                }
+                return period.endMinutes;
+            };
             
             // Find all periods that overlap with the visible range
-            const visiblePeriods = GEOLOGIC_PERIODS.filter(period => {
+            const visiblePeriods = adjustedPeriods.filter(period => {
                 const periodEnd = getPeriodEnd(period);
                 return periodEnd >= rangeStartMinutes && period.startMinutes <= rangeEndMinutes;
             });
@@ -2055,8 +2218,10 @@
                 const leftPercent = ((segmentStart - rangeStartMinutes) / totalRange) * 100;
                 const widthPercent = ((segmentEnd - segmentStart) / totalRange) * 100;
                 
-                // Skip if the segment is too small to see (< 0.1%)
-                if (widthPercent < 0.1) {
+                // Skip if the segment is too small to see
+                // Use lower threshold for Young Earth view since periods are heavily compressed
+                const minWidthPercent = isYoungEarthView ? 0.001 : 0.1;
+                if (widthPercent < minWidthPercent) {
                     return;
                 }
                 
@@ -2084,9 +2249,9 @@
             });
             
             // Add future segment if range extends into the future
-            if (rangeEndMinutes > CURRENT_DATE_MINUTES && rangeStartMinutes < TIMELINE_MAX) {
+            if (rangeEndMinutes > CURRENT_DATE_MINUTES && rangeStartMinutes < getTimelineMax()) {
                 const futureStart = Math.max(CURRENT_DATE_MINUTES, rangeStartMinutes);
-                const futureEnd = Math.min(TIMELINE_MAX, rangeEndMinutes);
+                const futureEnd = Math.min(getTimelineMax(), rangeEndMinutes);
                 
                 const leftPercent = ((futureStart - rangeStartMinutes) / totalRange) * 100;
                 const widthPercent = ((futureEnd - futureStart) / totalRange) * 100;
@@ -2216,8 +2381,8 @@
             const startComponents = minutesToDateComponents(topStartMinutes);
             const endComponents = minutesToDateComponents(topEndMinutes);
             
-            const startEra = startComponents.era === 1 ? "CE" : "BCE";
-            const endEra = endComponents.era === 1 ? "CE" : "BCE";
+            const startEra = getEraLabel(startComponents.era);
+            const endEra = getEraLabel(endComponents.era);
             
             const startMonthIndex = Math.min(Math.max(startComponents.month - 1, 0), 11);
             const endMonthIndex = Math.min(Math.max(endComponents.month - 1, 0), 11);
@@ -2238,7 +2403,7 @@
             }
             
             const components = minutesToDateComponents(minutes);
-            const era = components.era === 1 ? "CE" : "BCE";
+            const era = getEraLabel(components.era);
             const monthIndex = Math.min(Math.max(components.month - 1, 0), 11);
             
             // Format at the same granularity level as selected
@@ -2304,12 +2469,13 @@
 
         function formatYearLabel(minutes) {
             if (minutes === 0) {
-                return "Year 1 CE";
+                const era = isYoungEarthView ? "AD" : "CE";
+                return `Year 1 ${era}`;
             }
             
             const components = minutesToDateComponents(minutes);
             const label = compactFormatter.format(components.year);
-            const era = components.era === 1 ? "CE" : "BCE";
+            const era = getEraLabel(components.era);
             return `Year ${label} ${era}`;
         }
 
@@ -2331,7 +2497,7 @@
             
             // For sub-year granularities, use minutesToDateComponents to get correct date
             const components = minutesToDateComponents(minutes);
-            const era = components.era === 1 ? "CE" : "BCE";
+            const era = getEraLabel(components.era);
             const monthIndex = Math.min(Math.max(components.month - 1, 0), 11);
             
             // Format based on granularity
@@ -2352,11 +2518,12 @@
 
         function formatDetailedTime(minutes, granularity) {
             if (minutes === 0) {
-                return "Center (Year 1 CE · Month 1 · Day 1 · 00:00)";
+                const era = isYoungEarthView ? "AD" : "CE";
+                return `Center (Year 1 ${era} · Month 1 · Day 1 · 00:00)`;
             }
             
             const components = minutesToDateComponents(minutes);
-            const era = components.era === 1 ? "CE" : "BCE";
+            const era = getEraLabel(components.era);
             const monthIndex = Math.min(Math.max(components.month - 1, 0), 11);
             
             // Format based on granularity
@@ -3318,8 +3485,77 @@
             });
         }
 
+        // Earth view switch event listener
+        const earthViewButton = document.getElementById('earthViewButton');
+        
+        // Update era dropdown labels based on current view
+        function updateEraDropdowns() {
+            const positiveEraLabel = isYoungEarthView ? "AD" : "CE";
+            const negativeEraLabel = isYoungEarthView ? "BC" : "BCE";
+            
+            // Update start era dropdown
+            startEraSelect.options[0].text = positiveEraLabel;
+            startEraSelect.options[1].text = negativeEraLabel;
+            
+            // Update end era dropdown
+            endEraSelect.options[0].text = positiveEraLabel;
+            endEraSelect.options[1].text = negativeEraLabel;
+        }
+        
+        function toggleEarthView() {
+            isYoungEarthView = !isYoungEarthView;
+            
+            // Update button text
+            earthViewButton.textContent = isYoungEarthView ? 'Young Earth' : 'Old Earth';
+            
+            // Update era dropdown labels
+            updateEraDropdowns();
+            
+            // Update granularity slider bounds
+            const bounds = getGranularityBounds();
+            granularitySliderElement.min = bounds.min;
+            granularitySliderElement.max = bounds.max;
+            
+            // If current granularity is outside new bounds, adjust it
+            if (granularityIndex < bounds.min) {
+                granularityIndex = bounds.min;
+                granularitySliderElement.value = granularityIndex;
+            }
+            
+            // Clamp timeline range to new bounds
+            const newMin = getTimelineMin();
+            const newMax = getTimelineMax();
+            
+            // Adjust bottom timeline if it's outside new bounds
+            if (bottomStartMinutes < newMin) {
+                bottomStartMinutes = newMin;
+            }
+            if (bottomEndMinutes > newMax) {
+                bottomEndMinutes = newMax;
+            }
+            
+            // Adjust top timeline to fit within bottom timeline
+            if (topStartMinutes < bottomStartMinutes) {
+                topStartMinutes = bottomStartMinutes;
+            }
+            if (topEndMinutes > bottomEndMinutes) {
+                topEndMinutes = bottomEndMinutes;
+            }
+            
+            // Update all UI elements
+            updateGranularitySlider();
+            updateHorizontalSliderHandle(granularitySlider, granularityHandle);
+            updateRangeSliders();
+            refreshRangeDisplay();
+            rebuildTicks();
+            updatePointerAndDetails();
+            updateDateDisplays();
+        }
+        
+        earthViewButton.addEventListener('click', toggleEarthView);
 
         // Initialize
+        updateEraDropdowns(); // Initialize era labels based on default view
         initializeTimelines();
         updateGranularitySlider();
         resetDateSliders();
