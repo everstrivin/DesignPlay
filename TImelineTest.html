@@ -1680,9 +1680,23 @@
                     };
                 } else {
                     // All other periods: compressed between 8000 BC and 1805 AD
-                    // Compress proportionally and shift to start at 8000 BC
-                    const compressedStart = period.startMinutes * compressionRatio + timelineStartMinutes;
-                    const compressedEnd = period.endMinutes * compressionRatio + timelineStartMinutes;
+                    // Map from old timeline to new timeline:
+                    // Old timeline spans from -oldEarthSpan (oldest) to 0 (present)
+                    // New timeline spans from timelineStartMinutes (8000 BC) to preHoloceneEndMinutes (1805 AD)
+                    
+                    // In old timeline: more negative = older/further back
+                    // The oldest point is at -oldEarthSpan, newest (pre-Holocene) is near 0
+                    // Calculate how far each point is from the oldest point
+                    const startOffset = period.startMinutes - (-oldEarthSpan);
+                    const endOffset = period.endMinutes - (-oldEarthSpan);
+                    
+                    // Calculate position as fraction of old span (0 = oldest, 1 = newest/1805AD)
+                    const startFraction = startOffset / oldEarthSpan;
+                    const endFraction = endOffset / oldEarthSpan;
+                    
+                    // Map to new timeline range
+                    const compressedStart = timelineStartMinutes + startFraction * preHoloceneSpanMinutes;
+                    const compressedEnd = timelineStartMinutes + endFraction * preHoloceneSpanMinutes;
                     
                     return {
                         ...period,
@@ -2204,8 +2218,10 @@
                 const leftPercent = ((segmentStart - rangeStartMinutes) / totalRange) * 100;
                 const widthPercent = ((segmentEnd - segmentStart) / totalRange) * 100;
                 
-                // Skip if the segment is too small to see (< 0.1%)
-                if (widthPercent < 0.1) {
+                // Skip if the segment is too small to see
+                // Use lower threshold for Young Earth view since periods are heavily compressed
+                const minWidthPercent = isYoungEarthView ? 0.001 : 0.1;
+                if (widthPercent < minWidthPercent) {
                     return;
                 }
                 
