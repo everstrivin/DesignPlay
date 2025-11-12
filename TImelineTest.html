@@ -633,48 +633,31 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.75rem;
             width: 100%;
             padding: 0.5rem 0;
         }
 
-        .earth-view-switch {
-            display: flex;
-            background: rgba(148, 163, 184, 0.15);
+        .earth-view-button {
+            padding: 0.65rem 1.5rem;
             border-radius: 999px;
-            padding: 4px;
-            gap: 4px;
-        }
-
-        .earth-view-option {
-            padding: 0.5rem 1.25rem;
-            border-radius: 999px;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
-            color: var(--text-muted);
-            background: transparent;
+            color: white;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
             border: none;
             white-space: nowrap;
-        }
-
-        .earth-view-option:hover {
-            background: rgba(148, 163, 184, 0.2);
-        }
-
-        .earth-view-option.active {
-            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-            color: white;
             box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
         }
 
-        .earth-view-label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+        .earth-view-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(14, 165, 233, 0.4);
+        }
+
+        .earth-view-button:active {
+            transform: translateY(0);
         }
 
         .range-slider-info {
@@ -1013,11 +996,7 @@
                                 <span class="speed-label">Fast</span>
                             </div>
                             <div class="earth-view-switch-container">
-                                <span class="earth-view-label">Timeline View:</span>
-                                <div class="earth-view-switch">
-                                    <button class="earth-view-option active" id="oldEarthButton" data-view="old">Old Earth</button>
-                                    <button class="earth-view-option" id="youngEarthButton" data-view="young">Young Earth</button>
-                                </div>
+                                <button class="earth-view-button" id="earthViewButton">Old Earth</button>
                             </div>
                             <div class="granularity-slider-container">
                                 <span class="granularity-label">Coarse</span>
@@ -2160,7 +2139,19 @@
             const adjustedPeriods = getAdjustedGeologicPeriods();
             
             // Helper function to get the actual end time for a period (extends Holocene to present)
-            const getPeriodEnd = (period) => (period.endMya === 0) ? CURRENT_DATE_MINUTES : period.endMinutes;
+            const getPeriodEnd = (period) => {
+                if (period.endMya === 0) {
+                    // Holocene extends to present - use proportionally adjusted current date if in Young Earth view
+                    if (isYoungEarthView) {
+                        const oldEarthSpan = EARTH_AGE_YEARS * MINUTES_PER_YEAR;
+                        const youngEarthSpan = YOUNG_EARTH_AGE_YEARS * MINUTES_PER_YEAR;
+                        const compressionRatio = youngEarthSpan / oldEarthSpan;
+                        return CURRENT_DATE_MINUTES * compressionRatio;
+                    }
+                    return CURRENT_DATE_MINUTES;
+                }
+                return period.endMinutes;
+            };
             
             // Find all periods that overlap with the visible range
             const visiblePeriods = adjustedPeriods.filter(period => {
@@ -3444,21 +3435,14 @@
             });
         }
 
-        // Earth view switch event listeners
-        const oldEarthButton = document.getElementById('oldEarthButton');
-        const youngEarthButton = document.getElementById('youngEarthButton');
+        // Earth view switch event listener
+        const earthViewButton = document.getElementById('earthViewButton');
         
-        function switchEarthView(isYoung) {
-            isYoungEarthView = isYoung;
+        function toggleEarthView() {
+            isYoungEarthView = !isYoungEarthView;
             
-            // Update button states
-            if (isYoung) {
-                youngEarthButton.classList.add('active');
-                oldEarthButton.classList.remove('active');
-            } else {
-                oldEarthButton.classList.add('active');
-                youngEarthButton.classList.remove('active');
-            }
+            // Update button text
+            earthViewButton.textContent = isYoungEarthView ? 'Young Earth' : 'Old Earth';
             
             // Update granularity slider bounds
             const bounds = getGranularityBounds();
@@ -3501,8 +3485,7 @@
             updateDateDisplays();
         }
         
-        oldEarthButton.addEventListener('click', () => switchEarthView(false));
-        youngEarthButton.addEventListener('click', () => switchEarthView(true));
+        earthViewButton.addEventListener('click', toggleEarthView);
 
         // Initialize
         initializeTimelines();
