@@ -2732,101 +2732,64 @@
         
         // Apply color to a handle based on its position
         function applyHandleColor(handle, minutes) {
-            const color = getGeologicColorForPosition(minutes);
-            handle.style.background = color;
-            // Keep the white border
-            handle.style.border = '3px solid white';
+            handle.style.background = getGeologicColorForPosition(minutes);
         }
 
         // Apply two-tone gradient to track based on current date position
         function applyTwoToneGradient(element, startMinutes, endMinutes, isWrapper = false, isMainTrack = false, selectedRangeIncludesToday = false) {
             const totalRange = endMinutes - startMinutes;
+            const isFuture = CURRENT_DATE_MINUTES <= startMinutes;
+            const isPast = CURRENT_DATE_MINUTES >= endMinutes;
             
-            // If current date is outside the range, use single color
-            if (CURRENT_DATE_MINUTES <= startMinutes) {
-                // Entire range is in the future
-                if (isWrapper) {
-                    element.style.background = 'linear-gradient(90deg, rgba(168, 85, 247, 0.15), rgba(126, 34, 206, 0.15))';
-                } else if (isMainTrack) {
-                    element.style.background = 'linear-gradient(90deg, rgba(168, 85, 247, 0.3), rgba(126, 34, 206, 0.6), rgba(168, 85, 247, 0.3))';
-                    element.style.boxShadow = 'inset 0 0 12px rgba(168, 85, 247, 0.35)';
-                } else {
-                    element.style.background = 'rgba(168, 85, 247, 0.3)';
-                }
-            } else if (CURRENT_DATE_MINUTES >= endMinutes) {
-                // Entire range is in the past
-                if (isWrapper) {
-                    element.style.background = 'linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(37, 99, 235, 0.15))';
-                } else if (isMainTrack) {
-                    element.style.background = 'linear-gradient(90deg, rgba(14, 165, 233, 0.3), rgba(2, 132, 199, 0.6), rgba(14, 165, 233, 0.3))';
-                    element.style.boxShadow = 'inset 0 0 12px rgba(14, 165, 233, 0.35)';
-                } else {
-                    // Regular track - use blue for past
-                    element.style.background = 'rgba(14, 165, 233, 0.3)';
-                }
+            // Define color schemes based on style type
+            const colors = {
+                wrapper: { past: 'linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(37, 99, 235, 0.15))', 
+                          future: 'linear-gradient(90deg, rgba(168, 85, 247, 0.15), rgba(126, 34, 206, 0.15))' },
+                mainTrack: { past: 'linear-gradient(90deg, rgba(14, 165, 233, 0.3), rgba(2, 132, 199, 0.6), rgba(14, 165, 233, 0.3))',
+                           future: 'linear-gradient(90deg, rgba(168, 85, 247, 0.3), rgba(126, 34, 206, 0.6), rgba(168, 85, 247, 0.3))' },
+                regular: { past: 'rgba(14, 165, 233, 0.3)', future: 'rgba(168, 85, 247, 0.3)' }
+            };
+            
+            const style = isWrapper ? 'wrapper' : (isMainTrack ? 'mainTrack' : 'regular');
+            
+            // Handle single-color cases (entirely past or future)
+            if (isFuture) {
+                element.style.background = colors[style].future;
+                if (isMainTrack) element.style.boxShadow = 'inset 0 0 12px rgba(168, 85, 247, 0.35)';
+            } else if (isPast) {
+                element.style.background = colors[style].past;
+                if (isMainTrack) element.style.boxShadow = 'inset 0 0 12px rgba(14, 165, 233, 0.35)';
             } else {
-                // Current date falls within the range - create split gradient
-                const currentPercent = ((CURRENT_DATE_MINUTES - startMinutes) / totalRange) * 100;
+                // Split gradient - current date falls within range
+                let currentPercent = ((CURRENT_DATE_MINUTES - startMinutes) / totalRange) * 100;
                 
-                if (isWrapper) {
-                    // Apply padding adjustment only when selected range does NOT include today
-                    let adjustedPercent = currentPercent;
-                    if (!selectedRangeIncludesToday) {
-                        // Wrapper has 12px padding on each side, adjust percentage to align with track area
-                        const paddingPx = 12;
-                        const wrapperWidth = element.offsetWidth;
-                        const paddingPercent = (paddingPx / wrapperWidth) * 100;
-                        adjustedPercent = paddingPercent + currentPercent * (1 - 2 * paddingPercent / 100);
-                    }
-                    
-                    element.style.background = `linear-gradient(90deg, 
-                        rgba(14, 165, 233, 0.15) 0%, 
-                        rgba(37, 99, 235, 0.15) ${adjustedPercent}%, 
-                        rgba(168, 85, 247, 0.15) ${adjustedPercent}%, 
-                        rgba(126, 34, 206, 0.15) 100%)`;
+                if (isWrapper && !selectedRangeIncludesToday) {
+                    // Adjust for wrapper padding (12px each side)
+                    const paddingPercent = (12 / element.offsetWidth) * 100;
+                    currentPercent = paddingPercent + currentPercent * (1 - 2 * paddingPercent / 100);
+                    element.style.background = `linear-gradient(90deg, rgba(14, 165, 233, 0.15) 0%, rgba(37, 99, 235, 0.15) ${currentPercent}%, rgba(168, 85, 247, 0.15) ${currentPercent}%, rgba(126, 34, 206, 0.15) 100%)`;
                 } else if (isMainTrack) {
-                    element.style.background = `linear-gradient(90deg, 
-                        rgba(14, 165, 233, 0.3) 0%,
-                        rgba(2, 132, 199, 0.6) ${currentPercent / 2}%,
-                        rgba(14, 165, 233, 0.3) ${currentPercent}%,
-                        rgba(168, 85, 247, 0.3) ${currentPercent}%,
-                        rgba(126, 34, 206, 0.6) ${(100 + currentPercent) / 2}%,
-                        rgba(168, 85, 247, 0.3) 100%)`;
+                    element.style.background = `linear-gradient(90deg, rgba(14, 165, 233, 0.3) 0%, rgba(2, 132, 199, 0.6) ${currentPercent / 2}%, rgba(14, 165, 233, 0.3) ${currentPercent}%, rgba(168, 85, 247, 0.3) ${currentPercent}%, rgba(126, 34, 206, 0.6) ${(100 + currentPercent) / 2}%, rgba(168, 85, 247, 0.3) 100%)`;
                     element.style.boxShadow = 'inset 0 0 12px rgba(14, 165, 233, 0.2), inset 0 0 12px rgba(168, 85, 247, 0.2)';
                 } else {
-                    // Regular track - use blue for past, purple for future
-                    element.style.background = `linear-gradient(90deg, 
-                        rgba(14, 165, 233, 0.3) 0%, 
-                        rgba(14, 165, 233, 0.3) ${currentPercent}%, 
-                        rgba(168, 85, 247, 0.3) ${currentPercent}%, 
-                        rgba(168, 85, 247, 0.3) 100%)`;
+                    element.style.background = `linear-gradient(90deg, rgba(14, 165, 233, 0.3) 0%, rgba(14, 165, 233, 0.3) ${currentPercent}%, rgba(168, 85, 247, 0.3) ${currentPercent}%, rgba(168, 85, 247, 0.3) 100%)`;
                 }
             }
         }
 
         // Apply two-tone gradient to selected range bar based on current date position
-        function applySelectedRangeGradient(element, rangeStartMinutes, rangeEndMinutes, viewStartMinutes, viewEndMinutes) {
-            // If range doesn't span the current date, use simple gradient
-            if (CURRENT_DATE_MINUTES <= rangeStartMinutes) {
-                // Entire range is in the future
+        function applySelectedRangeGradient(element, rangeStartMinutes, rangeEndMinutes) {
+            const isFuture = CURRENT_DATE_MINUTES <= rangeStartMinutes;
+            const isPast = CURRENT_DATE_MINUTES >= rangeEndMinutes;
+            
+            if (isFuture) {
                 element.style.background = 'linear-gradient(90deg, var(--future-accent), var(--future-accent-dark))';
-            } else if (CURRENT_DATE_MINUTES >= rangeEndMinutes) {
-                // Entire range is in the past
+            } else if (isPast) {
                 element.style.background = 'linear-gradient(90deg, var(--accent), var(--accent-dark))';
             } else {
-                // Range spans the current date
-                // Calculate where "today" falls within the selected range itself
-                // The selected bar is positioned in track coordinates, so we don't need wrapper padding adjustment
-                const selectedRange = rangeEndMinutes - rangeStartMinutes;
-                const currentPercentInSelected = ((CURRENT_DATE_MINUTES - rangeStartMinutes) / selectedRange) * 100;
-                
-                // Apply gradient using the selected range percentage
-                // This ensures the transition aligns with where "today" actually falls in the bar
-                element.style.background = `linear-gradient(90deg, 
-                    var(--accent) 0%, 
-                    var(--accent-dark) ${currentPercentInSelected}%, 
-                    var(--future-accent) ${currentPercentInSelected}%, 
-                    var(--future-accent-dark) 100%)`;
+                // Range spans the current date - split gradient at the current date position
+                const currentPercent = ((CURRENT_DATE_MINUTES - rangeStartMinutes) / (rangeEndMinutes - rangeStartMinutes)) * 100;
+                element.style.background = `linear-gradient(90deg, var(--accent) 0%, var(--accent-dark) ${currentPercent}%, var(--future-accent) ${currentPercent}%, var(--future-accent-dark) 100%)`;
             }
         }
 
@@ -2858,7 +2821,7 @@
             bottomSelected.style.width = `${endPercent - startPercent}%`;
             
             // Apply gradient to selected range based on whether it spans the current date
-            applySelectedRangeGradient(bottomSelected, bottomStartMinutes, bottomEndMinutes, viewStartMinutes, viewEndMinutes);
+            applySelectedRangeGradient(bottomSelected, bottomStartMinutes, bottomEndMinutes);
             
             // Apply colors to handles based on their position in the timeline
             applyHandleColor(bottomStartHandle, bottomStartMinutes);
@@ -2894,7 +2857,7 @@
             topSelected.style.width = `${endPercent - startPercent}%`;
             
             // Apply gradient to selected range based on whether it spans the current date
-            applySelectedRangeGradient(topSelected, topStartMinutes, topEndMinutes, bottomStartMinutes, bottomEndMinutes);
+            applySelectedRangeGradient(topSelected, topStartMinutes, topEndMinutes);
             
             // Apply colors to handles based on their position in the timeline
             applyHandleColor(topStartHandle, topStartMinutes);
@@ -2974,6 +2937,31 @@
             }
         }
 
+        // Helper function to constrain top timeline within bottom bounds
+        function constrainTopTimeline() {
+            const bottomSpan = bottomEndMinutes - bottomStartMinutes;
+            const fineGranularity = getCurrentFineGranularity();
+            const minTopSpanTime = GRANULARITY_TO_MINUTES[fineGranularity];
+            const topSliderWrapperWidth = topSliderWrapper.getBoundingClientRect().width;
+            const minTopSpanPixel = calculateMinPixelSpan(topSliderWrapperWidth, bottomSpan);
+            const minTopSpan = Math.max(minTopSpanTime, minTopSpanPixel);
+            
+            topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - minTopSpan));
+            topEndMinutes = Math.min(bottomEndMinutes, Math.max(topEndMinutes, topStartMinutes + minTopSpan));
+            
+            // Ensure minimum distance is maintained after clamping
+            if (topEndMinutes - topStartMinutes < minTopSpan) {
+                const topMidpoint = (topStartMinutes + topEndMinutes) / 2;
+                topStartMinutes = Math.max(bottomStartMinutes, topMidpoint - minTopSpan / 2);
+                topEndMinutes = Math.min(bottomEndMinutes, topStartMinutes + minTopSpan);
+                
+                if (topEndMinutes - topStartMinutes < minTopSpan) {
+                    topStartMinutes = bottomStartMinutes;
+                    topEndMinutes = Math.min(bottomEndMinutes, bottomStartMinutes + minTopSpan);
+                }
+            }
+        }
+
         function handleBottomDrag(deltaMinutes) {
             const boundaryMin = dragState.boundaryMin || viewStartMinutes;
             const boundaryMax = dragState.boundaryMax || viewEndMinutes;
@@ -2988,7 +2976,6 @@
                 let newStart = dragState.startMinutesStart + deltaMinutes;
                 // Constrain within date input boundaries and ensure start doesn't go past end
                 newStart = Math.max(boundaryMin, Math.min(newStart, dragState.startMinutesEnd - effectiveMinSpan));
-                newStart = Math.max(boundaryMin, newStart); // Ensure it doesn't go below min
                 bottomStartMinutes = newStart;
                 
                 // If start moved, ensure end respects boundaries too
@@ -3000,32 +2987,11 @@
                 }
                 
                 // Constrain top timeline within new bottom bounds
-                const bottomSpan = bottomEndMinutes - bottomStartMinutes;
-                const fineGranularity = getCurrentFineGranularity();
-                const minTopSpanTime = GRANULARITY_TO_MINUTES[fineGranularity];
-                const topSliderWrapperWidth = topSliderWrapper.getBoundingClientRect().width;
-                const minTopSpanPixel = calculateMinPixelSpan(topSliderWrapperWidth, bottomSpan);
-                const minTopSpan = Math.max(minTopSpanTime, minTopSpanPixel);
-                
-                topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - minTopSpan));
-                topEndMinutes = Math.min(bottomEndMinutes, Math.max(topEndMinutes, topStartMinutes + minTopSpan));
-                
-                // Ensure minimum distance is maintained after clamping
-                if (topEndMinutes - topStartMinutes < minTopSpan) {
-                    const topMidpoint = (topStartMinutes + topEndMinutes) / 2;
-                    topStartMinutes = Math.max(bottomStartMinutes, topMidpoint - minTopSpan / 2);
-                    topEndMinutes = Math.min(bottomEndMinutes, topStartMinutes + minTopSpan);
-                    
-                    if (topEndMinutes - topStartMinutes < minTopSpan) {
-                        topStartMinutes = bottomStartMinutes;
-                        topEndMinutes = Math.min(bottomEndMinutes, bottomStartMinutes + minTopSpan);
-                    }
-                }
+                constrainTopTimeline();
             } else if (dragState.type === 'end') {
                 let newEnd = dragState.startMinutesEnd + deltaMinutes;
                 // Constrain within date input boundaries and ensure end doesn't go past start
                 newEnd = Math.min(boundaryMax, Math.max(newEnd, dragState.startMinutesStart + effectiveMinSpan));
-                newEnd = Math.min(boundaryMax, newEnd); // Ensure it doesn't go above max
                 bottomEndMinutes = newEnd;
                 
                 // If end moved, ensure start respects boundaries too
@@ -3037,27 +3003,7 @@
                 }
                 
                 // Constrain top timeline within new bottom bounds
-                const bottomSpan2 = bottomEndMinutes - bottomStartMinutes;
-                const fineGranularity2 = getCurrentFineGranularity();
-                const minTopSpanTime2 = GRANULARITY_TO_MINUTES[fineGranularity2];
-                const topSliderWrapperWidth2 = topSliderWrapper.getBoundingClientRect().width;
-                const minTopSpanPixel2 = calculateMinPixelSpan(topSliderWrapperWidth2, bottomSpan2);
-                const minTopSpan2 = Math.max(minTopSpanTime2, minTopSpanPixel2);
-                
-                topStartMinutes = Math.max(bottomStartMinutes, Math.min(topStartMinutes, bottomEndMinutes - minTopSpan2));
-                topEndMinutes = Math.min(bottomEndMinutes, Math.max(topEndMinutes, topStartMinutes + minTopSpan2));
-                
-                // Ensure minimum distance is maintained after clamping
-                if (topEndMinutes - topStartMinutes < minTopSpan2) {
-                    const topMidpoint = (topStartMinutes + topEndMinutes) / 2;
-                    topStartMinutes = Math.max(bottomStartMinutes, topMidpoint - minTopSpan2 / 2);
-                    topEndMinutes = Math.min(bottomEndMinutes, topStartMinutes + minTopSpan2);
-                    
-                    if (topEndMinutes - topStartMinutes < minTopSpan2) {
-                        topStartMinutes = bottomStartMinutes;
-                        topEndMinutes = Math.min(bottomEndMinutes, bottomStartMinutes + minTopSpan2);
-                    }
-                }
+                constrainTopTimeline();
             } else if (dragState.type === 'range') {
                 const span = dragState.startMinutesEnd - dragState.startMinutesStart;
                 
@@ -3398,60 +3344,19 @@
                     // For Year: use the temp year (change all digits)
                     newYear = tempComponents.year;
                 } else {
-                    // For coarser granularities: change the digit with carry-over to higher digits
-                    // But preserve all lower digits
-                    const yearDelta = tempComponents.year - currentComponents.year;
+                    // For coarser granularities: preserve lower-order digits based on granularity
+                    const granularityDigits = {
+                        "Decade": 10, "Century": 100, "Millennium": 1000,
+                        "Decamillennium": 10000, "Centimillennium": 100000,
+                        "Age": 1000000, "Epoch": 10000000, "Eon": 100000000
+                    };
                     
-                    if (granularity === "Decade") {
-                        // Change tens digit and higher (with carry), preserve ones digit
-                        const onesDigit = Math.abs(currentComponents.year) % 10;
-                        const currentWithoutOnes = currentComponents.year - (currentComponents.year >= 0 ? onesDigit : -onesDigit);
-                        const tempWithoutOnes = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 10 : -Math.abs(tempComponents.year) % 10);
-                        newYear = tempWithoutOnes + (currentComponents.year >= 0 ? onesDigit : -onesDigit);
-                    } else if (granularity === "Century") {
-                        // Change hundreds digit and higher (with carry), preserve last two digits
-                        const lastTwoDigits = Math.abs(currentComponents.year) % 100;
-                        const currentWithoutLastTwo = currentComponents.year - (currentComponents.year >= 0 ? lastTwoDigits : -lastTwoDigits);
-                        const tempWithoutLastTwo = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 100 : -Math.abs(tempComponents.year) % 100);
-                        newYear = tempWithoutLastTwo + (currentComponents.year >= 0 ? lastTwoDigits : -lastTwoDigits);
-                    } else if (granularity === "Millennium") {
-                        // Change thousands digit and higher (with carry), preserve last three digits
-                        const lastThreeDigits = Math.abs(currentComponents.year) % 1000;
-                        const currentWithoutLastThree = currentComponents.year - (currentComponents.year >= 0 ? lastThreeDigits : -lastThreeDigits);
-                        const tempWithoutLastThree = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 1000 : -Math.abs(tempComponents.year) % 1000);
-                        newYear = tempWithoutLastThree + (currentComponents.year >= 0 ? lastThreeDigits : -lastThreeDigits);
-                    } else if (granularity === "Decamillennium") {
-                        // Change ten-thousands digit and higher (with carry), preserve last four digits
-                        const lastFourDigits = Math.abs(currentComponents.year) % 10000;
-                        const currentWithoutLastFour = currentComponents.year - (currentComponents.year >= 0 ? lastFourDigits : -lastFourDigits);
-                        const tempWithoutLastFour = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 10000 : -Math.abs(tempComponents.year) % 10000);
-                        newYear = tempWithoutLastFour + (currentComponents.year >= 0 ? lastFourDigits : -lastFourDigits);
-                    } else if (granularity === "Centimillennium") {
-                        // Change hundred-thousands digit and higher (with carry), preserve last five digits
-                        const lastFiveDigits = Math.abs(currentComponents.year) % 100000;
-                        const currentWithoutLastFive = currentComponents.year - (currentComponents.year >= 0 ? lastFiveDigits : -lastFiveDigits);
-                        const tempWithoutLastFive = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 100000 : -Math.abs(tempComponents.year) % 100000);
-                        newYear = tempWithoutLastFive + (currentComponents.year >= 0 ? lastFiveDigits : -lastFiveDigits);
-                    } else if (granularity === "Age") {
-                        // Change millions digit and higher (with carry), preserve last six digits
-                        const lastSixDigits = Math.abs(currentComponents.year) % 1000000;
-                        const currentWithoutLastSix = currentComponents.year - (currentComponents.year >= 0 ? lastSixDigits : -lastSixDigits);
-                        const tempWithoutLastSix = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 1000000 : -Math.abs(tempComponents.year) % 1000000);
-                        newYear = tempWithoutLastSix + (currentComponents.year >= 0 ? lastSixDigits : -lastSixDigits);
-                    } else if (granularity === "Epoch") {
-                        // Change ten-millions digit and higher (with carry), preserve last seven digits
-                        const lastSevenDigits = Math.abs(currentComponents.year) % 10000000;
-                        const currentWithoutLastSeven = currentComponents.year - (currentComponents.year >= 0 ? lastSevenDigits : -lastSevenDigits);
-                        const tempWithoutLastSeven = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 10000000 : -Math.abs(tempComponents.year) % 10000000);
-                        newYear = tempWithoutLastSeven + (currentComponents.year >= 0 ? lastSevenDigits : -lastSevenDigits);
-                    } else if (granularity === "Eon") {
-                        // Change hundred-millions digit and higher (with carry), preserve last eight digits
-                        const lastEightDigits = Math.abs(currentComponents.year) % 100000000;
-                        const currentWithoutLastEight = currentComponents.year - (currentComponents.year >= 0 ? lastEightDigits : -lastEightDigits);
-                        const tempWithoutLastEight = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % 100000000 : -Math.abs(tempComponents.year) % 100000000);
-                        newYear = tempWithoutLastEight + (currentComponents.year >= 0 ? lastEightDigits : -lastEightDigits);
+                    const modulus = granularityDigits[granularity];
+                    if (modulus) {
+                        const lastDigits = Math.abs(currentComponents.year) % modulus;
+                        const tempWithoutLast = tempComponents.year - (tempComponents.year >= 0 ? Math.abs(tempComponents.year) % modulus : -Math.abs(tempComponents.year) % modulus);
+                        newYear = tempWithoutLast + (currentComponents.year >= 0 ? lastDigits : -lastDigits);
                     } else {
-                        // For any other granularities: use full year change
                         newYear = tempComponents.year;
                     }
                 }
