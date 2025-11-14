@@ -2295,6 +2295,42 @@
         const tooltipEpoch = document.getElementById('tooltipEpoch');
         const tooltipDates = document.getElementById('tooltipDates');
 
+        // Helper function to format tooltip dates based on current view mode
+        function formatTooltipDates(period) {
+            if (!isYoungEarthView) {
+                // Old Earth view: show MYA (millions of years ago) format
+                const startMya = period.startMya;
+                const endMya = period.endMya;
+                if (endMya === 0) {
+                    return `${startMya.toFixed(2)} Ma - Present`;
+                } else {
+                    return `${startMya.toFixed(2)} - ${endMya.toFixed(2)} Ma`;
+                }
+            } else {
+                // Young Earth view: convert minutes to year dates with AD/BC format
+                const startDateComponents = minutesToDateComponents(period.startMinutes);
+                const endDateComponents = minutesToDateComponents(period.endMinutes);
+                
+                // Format the start date
+                const startYear = Math.abs(startDateComponents.year);
+                const startEra = getEraLabel(startDateComponents.era);
+                const startDateStr = `${startYear} ${startEra}`;
+                
+                // Format the end date
+                let endDateStr;
+                if (period.endMya === 0) {
+                    // Period extends to present
+                    endDateStr = "Present";
+                } else {
+                    const endYear = Math.abs(endDateComponents.year);
+                    const endEra = getEraLabel(endDateComponents.era);
+                    endDateStr = `${endYear} ${endEra}`;
+                }
+                
+                return `${startDateStr} - ${endDateStr}`;
+            }
+        }
+
         function renderGeologicSegments(container, rangeStartMinutes, rangeEndMinutes) {
             // Clear existing segments and hide tooltip to prevent it from pointing to removed elements
             container.innerHTML = '';
@@ -2403,16 +2439,8 @@
             tooltipPeriod.textContent = period.period;
             tooltipEpoch.textContent = period.epoch;
             
-            // Format dates
-            const startMya = period.startMya;
-            const endMya = period.endMya;
-            let dateText;
-            if (endMya === 0) {
-                dateText = `${startMya.toFixed(2)} Ma - Present`;
-            } else {
-                dateText = `${startMya.toFixed(2)} - ${endMya.toFixed(2)} Ma`;
-            }
-            tooltipDates.textContent = dateText;
+            // Format dates based on current view mode
+            tooltipDates.textContent = formatTooltipDates(period);
             
             geologicTooltip.classList.add('visible');
             updateTooltipPosition(event);
