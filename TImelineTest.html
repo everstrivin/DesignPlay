@@ -3306,18 +3306,8 @@
                     tempComponents.hour,
                     currentComponents.minute  // Snap: preserve minutes
                 );
-            } else if (granularity === "Day") {
-                // For Day: snap to preserve original hour and minutes
-                newMinutes = dateComponentsToMinutes(
-                    tempComponents.era,
-                    tempComponents.year,
-                    tempComponents.month,
-                    tempComponents.day,
-                    currentComponents.hour,  // Snap: preserve hour
-                    currentComponents.minute  // Snap: preserve minutes
-                );
-            } else if (granularity === "Week") {
-                // For Week: same as Day (uses week-sized deltas)
+            } else if (granularity === "Day" || granularity === "Week") {
+                // For Day/Week: snap to preserve original hour and minutes
                 newMinutes = dateComponentsToMinutes(
                     tempComponents.era,
                     tempComponents.year,
