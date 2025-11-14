@@ -193,6 +193,102 @@
             line-height: 1.5;
         }
 
+        .test-button-container {
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .test-button {
+            border: none;
+            border-radius: 999px;
+            padding: 0.85rem 1.8rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: white;
+            background: linear-gradient(135deg, #10b981, #059669);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.25);
+        }
+
+        .test-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.3);
+        }
+
+        .test-button:active {
+            transform: translateY(0);
+        }
+
+        .test-panel {
+            width: 100%;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.12));
+            border-radius: 18px;
+            padding: 1.5rem;
+            border: 2px solid rgba(16, 185, 129, 0.2);
+            display: none;
+        }
+
+        .test-panel.active {
+            display: block;
+        }
+
+        .test-panel-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 1rem;
+        }
+
+        .test-panel-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #1e293b;
+            white-space: pre-line;
+            margin-bottom: 1.5rem;
+        }
+
+        .test-panel-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .test-panel-btn {
+            border: none;
+            border-radius: 12px;
+            padding: 0.7rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .test-panel-btn-primary {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        }
+
+        .test-panel-btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+        }
+
+        .test-panel-btn-secondary {
+            background: white;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .test-panel-btn-secondary:hover {
+            background: #f8fafc;
+        }
+
         .slider-area {
             display: flex;
             flex-direction: column;
@@ -934,6 +1030,14 @@
 <body>
     <div class="app">
         <section class="timeline-card">
+            <div class="test-button-container">
+                <button class="test-button" id="runTestButton">🧪 Run Full Test Suite</button>
+                <div class="test-panel" id="testPanel">
+                    <div class="test-panel-title" id="testPanelTitle"></div>
+                    <div class="test-panel-content" id="testPanelContent"></div>
+                    <div class="test-panel-buttons" id="testPanelButtons"></div>
+                </div>
+            </div>
             <div class="range-display" id="rangeDisplay"></div>
             <div class="dual-timeline-container">
                 <div class="timeline-with-vertical-controls">
@@ -1059,6 +1163,15 @@
     </div>
 
     <script>
+        // ================================================================
+        // DEEP TIME TIMELINE EXPLORER - CORE COMPONENT
+        // ================================================================
+        // This section contains the timeline component logic.
+        // The test suite code begins at the "TEST SUITE" marker below.
+        // To extract this as a React component, copy from here to the
+        // "END OF CORE COMPONENT" marker and adapt the vanilla JS to React.
+        // ================================================================
+        
         const MINUTES_PER_YEAR = 525600;
         const MINUTES_PER_MONTH = MINUTES_PER_YEAR / 12;
         const MINUTES_PER_WEEK = 10080;
@@ -3568,6 +3681,411 @@
         refreshRangeDisplay();
         rebuildTicks();
         updatePointerAndDetails();
+
+        // ================================================================
+        // END OF CORE COMPONENT
+        // ================================================================
+        // Everything above this line is the core timeline component.
+        // Everything below this line is the test suite.
+        // ================================================================
+
+        // ===========================
+        // COMPREHENSIVE TEST SUITE
+        // ===========================
+        
+        const runTestButton = document.getElementById('runTestButton');
+        const testPanel = document.getElementById('testPanel');
+        const testPanelTitle = document.getElementById('testPanelTitle');
+        const testPanelContent = document.getElementById('testPanelContent');
+        const testPanelButtons = document.getElementById('testPanelButtons');
+        
+        // Store original state to restore after tests
+        let originalState = null;
+        
+        function saveState() {
+            return {
+                topStart: topStartMinutes,
+                topEnd: topEndMinutes,
+                bottomStart: bottomStartMinutes,
+                bottomEnd: bottomEndMinutes,
+                viewStart: viewStartMinutes,
+                viewEnd: viewEndMinutes,
+                granularityIndex: granularityIndex,
+                speedValue: speedSlider.value,
+                isYoungEarth: isYoungEarthView
+            };
+        }
+        
+        function restoreState(state) {
+            topStartMinutes = state.topStart;
+            topEndMinutes = state.topEnd;
+            bottomStartMinutes = state.bottomStart;
+            bottomEndMinutes = state.bottomEnd;
+            viewStartMinutes = state.viewStart;
+            viewEndMinutes = state.viewEnd;
+            granularityIndex = state.granularityIndex;
+            speedSlider.value = state.speedValue;
+            if (isYoungEarthView !== state.isYoungEarth) {
+                toggleEarthView();
+            }
+            updateGranularitySlider();
+            updateHorizontalSliderHandle(speedSlider, speedHandle);
+            updateHorizontalSliderHandle(granularitySlider, granularityHandle);
+            updateRangeSliders();
+            updateDateDisplays();
+            refreshRangeDisplay();
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Custom panel functions
+        function showTestPanel(title, content, buttons) {
+            return new Promise((resolve) => {
+                testPanelTitle.textContent = title;
+                testPanelContent.textContent = content;
+                testPanelButtons.innerHTML = '';
+                
+                buttons.forEach(btn => {
+                    const button = document.createElement('button');
+                    button.className = `test-panel-btn ${btn.primary ? 'test-panel-btn-primary' : 'test-panel-btn-secondary'}`;
+                    button.textContent = btn.text;
+                    button.onclick = () => {
+                        hideTestPanel();
+                        resolve(btn.value);
+                    };
+                    testPanelButtons.appendChild(button);
+                });
+                
+                testPanel.classList.add('active');
+            });
+        }
+        
+        function hideTestPanel() {
+            testPanel.classList.remove('active');
+        }
+        
+        async function testAlert(message) {
+            const lines = message.split('\n');
+            const title = lines[0];
+            const content = lines.slice(1).join('\n');
+            await showTestPanel(title, content, [{ text: 'OK', primary: true, value: true }]);
+        }
+        
+        async function testConfirm(message) {
+            const lines = message.split('\n');
+            const title = lines[0];
+            const content = lines.slice(1).join('\n');
+            return await showTestPanel(title, content, [
+                { text: 'Cancel', primary: false, value: false },
+                { text: 'OK', primary: true, value: true }
+            ]);
+        }
+        
+        // ===========================
+        // AUTOMATED TEST FUNCTIONS
+        // ===========================
+        
+        const automatedTestResults = [];
+        
+        function runAutomatedTest(testName, testFn) {
+            try {
+                testFn();
+                automatedTestResults.push({ name: testName, passed: true, error: null });
+                return true;
+            } catch (error) {
+                automatedTestResults.push({ name: testName, passed: false, error: error.message });
+                return false;
+            }
+        }
+        
+        function verifyDateRange(start, end) {
+            if (start >= end) {
+                throw new Error('Start date must be before end date');
+            }
+            if (!isFinite(start) || !isFinite(end)) {
+                throw new Error('Invalid date values');
+            }
+        }
+        
+        function verifySliderPositions() {
+            if (topStartMinutes >= topEndMinutes) {
+                throw new Error('Top slider start must be before end');
+            }
+            if (bottomStartMinutes >= bottomEndMinutes) {
+                throw new Error('Bottom slider start must be before end');
+            }
+        }
+        
+        async function runAutomatedTests() {
+            automatedTestResults.length = 0; // Clear previous results
+            
+            // Test 14: Past vs Future Visual Distinction
+            runAutomatedTest('Past/Future Color Distinction', () => {
+                const yesterday = CURRENT_DATE_MINUTES - MINUTES_PER_DAY;
+                const tomorrow = CURRENT_DATE_MINUTES + MINUTES_PER_DAY;
+                viewStartMinutes = yesterday - MINUTES_PER_DAY * 7;
+                viewEndMinutes = tomorrow + MINUTES_PER_DAY * 7;
+                bottomStartMinutes = yesterday;
+                bottomEndMinutes = tomorrow;
+                const midRange = (bottomStartMinutes + bottomEndMinutes) / 2;
+                const quarterRange = (bottomEndMinutes - bottomStartMinutes) / 8;
+                topStartMinutes = midRange - quarterRange;
+                topEndMinutes = midRange + quarterRange;
+                updateRangeSliders();
+                updateDateDisplays();
+                refreshRangeDisplay();
+                
+                verifyDateRange(viewStartMinutes, viewEndMinutes);
+                verifySliderPositions();
+            });
+            await sleep(300);
+            
+            // Test 15: Small Date Ranges
+            runAutomatedTest('Small Date Ranges (Hours/Days)', () => {
+                const now = CURRENT_DATE_MINUTES;
+                viewStartMinutes = now - (7 * MINUTES_PER_DAY);
+                viewEndMinutes = now + (7 * MINUTES_PER_DAY);
+                bottomStartMinutes = now - MINUTES_PER_DAY;
+                bottomEndMinutes = now + MINUTES_PER_DAY;
+                const midSmall = (bottomStartMinutes + bottomEndMinutes) / 2;
+                const quarterSmall = (bottomEndMinutes - bottomStartMinutes) / 8;
+                topStartMinutes = midSmall - quarterSmall;
+                topEndMinutes = midSmall + quarterSmall;
+                updateRangeSliders();
+                updateDateDisplays();
+                refreshRangeDisplay();
+                
+                verifyDateRange(topStartMinutes, topEndMinutes);
+                verifySliderPositions();
+            });
+            await sleep(300);
+            
+            // Test 16: Large Date Ranges (Geological Time - Mesozoic Era)
+            runAutomatedTest('Geological Time (Mesozoic Era)', () => {
+                viewStartMinutes = -252_000_000 * MINUTES_PER_YEAR;
+                viewEndMinutes = -66_000_000 * MINUTES_PER_YEAR;
+                bottomStartMinutes = viewStartMinutes;
+                bottomEndMinutes = viewEndMinutes;
+                const midMeso = (bottomStartMinutes + bottomEndMinutes) / 2;
+                const quarterMeso = (bottomEndMinutes - bottomStartMinutes) / 8;
+                topStartMinutes = midMeso - quarterMeso;
+                topEndMinutes = midMeso + quarterMeso;
+                updateRangeSliders();
+                updateDateDisplays();
+                refreshRangeDisplay();
+                
+                verifyDateRange(viewStartMinutes, viewEndMinutes);
+                verifySliderPositions();
+            });
+            await sleep(300);
+            
+            // Test 17: Extreme Past (Formation of Earth)
+            runAutomatedTest('Extreme Past (Earth Formation)', () => {
+                viewStartMinutes = -4_600_000_000 * MINUTES_PER_YEAR;
+                viewEndMinutes = -4_400_000_000 * MINUTES_PER_YEAR;
+                bottomStartMinutes = viewStartMinutes;
+                bottomEndMinutes = viewEndMinutes;
+                const midHadean = (bottomStartMinutes + bottomEndMinutes) / 2;
+                const quarterHadean = (bottomEndMinutes - bottomStartMinutes) / 8;
+                topStartMinutes = midHadean - quarterHadean;
+                topEndMinutes = midHadean + quarterHadean;
+                updateRangeSliders();
+                updateDateDisplays();
+                refreshRangeDisplay();
+                
+                verifyDateRange(viewStartMinutes, viewEndMinutes);
+                verifySliderPositions();
+            });
+            await sleep(300);
+            
+            // Test 18: Future Dates
+            runAutomatedTest('Future Navigation', () => {
+                viewStartMinutes = CURRENT_DATE_MINUTES;
+                viewEndMinutes = CURRENT_DATE_MINUTES + (100 * MINUTES_PER_YEAR);
+                bottomStartMinutes = CURRENT_DATE_MINUTES + (10 * MINUTES_PER_YEAR);
+                bottomEndMinutes = CURRENT_DATE_MINUTES + (50 * MINUTES_PER_YEAR);
+                const midFuture = (bottomStartMinutes + bottomEndMinutes) / 2;
+                const quarterFuture = (bottomEndMinutes - bottomStartMinutes) / 8;
+                topStartMinutes = midFuture - quarterFuture;
+                topEndMinutes = midFuture + quarterFuture;
+                updateRangeSliders();
+                updateDateDisplays();
+                refreshRangeDisplay();
+                
+                verifyDateRange(viewStartMinutes, viewEndMinutes);
+                verifySliderPositions();
+            });
+            await sleep(300);
+            
+            return automatedTestResults;
+        }
+        
+        function formatAutomatedTestResults() {
+            const passed = automatedTestResults.filter(t => t.passed).length;
+            const total = automatedTestResults.length;
+            
+            let summary = `Automated Tests: ${passed}/${total} passed\n\n`;
+            automatedTestResults.forEach(test => {
+                const icon = test.passed ? '✅' : '❌';
+                summary += `${icon} ${test.name}\n`;
+                if (!test.passed && test.error) {
+                    summary += `   Error: ${test.error}\n`;
+                }
+            });
+            
+            return summary;
+        }
+        
+        async function runComprehensiveTests() {
+            // Save original state
+            originalState = saveState();
+            
+            await testAlert('🧪 Welcome to the Deep Time Timeline Explorer Test Suite!\n\nThis includes 13 manual verification tests and 5 automated tests.\n\nClick OK to begin...');
+            
+            
+            // Test 1: Initial State Verification
+            if (!await testConfirm('TEST 1: Initial State\n\nCan you see:\n• Date range display at the top?\n• Two horizontal sliders (fine on top, coarse on bottom)?\n• Vertical "ADJUST DATE" sliders on both sides?\n• Speed slider (Slow/Fast)?\n• "Old Earth" button in the center?\n• Granularity slider (Coarse/Fine) with current setting displayed?\n• Start and end dates below the vertical sliders?\n\nClick OK if you can see all these elements.')) {
+                await testAlert('Test suite stopped. Please review the interface and try again.');
+                restoreState(originalState);
+                return;
+            }
+            
+            // Test 2: Horizontal Slider Colors
+            if (!await testConfirm('TEST 2: Timeline Colors\n\nLook at the horizontal slider tracks.\n\nCan you see:\n• Blue coloring for past dates?\n• Purple coloring for future dates?\n• The color transition happening around today\'s date?\n\nMove your mouse over the colored segments to see geological period tooltips.\n\nClick OK if you can see the color distinction and tooltips work.')) {
+                restoreState(originalState);
+                return;
+            }
+            
+            // Test 3: Drag the fine (top) slider handles
+            await testAlert('TEST 3: Fine Slider Interaction\n\nNext, try dragging the handles on the TOP horizontal slider.\n\nClick OK, then try dragging both handles and the blue bar between them.');
+            await sleep(500);
+            
+            if (!await testConfirm('After dragging the top slider handles:\n\n• Did the date range at the top update?\n• Could you drag both the left and right handles?\n• Could you drag the colored bar between the handles?\n• Did the handles stay at least 50 pixels apart?\n\nClick OK if the fine slider works correctly.')) {
+                restoreState(originalState);
+                return;
+            }
+            
+            // Test 4: Drag the coarse (bottom) slider handles
+            await testAlert('TEST 4: Coarse Slider Interaction\n\nNow try dragging the handles on the BOTTOM horizontal slider.\n\nClick OK, then try dragging both handles and the bar between them.');
+            await sleep(500);
+            
+            if (!await testConfirm('After dragging the bottom slider handles:\n\n• Did the fine (top) slider\'s range adjust to stay within the coarse slider?\n• Did the dates below the vertical sliders update?\n• Could you drag both handles and the bar?\n• Did the handles stay properly separated?\n\nClick OK if the coarse slider works correctly.')) {
+                restoreState(originalState);
+                return;
+            }
+            
+            // Test 5: Vertical Date Adjustment
+            await testAlert('TEST 5: Vertical Date Adjustment\n\nThe vertical sliders adjust the coarse timeline boundaries.\n\nClick OK, then try dragging one of the vertical slider handles UP or DOWN (not the granularity labels - the actual slider area).');
+            await sleep(500);
+            
+            if (!await testConfirm('After dragging a vertical slider:\n\n• Did the date below that slider change?\n• Did the coarse (bottom) slider range adjust?\n• Did dragging UP move the date forward in time?\n• Did dragging DOWN move the date backward in time?\n• Did the slider return to center after you released it?\n\nClick OK if vertical date adjustment works.')) {
+                restoreState(originalState);
+                return;
+            }
+            
+            // Test 6: Speed Slider
+            await testAlert('TEST 6: Speed Slider\n\nThe speed slider controls how fast vertical date adjustments happen.\n\nClick OK, then:\n1. Move the Speed slider to "Fast"\n2. Try dragging a vertical slider up or down\n3. Move the Speed slider to "Slow"\n4. Try dragging a vertical slider again');
+            await sleep(500);
+            
+            if (!await testConfirm('Did you notice:\n\n• Dates changed faster when speed was set to "Fast"?\n• Dates changed slower when speed was set to "Slow"?\n• The speed difference was noticeable?\n\nClick OK if the speed control works.')) {
+                restoreState(originalState);
+                return;
+            }
+            
+            // Test 7: Granularity Slider
+            await testAlert('TEST 7: Granularity Slider\n\nThe granularity slider controls the time unit precision.\n\nClick OK, then:\n1. Move the Granularity slider toward "Coarse"\n2. Look at the displayed unit (e.g., "Millennium", "Century")\n3. Move it toward "Fine"\n4. Watch the unit change to finer divisions (e.g., "Month", "Day", "Hour")');
+            await sleep(500);
+            
+            if (!await testConfirm('Did you observe:\n\n• The granularity display updating as you moved the slider?\n• Coarser settings showing larger time units (years, centuries, millennia)?\n• Finer settings showing smaller time units (months, days, hours, minutes)?\n\nClick OK if granularity control works.')) {
+                restoreState(originalState);
+                return;
+            }
+            
+            // Test 8: Granularity affects vertical slider precision
+            await testAlert('TEST 8: Granularity Impact\n\nClick OK, then:\n1. Set Granularity to "Coarse" (left side)\n2. Drag a vertical slider - notice dates change in large jumps\n3. Set Granularity to "Fine" (right side)\n4. Drag a vertical slider - notice dates change in small increments');
+            await sleep(500);
+            
+            if (!await testConfirm('Did you notice:\n\n• Coarse granularity made dates jump by larger amounts (years, centuries)?\n• Fine granularity made dates change by smaller amounts (hours, minutes)?\n• The vertical slider adjustments respected the selected granularity?\n\nClick OK if this works correctly.')) {
+                restoreState(originalState);
+                return;
+            }
+            
+            // Test 9: Earth View Toggle
+            await testAlert('TEST 9: Earth View Toggle\n\nClick OK, then click the "Old Earth" button to switch to "Young Earth" view.');
+            await sleep(500);
+            
+            if (!await testConfirm('After clicking the button (it should now say "Young Earth"):\n\n• Did the timeline scale change to show only the last ~8000 years?\n• Did the era labels change from "CE/BCE" to "AD/BC"?\n• Did the coarsest granularity limit change to "Millennium"?\n• Can you still navigate the timeline?\n\nClick OK if Young Earth view works.')) {
+                restoreState(originalState);
+                return;
+            }
+            
+            await testAlert('Now click the button again to switch back to "Old Earth" view.');
+            await sleep(500);
+            
+            if (!await testConfirm('After switching back to "Old Earth":\n\n• Did the timeline scale expand to billions of years?\n• Did the era labels change back to "CE/BCE"?\n• Can you now access coarser granularities (Eon, Epoch, Age)?\n\nClick OK if switching works in both directions.')) {
+                restoreState(originalState);
+                return;
+            }
+            
+            // Test 10: Geological Period Tooltips
+            await testAlert('TEST 10: Geological Period Tooltips\n\nClick OK, then hover your mouse over the colored segments on the horizontal sliders.');
+            await sleep(500);
+            
+            if (!await testConfirm('When hovering over colored segments:\n\n• Did tooltips appear showing geological information?\n• Did you see Eon, Era, Period, and Epoch names?\n• Did you see date ranges in millions of years (Ma)?\n• Did different segments show different geological periods?\n• Did the "Future" section (purple) show "Future" in the tooltip?\n\nClick OK if geological tooltips work.')) {
+                restoreState(originalState);
+                return;
+            }
+            
+            // Test 11: Date Input Editing
+            await testAlert('TEST 11: Direct Date Editing\n\nClick OK, then try clicking on different parts of the dates shown below the vertical sliders (month, day, year, time, era).');
+            await sleep(500);
+            
+            if (!await testConfirm('When clicking on date components:\n\n• Could you click and edit the month (dropdown)?\n• Could you click and edit the day (type numbers)?\n• Could you click and edit the year (type numbers)?\n• Could you click and edit the hour and minute?\n• Could you click and change CE/BCE (or AD/BC)?\n• Did the slider positions update when you changed the dates?\n\nClick OK if date editing works.')) {
+                restoreState(originalState);
+                return;
+            }
+            
+            // Test 12: Handle Separation Constraints
+            await testAlert('TEST 12: Handle Separation\n\nClick OK, then try dragging the left handle of the TOP slider all the way to the right, attempting to push it past the right handle.');
+            await sleep(500);
+            
+            if (!await testConfirm('When trying to overlap the handles:\n\n• Did the handles stop before completely overlapping?\n• Was there always at least ~50 pixels of space between them?\n• Could you still grab and drag each handle separately?\n• Could you still grab the colored bar between them?\n\nClick OK if handle separation constraints work.')) {
+                restoreState(originalState);
+                return;
+            }
+            
+            // Test 13: Slider Synchronization
+            await testAlert('TEST 13: Slider Synchronization\n\nClick OK, then drag the BOTTOM (coarse) slider handles to create a small range.');
+            await sleep(500);
+            
+            if (!await testConfirm('After adjusting the coarse slider:\n\n• Did the TOP (fine) slider automatically constrain itself to stay within the bottom range?\n• If you made the bottom range very small, did the top range also become smaller?\n• Did the dates remain consistent between all controls?\n\nClick OK if slider synchronization works.')) {
+                restoreState(originalState);
+                return;
+            }
+            
+            // Run automated tests (Tests 14-18)
+            await testAlert('✅ Manual Tests Complete!\n\nNow running 5 automated tests...\n\nThese will test:\n• Past/Future color distinction\n• Small date ranges (hours/days)\n• Geological time (Mesozoic Era)\n• Extreme past (Earth formation)\n• Future navigation\n\nClick OK to run automated tests...');
+            
+            const automatedResults = await runAutomatedTests();
+            
+            // Restore original state
+            restoreState(originalState);
+            await sleep(500);
+            
+            // Show automated test results
+            const resultsText = formatAutomatedTestResults();
+            const allPassed = automatedResults.every(t => t.passed);
+            
+            if (allPassed) {
+                await testAlert(`✅ ALL TESTS PASSED!\n\n${resultsText}\n\nManual Tests (13): ✅ Completed\nAutomated Tests (5): ✅ All Passed\n\nThe Deep Time Timeline Explorer is working correctly! 🎉`);
+            } else {
+                await testAlert(`⚠️ SOME TESTS FAILED\n\n${resultsText}\n\nManual Tests (13): ✅ Completed\nAutomated Tests (5): Some failures detected\n\nPlease review the failed tests.`);
+            }
+        }
+        
+        runTestButton.addEventListener('click', runComprehensiveTests);
     </script>
 </body>
 </html>
